@@ -19,7 +19,6 @@ class ProductController extends Controller
     {
         try {
             $data = ProductModel::all();
-        
             return response()->json([
                 'data' => $data,
             ], Response::HTTP_OK); // Change the status code to 200 (OK)
@@ -75,7 +74,7 @@ class ProductController extends Controller
                     'category' => 'string|nullable|max:255',
                     'color' => 'required|string|max:255',
                     'size' => 'required|string|max:255',
-                    'discount' => 'integer|nullable|between:1,100',
+                    'discount' => 'integer|nullable|between:0,100',
                     'description' => 'string|nullable'
                 ]);
 
@@ -175,10 +174,8 @@ class ProductController extends Controller
             if ($user){
                 // Fetch Group I.D
                 $product = ProductModel::where('id', $request->input('id'))->first();
-
                 if($product){
                     $request->validate([
-                        'role' => 'string|nullable',
                         'image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
                         'name' => 'required|string|nullable|max:255',
                         'price' => 'numeric',
@@ -186,7 +183,7 @@ class ProductController extends Controller
                         'category' => 'string|nullable|max:255',
                         'color' => 'required|string|max:255',
                         'size' => 'required|string|max:255',
-                        'discount' => 'integer|nullable|between:1,100',
+                        'discount' => 'integer|nullable|between:0,100',
                         'description' => 'string|nullable'
                     ]);
                     $image = $request->file('image');
@@ -216,7 +213,7 @@ class ProductController extends Controller
                     if ($created) {
                         $userAction = 'CREATE';
                         $details = 'Add Product Information with Group ID: ' . $uuid . "\n" .
-                        'Role: MAIN' . "\n" .
+                        'Role: ' . "\n" .
                         'Image Name: ' . $filename . "\n" .
                         'Name: ' . $request->input('name') . "\n" .
                         'Price: ' . $request->input('price') . "\n" .
@@ -226,7 +223,6 @@ class ProductController extends Controller
                         'Size: ' . $request->input('size') . "\n" .
                         'Discount: ' . $request->input('discount') . "\n" .
                         'Description: ' . $request->input('description') . "\n";
-                    
                         // Create Log
                         $create = LogsModel::create([
                             'user_id' => $user->id,
@@ -279,6 +275,7 @@ class ProductController extends Controller
     public function show(string $id)
     {
         //
+        
     }
 
     /**
@@ -287,6 +284,33 @@ class ProductController extends Controller
     public function edit(string $id)
     {
         //
+        try {
+            $data = ProductModel::where('group_id', $id)->get(); // Use where to filter by group_id
+            return response()->json([
+                'data' => $data,
+            ], Response::HTTP_OK); // Change the status code to 200 (OK)
+        }catch (\Exception $e) {
+            // Handle exceptions and return an error response with CORS headers
+            $errorMessage = $e->getMessage();
+            $errorCode = $e->getCode();
+
+            // Create a JSON error response
+            $response = [
+                'success' => false,
+                'error' => [
+                    'code' => $errorCode,
+                    'message' => $errorMessage,
+                ],
+            ];
+
+            // Add additional error details if available
+            if ($e instanceof \Illuminate\Validation\ValidationException) {
+                $response['error']['details'] = $e->errors();
+            }
+
+            // Return the JSON error response with CORS headers and an appropriate HTTP status code
+            return response()->json($response, Response::HTTP_INTERNAL_SERVER_ERROR)->header('Content-Type', 'application/json');
+        }
     }
 
     /**

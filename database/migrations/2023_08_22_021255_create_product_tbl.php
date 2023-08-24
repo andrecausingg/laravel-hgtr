@@ -22,7 +22,7 @@ return new class extends Migration
             $table->string('category');
             $table->string('color');
             $table->string('size');
-            $table->decimal('discount')->nullable();
+            $table->integer('discount')->nullable();
             $table->text('description')->nullable();
             $table->timestamps();
         });

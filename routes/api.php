@@ -69,12 +69,16 @@ Route::get('user-info/edit/{id}', [UserInfoController::class, 'edit']);
 Route::post('user-info/update/{id}', [UserInfoController::class, 'update']);
 
 // PRODUCT
+// index Product
+Route::get('product/index', [ProductController::class, 'index']);
 // Store Product
 Route::post('product/store', [ProductController::class, 'store']);
 // Add Product with same group Id
 Route::post('product/add', [ProductController::class, 'addProduct']);
 // Update Product
 Route::post('product/update/{id}', [ProductController::class, 'update']);
+// Edit Product All
+Route::get('product/edit/{id}', [ProductController::class, 'edit']);
 // Delete Product | Update the other same group id with a role MAIN
 Route::delete('product/destroy/{id}', [ProductController::class, 'destroy']);
 // Delete All Product 
