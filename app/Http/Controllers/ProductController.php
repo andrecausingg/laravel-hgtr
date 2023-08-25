@@ -62,20 +62,20 @@ class ProductController extends Controller
         try {
             // Fetch User ID
             $user = AuthModel::where('session_login', $request->input('session'))
-            ->where('status', 'VERIFIED')
-            ->first();
+                ->where('status', 'VERIFIED')
+                ->first();
             if ($user) {
                 $request->validate([
-                    'role' => 'string|nullable',
+                    'role' => 'nullable|string',
                     'image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
                     'name' => 'required|string|nullable|max:255',
-                    'price' => 'required|numeric',
-                    'quantity' => 'required|integer',
+                    'price' => 'required|numeric|min:0',
+                    'quantity' => 'required|numeric|min:1',
                     'category' => 'required|string|nullable|max:255',
                     'color' => 'required|string|max:255',
                     'size' => 'required|string|max:255',
-                    'discount' => 'integer|nullable|between:0,100',
-                    'description' => 'string|nullable'
+                    'discount' => 'nullable|numeric|between:0,100',
+                    'description' => 'nullable|string',
                 ]);
 
                 $image = $request->file('image');
@@ -83,18 +83,18 @@ class ProductController extends Controller
                 do {
                     $filename = uniqid() . "_" . time() . "_" . mt_rand() . "." . $imageActualExt;
                 } while (ProductModel::where('image', $filename)->exists());
-                 // Store the image on the 'public' disk with the generated filename
+                // Store the image on the 'public' disk with the generated filename
                 Storage::disk('public')->put($filename, file_get_contents($image));
 
                 do {
                     $uuid = Str::uuid();
-                }while (ProductModel::where('image', $filename)->exists());
+                } while (ProductModel::where('image', $filename)->exists());
                 // Create Todo List
                 $created = ProductModel::create([
                     'user_id' => $user->id,
                     'group_id' => $uuid,
-                    'role' =>  'MAIN',
-                    'image' => $filename, 
+                    'role' => 'MAIN',
+                    'image' => $filename,
                     'name' => $request->input('name'),
                     'price' => $request->input('price'),
                     'quantity' => $request->input('quantity'),
@@ -108,17 +108,17 @@ class ProductController extends Controller
                 if ($created) {
                     $userAction = 'CREATED';
                     $details = 'Created Product Information with Group ID: ' . $uuid . "\n" .
-                    'Role: MAIN' . "\n" .
-                    'Image Name: ' . $filename . "\n" .
-                    'Name: ' . $request->input('name') . "\n" .
-                    'Price: ' . $request->input('price') . "\n" .
-                    'Quantity: ' . $request->input('quantity') . "\n" .
-                    'Category: ' . $request->input('category') . "\n" .
-                    'Color: ' . $request->input('color') . "\n" .
-                    'Size: ' . $request->input('size') . "\n" .
-                    'Discount: ' . $request->input('discount') . "\n" .
-                    'Description: ' . $request->input('description') . "\n";
-                
+                        'Role: MAIN' . "\n" .
+                        'Image Name: ' . $filename . "\n" .
+                        'Name: ' . $request->input('name') . "\n" .
+                        'Price: ' . $request->input('price') . "\n" .
+                        'Quantity: ' . $request->input('quantity') . "\n" .
+                        'Category: ' . $request->input('category') . "\n" .
+                        'Color: ' . $request->input('color') . "\n" .
+                        'Size: ' . $request->input('size') . "\n" .
+                        'Discount: ' . $request->input('discount') . "\n" .
+                        'Description: ' . $request->input('description') . "\n";
+
                     // Create Log
                     $create = LogsModel::create([
                         'user_id' => $user->id,
@@ -127,14 +127,14 @@ class ProductController extends Controller
                         'details' => $details,
                         'created_at' => now()
                     ]);
-                    if($create){
+                    if ($create) {
                         // Return a success response with CORS headers
                         return response()->json([
                             'message' => 'Created'
                         ], Response::HTTP_OK);
                     }
                 }
-            }else{
+            } else {
                 // Return a success response with CORS headers
                 return response()->json([
                     'message' => 'Intruder'
@@ -169,38 +169,39 @@ class ProductController extends Controller
         try {
             // Fetch User ID
             $user = AuthModel::where('session_login', $request->input('session'))
-            ->where('status', 'VERIFIED')
-            ->first();
-            if ($user){
+                ->where('status', 'VERIFIED')
+                ->first();
+            if ($user) {
                 // Fetch Group I.D
                 $product = ProductModel::where('id', $request->input('id'))->first();
-                if($product){
+                if ($product) {
                     $request->validate([
+                        'role' => 'nullable|string',
                         'image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
                         'name' => 'required|string|nullable|max:255',
-                        'price' => 'numeric',
-                        'quantity' => 'required|integer',
-                        'category' => 'string|nullable|max:255',
+                        'price' => 'required|numeric|min:0',
+                        'quantity' => 'required|numeric|min:1',
+                        'category' => 'required|string|nullable|max:255',
                         'color' => 'required|string|max:255',
                         'size' => 'required|string|max:255',
-                        'discount' => 'integer|nullable|between:0,100',
-                        'description' => 'string|nullable'
+                        'discount' => 'nullable|numeric|between:0,100',
+                        'description' => 'nullable|string',
                     ]);
                     $image = $request->file('image');
                     $imageActualExt = $image->getClientOriginalExtension();
                     do {
                         $filename = uniqid() . "_" . time() . "_" . mt_rand() . "." . $imageActualExt;
                     } while (ProductModel::where('image', $filename)->exists());
-                     // Store the image on the 'public' disk with the generated filename
+                    // Store the image on the 'public' disk with the generated filename
                     Storage::disk('public')->put($filename, file_get_contents($image));
-    
+
                     do {
                         $uuid = Str::uuid();
-                    }while (ProductModel::where('image', $filename)->exists());
+                    } while (ProductModel::where('image', $filename)->exists());
                     // Create Todo List
                     $created = ProductModel::create([
                         'group_id' => $product->group_id,
-                        'image' => $filename, 
+                        'image' => $filename,
                         'name' => $request->input('name'),
                         'price' => $request->input('price'),
                         'quantity' => $request->input('quantity'),
@@ -213,16 +214,16 @@ class ProductController extends Controller
                     if ($created) {
                         $userAction = 'CREATE';
                         $details = 'Add Product Information with Group ID: ' . $uuid . "\n" .
-                        'Role: ' . "\n" .
-                        'Image Name: ' . $filename . "\n" .
-                        'Name: ' . $request->input('name') . "\n" .
-                        'Price: ' . $request->input('price') . "\n" .
-                        'Quantity: ' . $request->input('quantity') . "\n" .
-                        'Category: ' . $request->input('category') . "\n" .
-                        'Color: ' . $request->input('color') . "\n" .
-                        'Size: ' . $request->input('size') . "\n" .
-                        'Discount: ' . $request->input('discount') . "\n" .
-                        'Description: ' . $request->input('description') . "\n";
+                            'Role: ' . "\n" .
+                            'Image Name: ' . $filename . "\n" .
+                            'Name: ' . $request->input('name') . "\n" .
+                            'Price: ' . $request->input('price') . "\n" .
+                            'Quantity: ' . $request->input('quantity') . "\n" .
+                            'Category: ' . $request->input('category') . "\n" .
+                            'Color: ' . $request->input('color') . "\n" .
+                            'Size: ' . $request->input('size') . "\n" .
+                            'Discount: ' . $request->input('discount') . "\n" .
+                            'Description: ' . $request->input('description') . "\n";
                         // Create Log
                         $create = LogsModel::create([
                             'user_id' => $user->id,
@@ -231,7 +232,7 @@ class ProductController extends Controller
                             'details' => $details,
                             'created_at' => now()
                         ]);
-                        if($create){
+                        if ($create) {
                             // Return a success response with CORS headers
                             return response()->json([
                                 'message' => 'Created'
@@ -239,7 +240,7 @@ class ProductController extends Controller
                         }
                     }
                 }
-            }else{
+            } else {
                 // Return a success response with CORS headers
                 return response()->json([
                     'message' => 'Intruder'
@@ -275,7 +276,7 @@ class ProductController extends Controller
     public function show(string $id)
     {
         //
-        
+
     }
 
     /**
@@ -289,7 +290,7 @@ class ProductController extends Controller
             return response()->json([
                 'data' => $data,
             ], Response::HTTP_OK); // Change the status code to 200 (OK)
-        }catch (\Exception $e) {
+        } catch (\Exception $e) {
             // Handle exceptions and return an error response with CORS headers
             $errorMessage = $e->getMessage();
             $errorCode = $e->getCode();
@@ -320,7 +321,7 @@ class ProductController extends Controller
     {
         try {
             $data = ProductModel::find($id);
-            if(!$data){
+            if (!$data) {
                 return response()->json([
                     'messages' => 'Data Not Found'
                 ], Response::HTTP_OK);
@@ -328,37 +329,43 @@ class ProductController extends Controller
 
             // Fetch User I.D
             $user = AuthModel::where('session_login', $request->input('session'))
-            ->where('status', 'VERIFIED')
-            ->first();
-            if($user){
-                 // Validate the Input
-                 $validatedData = $request->validate([
+                ->where('status', 'VERIFIED')
+                ->first();
+            if ($user) {
+                // Validate the Input
+                $validatedData = $request->validate([
                     'image' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
-                    'price' => 'numeric',
-                    'quantity' => 'integer',
-                    'color' => 'string|max:255',
-                    'size' => 'string|max:255',
-                    'discount' => 'integer|nullable|between:1,100',
-                    'description' => 'string|nullable'
+                    'price' => 'required|numeric|min:0',
+                    'quantity' => 'required|numeric|min:1',
+                    'color' => 'required|string|max:255',
+                    'size' => 'required|string|max:255',
+                    'discount' => 'nullable|numeric|between:0,100',
+                    'description' => 'nullable|string|min:1'
                 ]);
-    
+
                 // Update account properties
                 $data->fill($validatedData);
                 $changes = [];
 
                 if ($data->isDirty('image')) {
                     $changes[] = 'Image changed from "' . $data->getOriginal('image') . '" to "' . $data->image . '".';
-                }if ($data->isDirty('price')) {
+                }
+                if ($data->isDirty('price')) {
                     $changes[] = 'Price changed from "' . $data->getOriginal('price') . '" to "' . $data->price . '".';
-                }if ($data->isDirty('color')) {
+                }
+                if ($data->isDirty('color')) {
                     $changes[] = 'Color changed from "' . $data->getOriginal('color') . '" to "' . $data->color . '".';
-                }if ($data->isDirty('size')) {
+                }
+                if ($data->isDirty('size')) {
                     $changes[] = 'Size changed from "' . $data->getOriginal('size') . '" to "' . $data->size . '".';
-                }if ($data->isDirty('discount')) {
+                }
+                if ($data->isDirty('discount')) {
                     $changes[] = 'Discount changed from "' . $data->getOriginal('discount') . '" to "' . $data->discount . '".';
-                }if ($data->isDirty('description')) {
+                }
+                if ($data->isDirty('description')) {
                     $changes[] = 'Description changed from "' . $data->getOriginal('description') . '" to "' . $data->description . '".';
-                }if (empty($changes)) {
+                }
+                if (empty($changes)) {
                     return response()->json([
                         'message' => 'No changes to update.'
                     ], Response::HTTP_OK);
@@ -366,39 +373,38 @@ class ProductController extends Controller
 
                 if ($request->hasFile('image')) {
                     $storage = Storage::disk('public');
-        
+
                     // Delete old image
                     if ($storage->exists($data->image)) {
                         $storage->delete($data->image);
                     }
-        
+
                     $image = $request->file('image');
                     $imageActualExt = $image->getClientOriginalExtension();
-        
+
                     do {
                         $filename = uniqid() . "_" . time() . "_" . mt_rand() . "." . $imageActualExt;
                     } while (ProductModel::where('image', $filename)->exists());
-        
+
                     // Store the image on the 'public' disk with the generated filename
                     $storage->put($filename, file_get_contents($image));
                     $data->image = $filename;
                 }
-    
+
                 if ($data->save()) {
-                    if ($user) {
-                        $userAction = 'UPDATE';
-                        $details = 'Updated an Product with the following changes: ' . implode(' ', $changes);
-                        // Create Log
-                        LogsModel::create([
-                            'ip_address' => $request->ip(),
-                            'user_action' => $userAction,
-                            'details' => $details,
-                            'created_at' => now()
-                        ]);
-                        return response()->json([
-                            'message' => 'Updated'
-                        ], Response::HTTP_OK);
-                    }
+                    $userAction = 'UPDATE';
+                    $details = 'Updated an Product with the following changes: ' . implode(' ', $changes);
+                    // Create Log
+                    LogsModel::create([
+                        'user_id' => $user->id,
+                        'ip_address' => $request->ip(),
+                        'user_action' => $userAction,
+                        'details' => $details,
+                        'created_at' => now()
+                    ]);
+                    return response()->json([
+                        'message' => 'Updated'
+                    ], Response::HTTP_OK);
                 }
             }
         } catch (\Exception $e) {
@@ -433,34 +439,29 @@ class ProductController extends Controller
         try {
             // Find the product in the database
             $data = ProductModel::find($id);
-        
+
             if (!$data) {
                 return response()->json([
                     'message' => 'Data Not Found'
                 ], Response::HTTP_OK);
             }
-        
+
             // Fetch User ID
             $user = AuthModel::where('session_login', $request->input('session'))
                 ->where('status', 'VERIFIED')
                 ->first();
-        
+
             if ($user) {
                 if ($data->role == 'MAIN') {
-                    // Update a single product with the same group_id to have role 'MAIN'
-                    $affectedRows = ProductModel::where('group_id', $data->group_id)
-                        ->where('id', '!=', $id)
-                        ->limit(1) // Limit the update to one row
-                        ->update(['role' => 'MAIN']);
-        
-                    if ($affectedRows) {
-                        // Storage Public
+                    $mainProductsCount = ProductModel::where('group_id', $data->group_id)->count();
+
+                    if ($mainProductsCount === 1) {
+                        // If the product is not 'MAIN', simply delete it
                         $storage = Storage::disk('public');
                         // Delete old image
                         if ($storage->exists($data->image)) {
                             $storage->delete($data->image);
                         }
-        
                         if ($data->delete()) {
                             $userAction = 'DELETE';
                             $details = 'Deleted Product Information with Group ID: ' . $data->group_id . "\n" .
@@ -474,19 +475,65 @@ class ProductController extends Controller
                                 'Size: ' . $data->size . "\n" .
                                 'Discount: ' . $data->discount . "\n" .
                                 'Description: ' . $data->description . "\n";
-        
+
                             // Create Log
                             $create = LogsModel::create([
+                                'user_id' => $user->id,
                                 'ip_address' => $request->ip(),
                                 'user_action' => $userAction,
                                 'details' => $details,
                                 'created_at' => now()
                             ]);
-        
+
                             if ($create) {
                                 return response()->json([
                                     'message' => 'Deleted'
                                 ], Response::HTTP_OK);
+                            }
+                        }
+
+                    } else {
+                        // Update a single product with the same group_id to have role 'MAIN'
+                        $affectedRows = ProductModel::where('group_id', $data->group_id)
+                            ->where('id', '!=', $id)
+                            ->limit(1) // Limit the update to one row
+                            ->update(['role' => 'MAIN']);
+
+                        if ($affectedRows) {
+                            // Storage Public
+                            $storage = Storage::disk('public');
+                            // Delete old image
+                            if ($storage->exists($data->image)) {
+                                $storage->delete($data->image);
+                            }
+
+                            if ($data->delete()) {
+                                $userAction = 'DELETE';
+                                $details = 'Deleted Product Information with Group ID: ' . $data->group_id . "\n" .
+                                    'Role: ' . $data->role . "\n" .
+                                    'Image Name: ' . $data->image . "\n" .
+                                    'Name: ' . $data->name . "\n" .
+                                    'Price: ' . $data->price . "\n" .
+                                    'Quantity: ' . $data->quantity . "\n" .
+                                    'Category: ' . $data->category . "\n" .
+                                    'Color: ' . $data->colors . "\n" .
+                                    'Size: ' . $data->size . "\n" .
+                                    'Discount: ' . $data->discount . "\n" .
+                                    'Description: ' . $data->description . "\n";
+
+                                // Create Log
+                                $create = LogsModel::create([
+                                    'ip_address' => $request->ip(),
+                                    'user_action' => $userAction,
+                                    'details' => $details,
+                                    'created_at' => now()
+                                ]);
+
+                                if ($create) {
+                                    return response()->json([
+                                        'message' => 'Deleted'
+                                    ], Response::HTTP_OK);
+                                }
                             }
                         }
                     }
@@ -497,7 +544,7 @@ class ProductController extends Controller
                     if ($storage->exists($data->image)) {
                         $storage->delete($data->image);
                     }
-        
+
                     if ($data->delete()) {
                         $userAction = 'DELETE';
                         $details = 'Deleted Product Information with Group ID: ' . $data->group_id . "\n" .
@@ -511,7 +558,7 @@ class ProductController extends Controller
                             'Size: ' . $data->size . "\n" .
                             'Discount: ' . $data->discount . "\n" .
                             'Description: ' . $data->description . "\n";
-        
+
                         // Create Log
                         $create = LogsModel::create([
                             'user_id' => $user->id,
@@ -520,7 +567,7 @@ class ProductController extends Controller
                             'details' => $details,
                             'created_at' => now()
                         ]);
-        
+
                         if ($create) {
                             return response()->json([
                                 'message' => 'Deleted'
@@ -533,8 +580,7 @@ class ProductController extends Controller
                     'message' => 'Intruder'
                 ], Response::HTTP_OK);
             }
-        }
-        catch (\Exception $e) {
+        } catch (\Exception $e) {
             // Handle exceptions and return an error response with CORS headers
             $errorMessage = $e->getMessage();
             $errorCode = $e->getCode();
@@ -568,16 +614,16 @@ class ProductController extends Controller
             $user = AuthModel::where('session_login', $request->input('session'))
                 ->where('status', 'VERIFIED')
                 ->first();
-        
+
             if ($user) {
                 // Delete records based on group_id
                 $deletedCount = ProductModel::where('group_id', $id)->delete();
-        
+
                 if ($deletedCount > 0) {
                     // Log the deletion action
                     $userAction = 'DELETE';
                     $details = 'Deleted ' . $deletedCount . ' records with Group I.D: ' . $id;
-        
+
                     // Create Log
                     $create = LogsModel::create([
                         'user_id' => $user->id,
@@ -586,7 +632,7 @@ class ProductController extends Controller
                         'details' => $details,
                         'created_at' => now()
                     ]);
-        
+
                     if ($create) {
                         return response()->json([
                             'message' => 'Deleted'
@@ -602,8 +648,7 @@ class ProductController extends Controller
                     'message' => 'Intruder'
                 ], Response::HTTP_OK);
             }
-        }
-        catch (\Exception $e) {
+        } catch (\Exception $e) {
             // Handle exceptions and return an error response with CORS headers
             $errorMessage = $e->getMessage();
             $errorCode = $e->getCode();
