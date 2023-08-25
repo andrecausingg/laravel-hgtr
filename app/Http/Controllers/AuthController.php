@@ -17,10 +17,11 @@ use Symfony\Component\HttpFoundation\Response;
 class AuthController extends Controller
 {
     //
-    public function logIn(Request $request){
+    public function logIn(Request $request)
+    {
         try {
             $request->validate([
-                'email' => 'required|string|email|max:255', 
+                'email' => 'required|string|email|max:255',
                 'password' => 'required',
             ]);
 
@@ -31,10 +32,9 @@ class AuthController extends Controller
             if ($user && Hash::check($request->input('password'), $user->password)) {
                 $role = $user->role;
 
-
                 $verificationToken = Str::uuid(); // Generate a UUID token
                 $user->update(['session_login' => $verificationToken]);
-        
+
                 $userAction = 'LOG IN';
                 $details = 'USER LOGGED IN FROM THIS IP ADDRESS: ' . $request->ip();
                 // Create Log
@@ -46,26 +46,36 @@ class AuthController extends Controller
                     'created_at' => now()
                 ]);
 
-                if($create){
-                    $newUser = UserInfoModel::where('user_id', $user->id)->doesntExist();
-                    if($newUser){
-                        // Return a success response with CORS headers
-                        return response()->json([
-                            'message' => 'New User.',
-                            'sessionLogin' => $verificationToken,
-                            'status' => true,
-                            'role' => $role
-                        ], Response::HTTP_OK);
-                    }else{
-                        // Return a success response with CORS headers
-                        return response()->json([
-                            'message' => 'Logged in successfully.',
-                            'sessionLogin' => $verificationToken,
-                            'status' => true,
-                            'role' => $role
-                        ], Response::HTTP_OK);
+                if ($create) {
+                    if($user->role == "USER") {
+                        $newUser = UserInfoModel::where('user_id', $user->id)->doesntExist();
+                        if ($newUser) {
+                            // Return a success response with CORS headers
+                            return response()->json([
+                                'message' => 'New User.',
+                                'sessionLogin' => $verificationToken,
+                                'status' => true,
+                                'role' => $role
+                            ], Response::HTTP_OK);
+                        } else {
+                            // Return a success response with CORS headers
+                            return response()->json([
+                                'message' => 'Logged in successfully.',
+                                'sessionLogin' => $verificationToken,
+                                'status' => true,
+                                'role' => $role
+                            ], Response::HTTP_OK);
+                        }
                     }
                 }
+
+                // Return a success response with CORS headers
+                return response()->json([
+                    'message' => 'Logged in successfully.',
+                    'sessionLogin' => $verificationToken,
+                    'status' => true,
+                    'role' => $role
+                ], Response::HTTP_OK);
             } else {
                 return response()->json([
                     'message' => 'Invalid credentials or user not found.'
@@ -95,7 +105,8 @@ class AuthController extends Controller
         }
     }
 
-    public function signUp(Request $request){
+    public function signUp(Request $request)
+    {
         try {
             // Declare Value
             $verificationNumber = mt_rand(100000, 999999);
@@ -106,7 +117,7 @@ class AuthController extends Controller
 
             // Validate Email and Password
             $request->validate([
-                'email' => 'required|string|email|max:255', 
+                'email' => 'required|string|email|max:255',
                 'password' => 'required|min:8|confirmed',
                 'password_confirmation' => 'required|min:8'
             ]);
@@ -114,20 +125,20 @@ class AuthController extends Controller
             // Extract the name from the email address
             $emailParts = explode('@', $request->input('email'));
             $name = $emailParts[0];
-            
+
             // Exist Email Not Verified then Send Code
             $user = AuthModel::where('email', $request->input('email'))
-            ->where('status', 'NOT VERIFIED')
-            ->first();
+                ->where('status', 'NOT VERIFIED')
+                ->first();
             if ($user) {
                 // Update the user record with the new verification number
                 $user->verification_num = $verificationNumber;
                 $user->session_verify_email = $verificationToken;
                 $user->save();
-        
+
                 // Send the verification number to the user's email
                 Mail::to($request->input('email'))->send(new VerificationMail($verificationNumber, $name));
-        
+
                 // Return a success response with CORS headers
                 return response()->json([
                     'message' => 'Sent new code.',
@@ -137,9 +148,9 @@ class AuthController extends Controller
 
             // Exist Email Verified then Send Error 'User Already Exist'
             $user = AuthModel::where('email', $request->input('email'))
-            ->where('status', 'VERIFIED')
-            ->first();
-            if($user){
+                ->where('status', 'VERIFIED')
+                ->first();
+            if ($user) {
                 // Return a success response with CORS headers
                 return response()->json([
                     'message' => 'User already exist.',
@@ -165,7 +176,7 @@ class AuthController extends Controller
                 'message' => 'Created',
                 'sessionVerifyEmail' => $verificationToken
             ], Response::HTTP_CREATED);
-        
+
         } catch (\Exception $e) {
             // Handle exceptions and return an error response with CORS headers
             $errorMessage = $e->getMessage();
@@ -190,32 +201,33 @@ class AuthController extends Controller
         }
     }
 
-    public function resendCode(Request $request){
+    public function resendCode(Request $request)
+    {
         try {
             $verificationNumber = mt_rand(100000, 999999);
 
             $request->validate([
-                'sessionVerifyEmail' => 'required|string', 
+                'sessionVerifyEmail' => 'required|string',
             ]);
-            
+
             $user = AuthModel::where('session_verify_email', $request->input('sessionVerifyEmail'))
                 ->where('status', 'NOT VERIFIED')
                 ->first();
-            
+
             if ($user) {
                 $email = $user->email;
-            
+
                 // Extract the name from the email address
                 $emailParts = explode('@', $email);
                 $name = $emailParts[0];
-            
+
                 // Update the user record with the new verification number
                 $user->verification_num = $verificationNumber;
                 $user->save();
-            
+
                 // Send the verification number to the user's email
                 Mail::to($email)->send(new ResendVerificationMail($verificationNumber, $name));
-            
+
                 // Return a success response with CORS headers
                 return response()->json([
                     'message' => 'Sent new code.'
@@ -249,30 +261,31 @@ class AuthController extends Controller
         }
     }
 
-    public function verifyEmail(Request $request){
+    public function verifyEmail(Request $request)
+    {
         try {
             $verificationNumber = mt_rand(100000, 999999);
             $verificationToken = Str::uuid(); // Generate a UUID token
             $status = 'VERIFIED';
 
             $request->validate([
-                'verificationCode' => 'required|int|min:6', 
+                'verificationCode' => 'required|int|min:6',
                 'sessionVerifyEmail' => 'required|string'
             ]);
-            
+
             $user = AuthModel::where('session_verify_email', $request->input('sessionVerifyEmail'))
                 ->where('status', 'NOT VERIFIED')
                 ->where('verification_num', $request->input('verificationCode'))
                 ->first();
-            
-            if ($user){
+
+            if ($user) {
                 // Update the user record with the new verification number
                 $user->verification_num = $verificationNumber;
                 $user->session_verify_email = $verificationToken;
                 $user->status = $status;
                 $user->verified_at = now();
                 $user->save();
- 
+
                 // Return a success response with CORS headers
                 return response()->json([
                     'message' => 'Email verified.'
@@ -306,13 +319,14 @@ class AuthController extends Controller
         }
     }
 
-    public function checkVerKeyAndEmail(Request $request){
+    public function checkVerKeyAndEmail(Request $request)
+    {
         try {
             $user = AuthModel::where('email', $request->input('email'))
-            ->where('session_pass_reset', $request->input('verificationKey'))
-            ->where('status', 'VERIFIED')
-            ->first();
-        
+                ->where('session_pass_reset', $request->input('verificationKey'))
+                ->where('status', 'VERIFIED')
+                ->first();
+
             if ($user) {
                 return response()->json([
                     'message' => 'Good.'
@@ -346,26 +360,27 @@ class AuthController extends Controller
         }
     }
 
-    public function resetPassword(Request $request){
+    public function resetPassword(Request $request)
+    {
         try {
             $verificationToken = Str::uuid(); // Generate a UUID token
 
             $request->validate([
-                'email' => 'required|string|email|max:255', 
+                'email' => 'required|string|email|max:255',
             ]);
             $user = AuthModel::where('email', $request->input('email'))
                 ->where('status', 'VERIFIED')
                 ->first();
-            
+
             if ($user) {
                 // Update the user record with the new verification number
                 $user->session_pass_reset = $verificationToken;
                 $user->update_pass_reset_at = now();
                 $user->save();
-            
+
                 // Send the verification number to the user's email
                 Mail::to($user->email)->send(new ResetPasswordMail($verificationToken, $user->email));
-            
+
                 // Return a success response with CORS headers
                 return response()->json([
                     'message' => 'Password Reset Link Sent to Your Email.',
@@ -399,7 +414,8 @@ class AuthController extends Controller
         }
     }
 
-    public function updatePassword(Request $request){
+    public function updatePassword(Request $request)
+    {
         try {
             $verificationToken = Str::uuid(); // Generate a UUID token
 
@@ -408,17 +424,17 @@ class AuthController extends Controller
                 'password' => 'required|min:8|confirmed',
                 'password_confirmation' => 'required|min:8',
             ]);
-            
+
             $user = AuthModel::where('session_pass_reset', $request->input('verificationKey'))
                 ->where('status', 'VERIFIED')
                 ->first();
-            
+
             if ($user) {
                 $user->password = Hash::make($request->input('password'));
                 $user->session_pass_reset = $verificationToken;
                 $user->updated_at = now();
                 $user->save();
-            
+
                 // Return a success response with CORS headers
                 return response()->json([
                     'message' => 'Password updated.'
