@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\LogsController;
+use App\Http\Controllers\OrderController;
 use App\Http\Controllers\VisitorsController;
 use App\Http\Controllers\AccountsController;
 use App\Http\Controllers\UserInfoController;
@@ -83,3 +84,9 @@ Route::get('product/edit/{id}', [ProductController::class, 'edit']);
 Route::delete('product/destroy/{id}', [ProductController::class, 'destroy']);
 // Delete All Product 
 Route::delete('product/destroy/all/{id}', [ProductController::class, 'destroyAll']);
+
+// Client Cart
+// Add to Cart
+Route::post('product/add-to-cart', [ProductController::class, 'addToCart']);
+// Fetch Unpaid
+Route::get('product/unpaid/{id}', [OrderController::class, 'getUnpaid']);

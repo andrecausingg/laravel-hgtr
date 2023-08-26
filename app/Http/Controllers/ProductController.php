@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\AuthModel;
 use App\Models\LogsModel;
+use App\Models\OrderModel;
 use App\Models\ProductModel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -47,14 +48,6 @@ class ProductController extends Controller
     }
 
     /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
      * Store a newly created resource in storage.
      */
     public function store(Request $request)
@@ -88,7 +81,7 @@ class ProductController extends Controller
 
                 do {
                     $uuid = Str::uuid();
-                } while (ProductModel::where('image', $filename)->exists());
+                } while (ProductModel::where('group_id', $uuid)->exists());
                 // Create Todo List
                 $created = ProductModel::create([
                     'user_id' => $user->id,
@@ -270,15 +263,6 @@ class ProductController extends Controller
         }
     }
 
-    /** 
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-
-    }
-
     /**
      * Show the form for editing the specified resource.
      */
@@ -336,7 +320,7 @@ class ProductController extends Controller
                 $validatedData = $request->validate([
                     'image' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
                     'price' => 'required|numeric|min:0',
-                    'quantity' => 'required|numeric|min:1',
+                    'quantity' => 'required|numeric|min:0',
                     'color' => 'required|string|max:255',
                     'size' => 'required|string|max:255',
                     'discount' => 'nullable|numeric|between:0,100',
@@ -642,6 +626,205 @@ class ProductController extends Controller
                     return response()->json([
                         'message' => 'No records found with the specified group_id'
                     ], Response::HTTP_OK);
+                }
+            } else {
+                return response()->json([
+                    'message' => 'Intruder'
+                ], Response::HTTP_OK);
+            }
+        } catch (\Exception $e) {
+            // Handle exceptions and return an error response with CORS headers
+            $errorMessage = $e->getMessage();
+            $errorCode = $e->getCode();
+
+            // Create a JSON error response
+            $response = [
+                'success' => false,
+                'error' => [
+                    'code' => $errorCode,
+                    'message' => $errorMessage,
+                ],
+            ];
+
+            // Add additional error details if available
+            if ($e instanceof \Illuminate\Validation\ValidationException) {
+                $response['error']['details'] = $e->errors();
+            }
+
+            // Return the JSON error response with CORS headers and an appropriate HTTP status code
+            return response()->json($response, Response::HTTP_INTERNAL_SERVER_ERROR)->header('Content-Type', 'application/json');
+        }
+    }
+
+    public function displaySelectedProduct(string $id)
+    {
+        //
+        try {
+            $data = ProductModel::where('group_id', $id)->get(); // Use where to filter by group_id
+            return response()->json([
+                'data' => $data,
+            ], Response::HTTP_OK); // Change the status code to 200 (OK)
+        } catch (\Exception $e) {
+            // Handle exceptions and return an error response with CORS headers
+            $errorMessage = $e->getMessage();
+            $errorCode = $e->getCode();
+
+            // Create a JSON error response
+            $response = [
+                'success' => false,
+                'error' => [
+                    'code' => $errorCode,
+                    'message' => $errorMessage,
+                ],
+            ];
+
+            // Add additional error details if available
+            if ($e instanceof \Illuminate\Validation\ValidationException) {
+                $response['error']['details'] = $e->errors();
+            }
+
+            // Return the JSON error response with CORS headers and an appropriate HTTP status code
+            return response()->json($response, Response::HTTP_INTERNAL_SERVER_ERROR)->header('Content-Type', 'application/json');
+        }
+    }
+
+    // Client Function
+    public function addToCart(Request $request)
+    {
+        try {
+            $user = AuthModel::where('session_login', $request->input('session'))
+                ->where('status', 'VERIFIED')
+                ->first();
+
+            if ($user) {
+                $request->validate([
+                    'color' => 'required|string|max:255',
+                    'size' => 'required|string|max:255',
+                    'quantity' => 'required|min:1',
+                    'group_id' => 'required|string',
+                ]);
+
+                $product = ProductModel::where('color', $request->input('color'))
+                    ->where('size', $request->input('size'))
+                    ->where('group_id', $request->input('group_id'))
+                    ->first();
+
+
+                if ($product && $product->quantity >= 1) {
+                    do {
+                        $uuidGroupId = Str::uuid();
+                    } while (OrderModel::where('group_id', $uuidGroupId)->exists());
+
+                    do {
+                        $uuidOrderId = Str::uuid();
+                    } while (OrderModel::where('order_id', $uuidOrderId)->exists());
+
+                    $checkExistUnpaid = OrderModel::where('user_id', $user->id)
+                        ->where('status', 'UNPAID')
+                        ->where('role', 'MAIN')
+                        ->first();
+
+                    // Add new Item on Cart then updating the shipping fee
+                    if ($checkExistUnpaid) {
+                        $quantity = (int) $request->input('quantity');
+                        $discountedPrice = $product->price * (1 - ($product->discount / 100));
+                        $totalPrice = $discountedPrice * $quantity;
+
+                        $created = OrderModel::create([
+                            'user_id' => $user->id,
+                            'group_id' => $checkExistUnpaid->group_id,
+                            'order_id' => $uuidOrderId,
+                            'product_group_id' => $product->category,
+                            'role' => '',
+                            'category' => $product->category,
+                            'name' => $product->name,
+                            'image' => $product->image,
+                            'size' => $product->size,
+                            'color' => $product->color,
+                            'quantity' => $quantity,
+                            'discount' => $product->discount,
+                            'description' => $product->description,
+                            'product_price' => $product->price,
+                            'shipping_fee' => 0.00,
+                            'total_price' => $totalPrice,
+                            'status' => 'UNPAID'
+                        ]);
+
+                        if ($created) {
+                            $fetchAllQuantityAndCalculateShippingFee = OrderModel::where('user_id', $user->id)->get();
+                            $totalQuantity = 0;
+
+                            foreach ($fetchAllQuantityAndCalculateShippingFee as $order) {
+                                $totalQuantity += $order->quantity;
+                            }
+
+                            function calculateShippingFee($totalQuantity)
+                            {
+                                $shippingFee = 100; // Base shipping fee
+                                $rangeSize = 5; // Size of each range
+                                $feeIncrement = 100; // Fee increment for each range
+
+                                // Calculate the range index based on the quantity
+                                $rangeIndex = ceil($totalQuantity / $rangeSize);
+
+                                // Calculate the shipping fee based on the range index and quantity
+                                $shippingFee += ($rangeIndex - 1) * $feeIncrement;
+
+                                return number_format($shippingFee, 2); // Format the shipping fee with two decimal places
+                            }
+
+                            $updateShippingFeeNow = OrderModel::where('user_id', $user->id)
+                            ->where('status', 'UNPAID')
+                            ->where('role', 'MAIN')
+                            ->first();
+                            $updateShippingFeeNow->shipping_fee = calculateShippingFee($totalQuantity);
+                            if ($updateShippingFeeNow->save()) {
+                                return response()->json([
+                                    'message' => 'Created'
+                                ], Response::HTTP_OK);
+                            }
+                        }
+
+                        // Fresh Create
+                    } else {
+                        $quantity = (int) $request->input('quantity');
+                        $baseShippingFee = 100;
+                        $numGroups = floor($quantity / 5);
+                        $shippingFees = ($numGroups * $baseShippingFee) + $baseShippingFee;
+
+                        $discountedPrice = $product->price * (1 - ($product->discount / 100));
+                        $totalPrice = $discountedPrice * $quantity;
+
+                        $created = OrderModel::create([
+                            'user_id' => $user->id,
+                            'group_id' => $uuidGroupId,
+                            'order_id' => $uuidOrderId,
+                            'product_group_id' => $product->group_id,
+                            'role' => 'MAIN',
+                            'category' => $product->category,
+                            'name' => $product->name,
+                            'image' => $product->image,
+                            'size' => $product->size,
+                            'color' => $product->color,
+                            'quantity' => $quantity,
+                            'discount' => $product->discount,
+                            'description' => $product->description,
+                            'product_price' => $product->price,
+                            'shipping_fee' => $shippingFees,
+                            'total_price' => $totalPrice,
+                            'status' => 'UNPAID'
+                        ]);
+                    }
+
+                    if ($created) {
+                        return response()->json([
+                            'message' => 'Created'
+                        ], Response::HTTP_OK);
+                    }
+                } else {
+                    return response()->json([
+                        'message' => 'Selected product is unavailable or out of stock.'
+                    ], Response::HTTP_BAD_REQUEST);
                 }
             } else {
                 return response()->json([
