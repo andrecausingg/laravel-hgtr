@@ -87,6 +87,8 @@ Route::delete('product/destroy/all/{id}', [ProductController::class, 'destroyAll
 
 // Client Cart
 // Add to Cart
-Route::post('product/add-to-cart', [ProductController::class, 'addToCart']);
+Route::post('product/add-to-cart', [OrderController::class, 'addToCart']);
 // Fetch Unpaid
 Route::get('product/unpaid/{id}', [OrderController::class, 'getUnpaid']);
+// Edit Product Selected on Unpaid
+Route::get('product/unpaid/edit/{id}', [OrderController::class, 'edit']);
