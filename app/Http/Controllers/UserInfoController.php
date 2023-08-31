@@ -192,16 +192,20 @@ class UserInfoController extends Controller
     {
         //
         try {
-            $data = UserInfoModel::find($id);
-            if (!$data) {
+            $user = AuthModel::where('session_login', $id)
+                ->where('status', 'VERIFIED')
+                ->first();
+            if ($user) {
+                $data = UserInfoModel::where('user_id', $user->id)->get();
                 return response()->json([
-                    'messages' => 'Data Not Found'
-                ], Response::HTTP_UNAUTHORIZED);
+                    'data' => $data
+                ], Response::HTTP_OK); // Change the status code to 200 (OK)
+            } else {
+                // Return a success response with CORS headers
+                return response()->json([
+                    'message' => 'Intruder'
+                ], Response::HTTP_OK);
             }
-
-            return response()->json([
-                'data' => $data
-            ], Response::HTTP_UNAUTHORIZED);
         } catch (\Exception $e) {
             // Handle exceptions and return an error response with CORS headers
             $errorMessage = $e->getMessage();
