@@ -71,9 +71,14 @@ Route::delete('accounts/delete/{id}', [AccountsController::class, 'destroy']);
 
 // NEW USER
 // User Info
+// Store New User
 Route::post('user-info/store', [UserInfoController::class, 'store']);
+// Edit Show Specific User Info
 Route::get('user-info/edit/{id}', [UserInfoController::class, 'edit']);
+// Update User Info
 Route::post('user-info/update/{id}', [UserInfoController::class, 'update']);
+// Show User Info
+Route::get('user-info/show/{id}', [UserInfoController::class, 'show']);
 
 // PRODUCT
 // index Product
