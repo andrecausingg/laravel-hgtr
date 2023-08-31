@@ -123,7 +123,7 @@ class OrderController extends Controller
                         ->first();
 
                     if ($checkExistUnpaid) {
-                        // Same Add to Cart just update the total price and quantity
+                        // Same product on Cart just update the total price and quantity
                         $checkSameOrder = OrderModel::where('user_id', $user->id)
                             ->where('color', $request->input('color'))
                             ->where('size', $request->input('size'))
@@ -152,7 +152,9 @@ class OrderController extends Controller
                             $checkSameOrder->quantity = $finalTotalQuantity;
                             if ($checkSameOrder->save()) {
                                 // Fetch the total Quantity
-                                $fetchAllQuantityAndCalculateShippingFee = OrderModel::where('user_id', $user->id)->get();
+                                $fetchAllQuantityAndCalculateShippingFee = OrderModel::where('user_id', $user->id)
+                                    ->where('status', 'UNPAID')
+                                    ->get();
                                 $totalQuantity = 0;
                                 foreach ($fetchAllQuantityAndCalculateShippingFee as $order) {
                                     $totalQuantity += $order->quantity;
@@ -187,6 +189,7 @@ class OrderController extends Controller
                                 }
                             }
                         } else {
+                            // Add new item on cart with the same Group  I.D
                             $quantity = (int) $request->input('quantity');
                             $discountedPrice = $product->price * (1 - ($product->discount / 100));
                             $totalPrice = $discountedPrice * $quantity;
@@ -211,38 +214,69 @@ class OrderController extends Controller
                                 'status' => 'UNPAID'
                             ]);
 
+                            // Logs
                             if ($created) {
-                                $fetchAllQuantityAndCalculateShippingFee = OrderModel::where('user_id', $user->id)->get();
-                                $totalQuantity = 0;
+                                $userAction = 'CREATED';
+                                $details = 'Created Product Information with Group ID: ' . $product->group_id . "\n" .
+                                    'Order ID: ' . $uuidOrderId . "\n" .
+                                    'Product Group ID: ' . $product->group_id . "\n" .
+                                    'Role: MAIN' . "\n" .
+                                    'Category: ' . $product->category . "\n" .
+                                    'Product Name: ' . $product->name . "\n" .
+                                    'Image Name: ' . $product->image . "\n" .
+                                    'Size: ' . $product->size . "\n" .
+                                    'Color: ' . $product->color . "\n" .
+                                    'Quantity: ' . $quantity . "\n" .
+                                    'Discount: ' . $product->discount . "\n" .
+                                    'Description: ' . $product->description . "\n" .
+                                    'Product Price: ' . $product->price . "\n" .
+                                    'Total Price: ' . $totalPrice . "\n" .
+                                    'Status: ' . 'UNPAID' . "\n";
+                                // Create Log
+                                $create = LogsModel::create([
+                                    'user_id' => $user->id,
+                                    'ip_address' => $request->ip(),
+                                    'user_action' => $userAction,
+                                    'details' => $details,
+                                    'created_at' => now()
+                                ]);
 
-                                foreach ($fetchAllQuantityAndCalculateShippingFee as $order) {
-                                    $totalQuantity += $order->quantity;
-                                }
+                                // Calculate Shipping Fee Always
+                                if ($created) {
+                                    $fetchAllQuantityAndCalculateShippingFee = OrderModel::where('user_id', $user->id)
+                                        ->where('status', 'UNPAID')
+                                        ->get();
+                                    $totalQuantity = 0;
 
-                                function calculateShippingFee($totalQuantity)
-                                {
-                                    $shippingFee = 100; // Base shipping fee
-                                    $rangeSize = 5; // Size of each range
-                                    $feeIncrement = 100; // Fee increment for each range
+                                    foreach ($fetchAllQuantityAndCalculateShippingFee as $order) {
+                                        $totalQuantity += $order->quantity;
+                                    }
 
-                                    // Calculate the range index based on the quantity
-                                    $rangeIndex = ceil($totalQuantity / $rangeSize);
+                                    function calculateShippingFee($totalQuantity)
+                                    {
+                                        $shippingFee = 100; // Base shipping fee
+                                        $rangeSize = 5; // Size of each range
+                                        $feeIncrement = 100; // Fee increment for each range
 
-                                    // Calculate the shipping fee based on the range index and quantity
-                                    $shippingFee += ($rangeIndex - 1) * $feeIncrement;
+                                        // Calculate the range index based on the quantity
+                                        $rangeIndex = ceil($totalQuantity / $rangeSize);
 
-                                    return number_format($shippingFee, 2); // Format the shipping fee with two decimal places
-                                }
+                                        // Calculate the shipping fee based on the range index and quantity
+                                        $shippingFee += ($rangeIndex - 1) * $feeIncrement;
 
-                                $updateShippingFeeNow = OrderModel::where('user_id', $user->id)
-                                    ->where('status', 'UNPAID')
-                                    ->where('role', 'MAIN')
-                                    ->first();
-                                $updateShippingFeeNow->shipping_fee = calculateShippingFee($totalQuantity);
-                                if ($updateShippingFeeNow->save()) {
-                                    return response()->json([
-                                        'message' => 'Created'
-                                    ], Response::HTTP_OK);
+                                        return number_format($shippingFee, 2); // Format the shipping fee with two decimal places
+                                    }
+
+                                    $updateShippingFeeNow = OrderModel::where('user_id', $user->id)
+                                        ->where('status', 'UNPAID')
+                                        ->where('role', 'MAIN')
+                                        ->first();
+                                    $updateShippingFeeNow->shipping_fee = calculateShippingFee($totalQuantity);
+                                    if ($updateShippingFeeNow->save()) {
+                                        return response()->json([
+                                            'message' => 'Created'
+                                        ], Response::HTTP_OK);
+                                    }
                                 }
                             }
                         }
@@ -276,7 +310,9 @@ class OrderController extends Controller
                             $checkSameOrder->quantity = $finalTotalQuantity;
                             if ($checkSameOrder->save()) {
                                 // Fetch the total Quantity
-                                $fetchAllQuantityAndCalculateShippingFee = OrderModel::where('user_id', $user->id)->get();
+                                $fetchAllQuantityAndCalculateShippingFee = OrderModel::where('user_id', $user->id)
+                                    ->where('status', 'UNPAID')
+                                    ->get();
                                 $totalQuantity = 0;
                                 foreach ($fetchAllQuantityAndCalculateShippingFee as $order) {
                                     $totalQuantity += $order->quantity;
@@ -341,9 +377,40 @@ class OrderController extends Controller
                                 'status' => 'UNPAID'
                             ]);
 
-                            return response()->json([
-                                'message' => 'Created'
-                            ], Response::HTTP_OK);
+                            if ($created) {
+                                // Delete if not role MAIN
+                                $userAction = 'CREATED';
+                                $details = 'Created Product Information with Group ID: ' . $product->group_id . "\n" .
+                                    'Order ID: ' . $uuidOrderId . "\n" .
+                                    'Product Group ID: ' . $product->group_id . "\n" .
+                                    'Role: MAIN' . "\n" .
+                                    'Category: ' . $product->category . "\n" .
+                                    'Product Name: ' . $product->name . "\n" .
+                                    'Image Name: ' . $product->image . "\n" .
+                                    'Size: ' . $product->size . "\n" .
+                                    'Color: ' . $product->color . "\n" .
+                                    'Quantity: ' . $quantity . "\n" .
+                                    'Discount: ' . $product->discount . "\n" .
+                                    'Description: ' . $product->description . "\n" .
+                                    'Product Price: ' . $product->price . "\n" .
+                                    'Shipping Fee: ' . $shippingFees . "\n" .
+                                    'Total Price: ' . $totalPrice . "\n" .
+                                    'Status: ' . 'UNPAID' . "\n";
+                                // Create Log
+                                $create = LogsModel::create([
+                                    'user_id' => $user->id,
+                                    'ip_address' => $request->ip(),
+                                    'user_action' => $userAction,
+                                    'details' => $details,
+                                    'created_at' => now()
+                                ]);
+
+                                if ($create) {
+                                    return response()->json([
+                                        'message' => 'Created'
+                                    ], Response::HTTP_OK);
+                                }
+                            }
                         }
                     }
                 } else {
@@ -434,98 +501,8 @@ class OrderController extends Controller
             if ($user) {
                 if ($data->role == 'MAIN') {
                     $mainProductsCount = OrderModel::where('group_id', $data->group_id)->count();
-
+                    // Delete if role MAIN and one only
                     if ($mainProductsCount === 1) {
-                        // If the product is not 'MAIN', simply delete it
-                        $storage = Storage::disk('public');
-                        // Delete old image
-                        if ($storage->exists($data->image)) {
-                            $storage->delete($data->image);
-                        }
-                        if ($data->delete()) {
-                            $userAction = 'DELETE';
-                            $details = 'Deleted Product Information with Group ID: ' . $data->group_id . "\n" .
-                                'Role: ' . $data->role . "\n" .
-                                'Image Name: ' . $data->image . "\n" .
-                                'Name: ' . $data->name . "\n" .
-                                'Price: ' . $data->price . "\n" .
-                                'Quantity: ' . $data->quantity . "\n" .
-                                'Category: ' . $data->category . "\n" .
-                                'Color: ' . $data->colors . "\n" .
-                                'Size: ' . $data->size . "\n" .
-                                'Discount: ' . $data->discount . "\n" .
-                                'Description: ' . $data->description . "\n";
-
-                            // Create Log
-                            $create = LogsModel::create([
-                                'user_id' => $user->id,
-                                'ip_address' => $request->ip(),
-                                'user_action' => $userAction,
-                                'details' => $details,
-                                'created_at' => now()
-                            ]);
-
-                            if ($create) {
-                                return response()->json([
-                                    'message' => 'Deleted'
-                                ], Response::HTTP_OK);
-                            }
-                        }
-
-                    } else {
-                        // Update a single product with the same group_id to have role 'MAIN'
-                        $affectedRows = ProductModel::where('group_id', $data->group_id)
-                            ->where('id', '!=', $id)
-                            ->limit(1) // Limit the update to one row
-                            ->update(['role' => 'MAIN']);
-
-                        if ($affectedRows) {
-                            // Storage Public
-                            $storage = Storage::disk('public');
-                            // Delete old image
-                            if ($storage->exists($data->image)) {
-                                $storage->delete($data->image);
-                            }
-
-                            if ($data->delete()) {
-                                $userAction = 'DELETE';
-                                $details = 'Deleted Product Information with Group ID: ' . $data->group_id . "\n" .
-                                    'Role: ' . $data->role . "\n" .
-                                    'Image Name: ' . $data->image . "\n" .
-                                    'Name: ' . $data->name . "\n" .
-                                    'Price: ' . $data->price . "\n" .
-                                    'Quantity: ' . $data->quantity . "\n" .
-                                    'Category: ' . $data->category . "\n" .
-                                    'Color: ' . $data->colors . "\n" .
-                                    'Size: ' . $data->size . "\n" .
-                                    'Discount: ' . $data->discount . "\n" .
-                                    'Description: ' . $data->description . "\n";
-
-                                // Create Log
-                                $create = LogsModel::create([
-                                    'ip_address' => $request->ip(),
-                                    'user_action' => $userAction,
-                                    'details' => $details,
-                                    'created_at' => now()
-                                ]);
-
-                                if ($create) {
-                                    return response()->json([
-                                        'message' => 'Deleted'
-                                    ], Response::HTTP_OK);
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    // If the product is not 'MAIN', simply delete it
-                    $storage = Storage::disk('public');
-                    // Delete old image
-                    if ($storage->exists($data->image)) {
-                        $storage->delete($data->image);
-                    }
-
-                    if ($data->delete()) {
                         $userAction = 'DELETE';
                         $details = 'Deleted Product Information with Group ID: ' . $data->group_id . "\n" .
                             'Order ID: ' . $data->order_id . "\n" .
@@ -533,13 +510,14 @@ class OrderController extends Controller
                             'Category: ' . $data->category . "\n" .
                             'Name: ' . $data->name . "\n" .
                             'Image Name: ' . $data->image . "\n" .
-                            'Color: ' . $data->colors . "\n" .
                             'Size: ' . $data->size . "\n" .
-                            'Price: ' . $data->price . "\n" .
+                            'Color: ' . $data->color . "\n" .
                             'Quantity: ' . $data->quantity . "\n" .
                             'Discount: ' . $data->discount . "\n" .
-                            'Description: ' . $data->description . "\n";
-                            'Product Price: ' . $data->product_price . "\n";
+                            'Description: ' . $data->description . "\n" .
+                            'Product Price: ' . $data->product_price . "\n" .
+                            'Total Price: ' . $data->total_price . "\n" .
+                            'Status: ' . $data->status . "\n";
 
                         // Create Log
                         $create = LogsModel::create([
@@ -551,9 +529,197 @@ class OrderController extends Controller
                         ]);
 
                         if ($create) {
-                            return response()->json([
-                                'message' => 'Deleted'
-                            ], Response::HTTP_OK);
+                            // Updating the Total Shipping fee now
+                            // Fetch the total Quantity
+                            $fetchAllQuantityAndCalculateShippingFee = OrderModel::where('user_id', $user->id)
+                                ->where('status', 'UNPAID')
+                                ->get();
+
+                            $totalQuantity = 0;
+                            foreach ($fetchAllQuantityAndCalculateShippingFee as $order) {
+                                $totalQuantity += $order->quantity;
+                            }
+
+                            // Calculate the Shipping Fee
+                            function calculateShippingFee($totalQuantity)
+                            {
+                                $shippingFee = 100; // Base shipping fee
+                                $rangeSize = 5; // Size of each range
+                                $feeIncrement = 100; // Fee increment for each range
+
+                                // Calculate the range index based on the quantity
+                                $rangeIndex = ceil($totalQuantity / $rangeSize);
+
+                                // Calculate the shipping fee based on the range index and quantity
+                                $shippingFee += ($rangeIndex - 1) * $feeIncrement;
+
+                                return number_format($shippingFee, 2); // Format the shipping fee with two decimal places
+                            }
+
+                            // Saving Now
+                            $updateShippingFeeNow = OrderModel::where('user_id', $user->id)
+                                ->where('status', 'UNPAID')
+                                ->where('role', 'MAIN')
+                                ->first();
+                            $updateShippingFeeNow->shipping_fee = calculateShippingFee($totalQuantity);
+
+                            if ($updateShippingFeeNow->save()) {
+                                if ($data->delete()) {
+                                    return response()->json([
+                                        'message' => 'Deleted'
+                                    ], Response::HTTP_OK);
+                                }
+                            }
+                        }
+                    } else {
+                        // Update a single product with the same group_id to have role 'MAIN' and Shipping fee
+                        $affectedRows = OrderModel::where('group_id', $data->group_id)
+                            ->where('id', '!=', $id)
+                            ->limit(1)
+                            ->update(['role' => 'MAIN', 'shipping_fee' => $data->shipping_fee]); // Combine both columns in one array
+
+
+                        if ($affectedRows) {
+                            $userAction = 'DELETE';
+                            $details = 'Deleted Product Information with Group ID: ' . $data->group_id . "\n" .
+                                'Order ID: ' . $data->order_id . "\n" .
+                                'Product Group ID: ' . $data->product_group_id . "\n" .
+                                'Role: MAIN' . "\n" .
+                                'Category: ' . $data->category . "\n" .
+                                'Name: ' . $data->name . "\n" .
+                                'Image Name: ' . $data->image . "\n" .
+                                'Size: ' . $data->size . "\n" .
+                                'Color: ' . $data->color . "\n" .
+                                'Quantity: ' . $data->quantity . "\n" .
+                                'Discount: ' . $data->discount . "\n" .
+                                'Description: ' . $data->description . "\n" .
+                                'Product Price: ' . $data->product_price . "\n" .
+                                'Shipping Fee: ' . $data->shipping_fee . "\n" .
+                                'Total Price: ' . $data->total_price . "\n" .
+                                'Status: ' . $data->status . "\n";
+
+                            // Create Log
+                            $create = LogsModel::create([
+                                'user_id' => $user->id,
+                                'ip_address' => $request->ip(),
+                                'user_action' => $userAction,
+                                'details' => $details,
+                                'created_at' => now()
+                            ]);
+
+                            if ($create) {
+                                // Updating the Total Shipping fee now
+                                // Fetch the total Quantity
+                                $fetchAllQuantityAndCalculateShippingFee = OrderModel::where('user_id', $user->id)
+                                    ->where('status', 'UNPAID')
+                                    ->get();
+
+                                $totalQuantity = 0;
+                                foreach ($fetchAllQuantityAndCalculateShippingFee as $order) {
+                                    $totalQuantity += $order->quantity;
+                                }
+
+                                // Calculate the Shipping Fee
+                                function calculateShippingFee($totalQuantity)
+                                {
+                                    $shippingFee = 100; // Base shipping fee
+                                    $rangeSize = 5; // Size of each range
+                                    $feeIncrement = 100; // Fee increment for each range
+
+                                    // Calculate the range index based on the quantity
+                                    $rangeIndex = ceil($totalQuantity / $rangeSize);
+
+                                    // Calculate the shipping fee based on the range index and quantity
+                                    $shippingFee += ($rangeIndex - 1) * $feeIncrement;
+
+                                    return number_format($shippingFee, 2); // Format the shipping fee with two decimal places
+                                }
+
+                                // Saving Now
+                                $updateShippingFeeNow = OrderModel::where('user_id', $user->id)
+                                    ->where('status', 'UNPAID')
+                                    ->where('role', 'MAIN')
+                                    ->first();
+                                $updateShippingFeeNow->shipping_fee = calculateShippingFee($totalQuantity);
+
+                                if ($updateShippingFeeNow->save()) {
+                                    if ($data->delete()) {
+                                        return response()->json([
+                                            'message' => 'Deleted'
+                                        ], Response::HTTP_OK);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    // Delete if not role MAIN
+                    $userAction = 'DELETE';
+                    $details = 'Deleted Product Information with Group ID: ' . $data->group_id . "\n" .
+                        'Order ID: ' . $data->order_id . "\n" .
+                        'Product Group ID: ' . $data->product_group_id . "\n" .
+                        'Category: ' . $data->category . "\n" .
+                        'Name: ' . $data->name . "\n" .
+                        'Image Name: ' . $data->image . "\n" .
+                        'Size: ' . $data->size . "\n" .
+                        'Color: ' . $data->color . "\n" .
+                        'Quantity: ' . $data->quantity . "\n" .
+                        'Discount: ' . $data->discount . "\n" .
+                        'Description: ' . $data->description . "\n" .
+                        'Product Price: ' . $data->product_price . "\n" .
+                        'Total Price: ' . $data->total_price . "\n" .
+                        'Status: ' . $data->status . "\n";
+
+                    // Create Log
+                    $create = LogsModel::create([
+                        'user_id' => $user->id,
+                        'ip_address' => $request->ip(),
+                        'user_action' => $userAction,
+                        'details' => $details,
+                        'created_at' => now()
+                    ]);
+
+                    if ($create) {
+                        // Updating the Total Shipping fee now
+                        // Fetch the total Quantity
+                        $fetchAllQuantityAndCalculateShippingFee = OrderModel::where('user_id', $user->id)
+                            ->where('status', 'UNPAID')
+                            ->get();
+
+                        $totalQuantity = 0;
+                        foreach ($fetchAllQuantityAndCalculateShippingFee as $order) {
+                            $totalQuantity += $order->quantity;
+                        }
+
+                        // Calculate the Shipping Fee
+                        function calculateShippingFee($totalQuantity)
+                        {
+                            $shippingFee = 100; // Base shipping fee
+                            $rangeSize = 5; // Size of each range
+                            $feeIncrement = 100; // Fee increment for each range
+
+                            // Calculate the range index based on the quantity
+                            $rangeIndex = ceil($totalQuantity / $rangeSize);
+
+                            // Calculate the shipping fee based on the range index and quantity
+                            $shippingFee += ($rangeIndex - 1) * $feeIncrement;
+
+                            return number_format($shippingFee, 2); // Format the shipping fee with two decimal places
+                        }
+
+                        // Saving Now
+                        $updateShippingFeeNow = OrderModel::where('user_id', $user->id)
+                            ->where('status', 'UNPAID')
+                            ->where('role', 'MAIN')
+                            ->first();
+                        $updateShippingFeeNow->shipping_fee = calculateShippingFee($totalQuantity);
+
+                        if ($updateShippingFeeNow->save()) {
+                            if ($data->delete()) {
+                                return response()->json([
+                                    'message' => 'Deleted'
+                                ], Response::HTTP_OK);
+                            }
                         }
                     }
                 }

@@ -98,3 +98,5 @@ Route::post('product/add-to-cart', [OrderController::class, 'addToCart']);
 Route::get('product/unpaid/{id}', [OrderController::class, 'getUnpaid']);
 // Edit Product Selected on Unpaid
 Route::get('product/unpaid/edit/{id}', [OrderController::class, 'edit']);
+// Delete Item on Cart
+Route::delete('product/order/destroy/{id}', [OrderController::class, 'destroy']);
