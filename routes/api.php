@@ -41,6 +41,12 @@ Route::post('update-password', [AuthController::class, 'updatePassword']);
 // Check Legit Email and Verification Key
 Route::post('check-verkey-and-email', [AuthController::class, 'checkVerKeyAndEmail']);
 
+// Client
+// Update Email
+Route::post('change-email', [AuthController::class, 'updateNewEmailClient']);
+// Update Password
+Route::post('change-password', [AuthController::class, 'updatePasswordClient']);
+
 // VISITOR
 // Store Visitor
 Route::post('store-visitor', [VisitorsController::class, 'create']);

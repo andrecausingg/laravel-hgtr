@@ -47,7 +47,7 @@ class AuthController extends Controller
                 ]);
 
                 if ($create) {
-                    if($user->role == "USER") {
+                    if ($user->role == "USER") {
                         $newUser = UserInfoModel::where('user_id', $user->id)->doesntExist();
                         if ($newUser) {
                             // Return a success response with CORS headers
@@ -443,6 +443,106 @@ class AuthController extends Controller
                 return response()->json([
                     'message' => 'User not found or not verified.'
                 ], Response::HTTP_NOT_FOUND);
+            }
+        } catch (\Exception $e) {
+            // Handle exceptions and return an error response with CORS headers
+            $errorMessage = $e->getMessage();
+            $errorCode = $e->getCode();
+
+            // Create a JSON error response
+            $response = [
+                'success' => false,
+                'error' => [
+                    'code' => $errorCode,
+                    'message' => $errorMessage,
+                ],
+            ];
+
+            // Add additional error details if available
+            if ($e instanceof \Illuminate\Validation\ValidationException) {
+                $response['error']['details'] = $e->errors();
+            }
+
+            // Return the JSON error response with CORS headers and an appropriate HTTP status code
+            return response()->json($response, Response::HTTP_INTERNAL_SERVER_ERROR)->header('Content-Type', 'application/json');
+        }
+    }
+
+    public function updateNewEmailClient(Request $request)
+    {
+        try {
+            $user = AuthModel::where('session_login', $request->input('session'))
+                ->where('status', 'VERIFIED')
+                ->first();
+
+            if ($user) {
+                if (Hash::check($request->input('password'), $user->password)) {
+                    $request->validate([
+                        'email' => 'required|string|email|max:255',
+                        'password' => 'required|min:8',
+                    ]);
+
+                    $user->email = $request->input('email');
+                    $user->save();
+
+                    return response()->json([
+                        'message' => 'Email updated successfully'
+                    ], Response::HTTP_OK);
+                }
+            } else {
+                return response()->json([
+                    'message' => 'Intruder'
+                ], Response::HTTP_OK);
+            }
+        } catch (\Exception $e) {
+            // Handle exceptions and return an error response with CORS headers
+            $errorMessage = $e->getMessage();
+            $errorCode = $e->getCode();
+
+            // Create a JSON error response
+            $response = [
+                'success' => false,
+                'error' => [
+                    'code' => $errorCode,
+                    'message' => $errorMessage,
+                ],
+            ];
+
+            // Add additional error details if available
+            if ($e instanceof \Illuminate\Validation\ValidationException) {
+                $response['error']['details'] = $e->errors();
+            }
+
+            // Return the JSON error response with CORS headers and an appropriate HTTP status code
+            return response()->json($response, Response::HTTP_INTERNAL_SERVER_ERROR)->header('Content-Type', 'application/json');
+        }
+    }
+
+    public function updatePasswordClient(Request $request)
+    {
+        try {
+            $user = AuthModel::where('session_login', $request->input('session'))
+                ->where('status', 'VERIFIED')
+                ->first();
+
+            if ($user) {
+                if (Hash::check($request->input('password'), $user->password)) {
+                    $request->validate([
+                        'email' => 'required|string|email|max:255',
+                        'password' => 'required|min:8',
+                    ]);
+
+                    $user->password = $request->input('password');
+                    $user->save();
+
+                    return response()->json([
+                        'message' => 'Password updated successfully'
+                    ], Response::HTTP_OK);
+                }
+            } else {
+                return response()->json([
+                    'message' => 'Intruder'
+                ], Response::HTTP_OK);
             }
         } catch (\Exception $e) {
             // Handle exceptions and return an error response with CORS headers
