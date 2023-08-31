@@ -479,7 +479,7 @@ class AuthController extends Controller
                 if (Hash::check($request->input('currentPassword'), $user->password)) {
                     // Validate the input
                     $validatedData = $request->validate([
-                        'newEmail' => 'required|string|email|max:255',
+                        'newEmail' => 'required|string|email|max:255|unique:users_tbl,email', // Assuming 'users' is the table name
                         // Change 'newEmail' validation rule
                         'currentPassword' => 'required|min:8',
                     ]);

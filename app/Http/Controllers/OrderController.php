@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\AuthModel;
+use App\Models\LogsModel;
 use App\Models\OrderModel;
 use App\Models\ProductModel;
 use Illuminate\Http\Request;
@@ -527,16 +528,18 @@ class OrderController extends Controller
                     if ($data->delete()) {
                         $userAction = 'DELETE';
                         $details = 'Deleted Product Information with Group ID: ' . $data->group_id . "\n" .
-                            'Role: ' . $data->role . "\n" .
-                            'Image Name: ' . $data->image . "\n" .
-                            'Name: ' . $data->name . "\n" .
-                            'Price: ' . $data->price . "\n" .
-                            'Quantity: ' . $data->quantity . "\n" .
+                            'Order ID: ' . $data->order_id . "\n" .
+                            'Product Group ID: ' . $data->product_group_id . "\n" .
                             'Category: ' . $data->category . "\n" .
+                            'Name: ' . $data->name . "\n" .
+                            'Image Name: ' . $data->image . "\n" .
                             'Color: ' . $data->colors . "\n" .
                             'Size: ' . $data->size . "\n" .
+                            'Price: ' . $data->price . "\n" .
+                            'Quantity: ' . $data->quantity . "\n" .
                             'Discount: ' . $data->discount . "\n" .
                             'Description: ' . $data->description . "\n";
+                            'Product Price: ' . $data->product_price . "\n";
 
                         // Create Log
                         $create = LogsModel::create([
