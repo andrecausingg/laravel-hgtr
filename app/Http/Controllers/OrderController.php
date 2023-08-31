@@ -6,6 +6,7 @@ use App\Models\AuthModel;
 use App\Models\OrderModel;
 use App\Models\ProductModel;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -416,7 +417,7 @@ class OrderController extends Controller
     {
         try {
             // Find the product in the database
-            $data = ProductModel::find($id);
+            $data = OrderModel::find($id);
 
             if (!$data) {
                 return response()->json([
@@ -431,7 +432,7 @@ class OrderController extends Controller
 
             if ($user) {
                 if ($data->role == 'MAIN') {
-                    $mainProductsCount = ProductModel::where('group_id', $data->group_id)->count();
+                    $mainProductsCount = OrderModel::where('group_id', $data->group_id)->count();
 
                     if ($mainProductsCount === 1) {
                         // If the product is not 'MAIN', simply delete it

@@ -479,15 +479,16 @@ class AuthController extends Controller
                 if (Hash::check($request->input('currentPassword'), $user->password)) {
                     // Validate the input
                     $validatedData = $request->validate([
-                        'email' => 'required|string|email|max:255',
+                        'newEmail' => 'required|string|email|max:255',
+                        // Change 'newEmail' validation rule
                         'currentPassword' => 'required|min:8',
                     ]);
 
                     // Update account properties
-                    $user->fill($validatedData);
+                    $user->email = $validatedData['newEmail']; // Update email address
                     $changes = [];
 
-                    if ($user->isDirty('email')) {
+                    if ($user->isDirty('email')) { // Check for email change
                         $changes[] = 'Email changed from "' . $user->getOriginal('email') . '" to "' . $user->email . '".';
                     }
 
