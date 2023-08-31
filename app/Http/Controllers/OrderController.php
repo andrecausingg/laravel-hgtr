@@ -6,6 +6,7 @@ use App\Models\AuthModel;
 use App\Models\LogsModel;
 use App\Models\OrderModel;
 use App\Models\ProductModel;
+use App\Models\UserInfoModel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -17,10 +18,26 @@ class OrderController extends Controller
     public function index()
     {
         try {
-            $data = OrderModel::all();
+            // Get the order records with their associated userInfo
+            $orders = OrderModel::get();
+        
+            // Initialize an array to store user information for each order
+            $orderData = [];
+        
+            foreach ($orders as $order) {
+                // Fetch the user information using user_id
+                $userInfo = UserInfoModel::where('user_id', $order->user_id)->first();
+        
+                // Add order and user information to the array
+                $orderData[] = [
+                    'order' => $order,
+                    'userInfo' => $userInfo
+                ];
+            }
+        
             return response()->json([
-                'data' => $data,
-            ], Response::HTTP_OK); // Change the status code to 200 (OK)
+                'data' => $orderData
+            ], Response::HTTP_OK);
         } catch (\Exception $e) {
             // Handle exceptions and return an error response with CORS headers
             $errorMessage = $e->getMessage();
@@ -751,5 +768,13 @@ class OrderController extends Controller
             return response()->json($response, Response::HTTP_INTERNAL_SERVER_ERROR)->header('Content-Type', 'application/json');
         }
     }
+
+    public function checkOut(Request $request)
+    {
+
+    }
+
+
+
 
 }
