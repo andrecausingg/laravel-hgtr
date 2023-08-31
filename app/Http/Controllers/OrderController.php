@@ -12,9 +12,6 @@ use Symfony\Component\HttpFoundation\Response;
 class OrderController extends Controller
 {
 
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
         try {
@@ -46,6 +43,7 @@ class OrderController extends Controller
         }
     }
 
+    // Client To pay Component
     public function getUnpaid($id)
     {
         try {
@@ -86,6 +84,7 @@ class OrderController extends Controller
         }
     }
 
+    // Client Add to Cart
     public function addToCart(Request $request)
     {
         try {
@@ -379,9 +378,7 @@ class OrderController extends Controller
         }
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
+    // Client Edit on To pay component Display Specific product
     public function edit($id)
     {
         try {
@@ -391,6 +388,176 @@ class OrderController extends Controller
                 'products' => $products,
                 'order' => $order,
             ], Response::HTTP_OK); // Change the status code to 200 (OK)
+        } catch (\Exception $e) {
+            // Handle exceptions and return an error response with CORS headers
+            $errorMessage = $e->getMessage();
+            $errorCode = $e->getCode();
+
+            // Create a JSON error response
+            $response = [
+                'success' => false,
+                'error' => [
+                    'code' => $errorCode,
+                    'message' => $errorMessage,
+                ],
+            ];
+
+            // Add additional error details if available
+            if ($e instanceof \Illuminate\Validation\ValidationException) {
+                $response['error']['details'] = $e->errors();
+            }
+
+            // Return the JSON error response with CORS headers and an appropriate HTTP status code
+            return response()->json($response, Response::HTTP_INTERNAL_SERVER_ERROR)->header('Content-Type', 'application/json');
+        }
+    }
+
+    public function destroy(Request $request, $id)
+    {
+        try {
+            // Find the product in the database
+            $data = ProductModel::find($id);
+
+            if (!$data) {
+                return response()->json([
+                    'message' => 'Data Not Found'
+                ], Response::HTTP_OK);
+            }
+
+            // Fetch User ID
+            $user = AuthModel::where('session_login', $request->input('session'))
+                ->where('status', 'VERIFIED')
+                ->first();
+
+            if ($user) {
+                if ($data->role == 'MAIN') {
+                    $mainProductsCount = ProductModel::where('group_id', $data->group_id)->count();
+
+                    if ($mainProductsCount === 1) {
+                        // If the product is not 'MAIN', simply delete it
+                        $storage = Storage::disk('public');
+                        // Delete old image
+                        if ($storage->exists($data->image)) {
+                            $storage->delete($data->image);
+                        }
+                        if ($data->delete()) {
+                            $userAction = 'DELETE';
+                            $details = 'Deleted Product Information with Group ID: ' . $data->group_id . "\n" .
+                                'Role: ' . $data->role . "\n" .
+                                'Image Name: ' . $data->image . "\n" .
+                                'Name: ' . $data->name . "\n" .
+                                'Price: ' . $data->price . "\n" .
+                                'Quantity: ' . $data->quantity . "\n" .
+                                'Category: ' . $data->category . "\n" .
+                                'Color: ' . $data->colors . "\n" .
+                                'Size: ' . $data->size . "\n" .
+                                'Discount: ' . $data->discount . "\n" .
+                                'Description: ' . $data->description . "\n";
+
+                            // Create Log
+                            $create = LogsModel::create([
+                                'user_id' => $user->id,
+                                'ip_address' => $request->ip(),
+                                'user_action' => $userAction,
+                                'details' => $details,
+                                'created_at' => now()
+                            ]);
+
+                            if ($create) {
+                                return response()->json([
+                                    'message' => 'Deleted'
+                                ], Response::HTTP_OK);
+                            }
+                        }
+
+                    } else {
+                        // Update a single product with the same group_id to have role 'MAIN'
+                        $affectedRows = ProductModel::where('group_id', $data->group_id)
+                            ->where('id', '!=', $id)
+                            ->limit(1) // Limit the update to one row
+                            ->update(['role' => 'MAIN']);
+
+                        if ($affectedRows) {
+                            // Storage Public
+                            $storage = Storage::disk('public');
+                            // Delete old image
+                            if ($storage->exists($data->image)) {
+                                $storage->delete($data->image);
+                            }
+
+                            if ($data->delete()) {
+                                $userAction = 'DELETE';
+                                $details = 'Deleted Product Information with Group ID: ' . $data->group_id . "\n" .
+                                    'Role: ' . $data->role . "\n" .
+                                    'Image Name: ' . $data->image . "\n" .
+                                    'Name: ' . $data->name . "\n" .
+                                    'Price: ' . $data->price . "\n" .
+                                    'Quantity: ' . $data->quantity . "\n" .
+                                    'Category: ' . $data->category . "\n" .
+                                    'Color: ' . $data->colors . "\n" .
+                                    'Size: ' . $data->size . "\n" .
+                                    'Discount: ' . $data->discount . "\n" .
+                                    'Description: ' . $data->description . "\n";
+
+                                // Create Log
+                                $create = LogsModel::create([
+                                    'ip_address' => $request->ip(),
+                                    'user_action' => $userAction,
+                                    'details' => $details,
+                                    'created_at' => now()
+                                ]);
+
+                                if ($create) {
+                                    return response()->json([
+                                        'message' => 'Deleted'
+                                    ], Response::HTTP_OK);
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    // If the product is not 'MAIN', simply delete it
+                    $storage = Storage::disk('public');
+                    // Delete old image
+                    if ($storage->exists($data->image)) {
+                        $storage->delete($data->image);
+                    }
+
+                    if ($data->delete()) {
+                        $userAction = 'DELETE';
+                        $details = 'Deleted Product Information with Group ID: ' . $data->group_id . "\n" .
+                            'Role: ' . $data->role . "\n" .
+                            'Image Name: ' . $data->image . "\n" .
+                            'Name: ' . $data->name . "\n" .
+                            'Price: ' . $data->price . "\n" .
+                            'Quantity: ' . $data->quantity . "\n" .
+                            'Category: ' . $data->category . "\n" .
+                            'Color: ' . $data->colors . "\n" .
+                            'Size: ' . $data->size . "\n" .
+                            'Discount: ' . $data->discount . "\n" .
+                            'Description: ' . $data->description . "\n";
+
+                        // Create Log
+                        $create = LogsModel::create([
+                            'user_id' => $user->id,
+                            'ip_address' => $request->ip(),
+                            'user_action' => $userAction,
+                            'details' => $details,
+                            'created_at' => now()
+                        ]);
+
+                        if ($create) {
+                            return response()->json([
+                                'message' => 'Deleted'
+                            ], Response::HTTP_OK);
+                        }
+                    }
+                }
+            } else {
+                return response()->json([
+                    'message' => 'Intruder'
+                ], Response::HTTP_OK);
+            }
         } catch (\Exception $e) {
             // Handle exceptions and return an error response with CORS headers
             $errorMessage = $e->getMessage();

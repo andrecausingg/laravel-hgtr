@@ -476,17 +476,45 @@ class AuthController extends Controller
                 ->first();
 
             if ($user) {
-                if (Hash::check($request->input('password'), $user->password)) {
-                    $request->validate([
+                if (Hash::check($request->input('currentPassword'), $user->password)) {
+                    // Validate the input
+                    $validatedData = $request->validate([
                         'email' => 'required|string|email|max:255',
-                        'password' => 'required|min:8',
+                        'currentPassword' => 'required|min:8',
                     ]);
 
-                    $user->email = $request->input('email');
-                    $user->save();
+                    // Update account properties
+                    $user->fill($validatedData);
+                    $changes = [];
 
+                    if ($user->isDirty('email')) {
+                        $changes[] = 'Email changed from "' . $user->getOriginal('email') . '" to "' . $user->email . '".';
+                    }
+
+                    if (empty($changes)) {
+                        return response()->json([
+                            'message' => 'No changes to update.'
+                        ], Response::HTTP_OK);
+                    }
+
+                    if ($user->save()) {
+                        $userAction = 'UPDATE';
+                        $details = 'Updated an Email with the following change: ' . implode(' ', $changes);
+                        // Create Log
+                        LogsModel::create([
+                            'user_id' => $user->id,
+                            'ip_address' => $request->ip(),
+                            'user_action' => $userAction,
+                            'details' => $details,
+                            'created_at' => now()
+                        ]);
+                        return response()->json([
+                            'message' => 'Updated'
+                        ], Response::HTTP_OK);
+                    }
+                } else {
                     return response()->json([
-                        'message' => 'Email updated successfully'
+                        'message' => 'Invalid current password.'
                     ], Response::HTTP_OK);
                 }
             } else {
@@ -526,17 +554,40 @@ class AuthController extends Controller
                 ->first();
 
             if ($user) {
-                if (Hash::check($request->input('password'), $user->password)) {
-                    $request->validate([
-                        'email' => 'required|string|email|max:255',
-                        'password' => 'required|min:8',
+                if (Hash::check($request->input('currentPassword'), $user->password)) {
+                    // Validate the input
+                    $validatedData = $request->validate([
+                        'currentPassword' => 'required|min:8',
+                        'newPassword' => 'required|min:8',
                     ]);
 
-                    $user->password = $request->input('password');
-                    $user->save();
+                    // Update account properties
+                    $user->password = Hash::make($request->input('newPassword'));
 
+                    if ($user->save()) {
+                        $userAction = 'UPDATE';
+                        $details = 'Password has changed.';
+
+                        // Create Log
+                        LogsModel::create([
+                            'user_id' => $user->id,
+                            'ip_address' => $request->ip(),
+                            'user_action' => $userAction,
+                            'details' => $details,
+                            'created_at' => now()
+                        ]);
+
+                        return response()->json([
+                            'message' => 'Password updated successfully.'
+                        ], Response::HTTP_OK);
+                    } else {
+                        return response()->json([
+                            'message' => 'Failed to update password.'
+                        ], Response::HTTP_OK);
+                    }
+                } else {
                     return response()->json([
-                        'message' => 'Password updated successfully'
+                        'message' => 'Invalid current password.'
                     ], Response::HTTP_OK);
                 }
             } else {
