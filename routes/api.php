@@ -111,5 +111,10 @@ Route::post('product/checkout', [OrderController::class, 'checkOut']);
 Route::post('product/cancelled/{id}', [OrderController::class, 'cancelItemOnCart']);
 
 
-// Admin  Products
+// Admin Products
+// Display order
 Route::get('product/order/index', [OrderController::class, 'index']);
+// Mark as done per item
+Route::post('product/order/mark-as-done-per-item/{id}', [OrderController::class, 'markAsDonePerItem']);
+// Mark as done all item
+Route::post('product/order/mark-as-done-all-item/{id}', [OrderController::class, 'markAsDoneAllItem']);
