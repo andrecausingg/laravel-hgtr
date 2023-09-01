@@ -544,7 +544,7 @@ class OrderController extends Controller
                     ->where('id', '!=', $id)
                     ->limit(1)
                     ->update(['role' => 'MAIN', 'shipping_fee' => $data->shipping_fee]);
-        
+
                 if ($affectedRows) {
                     // Create Log for the update
                     $userAction = 'DELETE';
@@ -564,7 +564,7 @@ class OrderController extends Controller
                         'Shipping Fee: ' . $data->shipping_fee . "\n" .
                         'Total Price: ' . $data->total_price . "\n" .
                         'Status: ' . $data->status . "\n";
-        
+
                     // Create Log
                     $create = LogsModel::create([
                         'user_id' => $user->id,
@@ -573,20 +573,20 @@ class OrderController extends Controller
                         'details' => $details,
                         'created_at' => now()
                     ]);
-        
+
                     // Fetch the total Quantity
                     $fetchAllQuantityAndCalculateShippingFee = OrderModel::where('user_id', $user->id)
                         ->where('status', 'UNPAID')
                         ->get();
-        
+
                     $totalQuantity = 0;
                     foreach ($fetchAllQuantityAndCalculateShippingFee as $order) {
                         $totalQuantity += $order->quantity;
                     }
-        
+
                     // Calculate the new Shipping Fee
                     $newShippingFee = calculateShippingFee($totalQuantity);
-        
+
                     // Update the Shipping Fee for the current product
                     $data->shipping_fee = $newShippingFee;
                     $data->save();
@@ -599,8 +599,7 @@ class OrderController extends Controller
                         ], Response::HTTP_OK);
                     }
                 }
-            } 
-            else {
+            } else {
                 // Delete if not role MAIN
                 $userAction = 'DELETE';
                 $details = 'Deleted Product Information with Group ID: ' . $data->group_id . "\n" .
@@ -685,6 +684,10 @@ class OrderController extends Controller
                 ->where('status', 'VERIFIED')
                 ->first();
             if ($user) {
+                $request->validate([
+                    'payment' => 'required|string',
+                ]);
+
                 // Retrieving unpaid products for the user
                 $data = OrderModel::where('user_id', $user->id)->where('status', 'UNPAID')->get();
 
@@ -764,9 +767,9 @@ class OrderController extends Controller
                         ->where('user_id', $user->id)
                         ->limit(1)
                         ->update([
-                            'role' => 'MAIN',
-                            'shipping_fee' => $data->shipping_fee,
-                        ]);
+                                'role' => 'MAIN',
+                                'shipping_fee' => $data->shipping_fee,
+                            ]);
 
                     if ($affectedRows) {
                         // Remove self Role and shipping Fee then change status to CANCELLED
@@ -775,12 +778,12 @@ class OrderController extends Controller
                             ->where('user_id', $user->id)
                             ->limit(1)
                             ->update([
-                                'role' => '',
-                                'shipping_fee' => 0.00,
-                                'status' => 'CANCELLED',
-                                'reason_cancel' => $request->input('reasonCancel'),
-                                'cancel_at' => now()
-                            ]);
+                                    'role' => '',
+                                    'shipping_fee' => 0.00,
+                                    'status' => 'CANCELLED',
+                                    'reason_cancel' => $request->input('reasonCancel'),
+                                    'cancel_at' => now()
+                                ]);
 
                         if ($affectedRowsSelf) {
                             $userAction = 'CANCELLED';
@@ -1113,9 +1116,9 @@ class OrderController extends Controller
                 $affectedRows = OrderModel::where('group_id', $id)
                     ->where('status', 'TO SHIP / TO PROCESS')
                     ->update([
-                        'status' => 'TO SHIP / PROCESSED',
-                        'mark_as_done_at' => now()
-                    ]);
+                            'status' => 'TO SHIP / PROCESSED',
+                            'mark_as_done_at' => now()
+                        ]);
 
                 if ($affectedRows > 0) {
                     $userAction = 'MARK AS DONE ALL';
@@ -1178,9 +1181,9 @@ class OrderController extends Controller
                 $affectedRows = OrderModel::where('group_id', $id)
                     ->where('status', 'TO SHIP / PROCESSED')
                     ->update([
-                        'status' => 'SHIPPING',
-                        'ship_at' => now()
-                    ]);
+                            'status' => 'SHIPPING',
+                            'ship_at' => now()
+                        ]);
 
                 if ($affectedRows > 0) {
                     $userAction = 'SHIP ALL';
@@ -1229,4 +1232,171 @@ class OrderController extends Controller
             return response()->json($response, Response::HTTP_INTERNAL_SERVER_ERROR)->header('Content-Type', 'application/json');
         }
     }
+
+    // MARK AS DONE PER ITEM | ADMIN
+    public function shipCompletePerItem(Request $request, $id)
+    {
+        try {
+            // Fetch User ID
+            $user = AuthModel::where('session_login', $request->input('session'))
+                ->where('status', 'VERIFIED')
+                ->first();
+
+            if ($user) {
+                $order = OrderModel::find($id)->where('status', 'SHIPPING');
+
+                if ($order) {
+                    $order->status = 'COMPLETED';
+                    $order->completed_at = now();
+
+                    if ($order->save()) {
+                        $userAction = 'COMPLETE';
+                        $details = "Complete Ship this product Information with Group ID: {$order->group_id}\n" .
+                            "Order ID: {$order->order_id}\n" .
+                            "Product Group ID: {$order->product_group_id}\n" .
+                            "Role: {$order->role}\n" .
+                            "Category: {$order->category}\n" .
+                            "Name: {$order->name}\n" .
+                            "Image Name: {$order->image}\n" .
+                            "Size: {$order->size}\n" .
+                            "Color: {$order->color}\n" .
+                            "Quantity: {$order->quantity}\n" .
+                            "Discount: {$order->discount}\n" .
+                            "Description: {$order->description}\n" .
+                            "Product Price: {$order->product_price}\n" .
+                            "Shipping Fee: {$order->shipping_fee}\n" .
+                            "Total Price: {$order->total_price}\n";
+
+                        // Create Log
+                        $createLog = LogsModel::create([
+                            'user_id' => $user->id,
+                            'ip_address' => $request->ip(),
+                            'user_action' => $userAction,
+                            'details' => $details,
+                            'created_at' => now()
+                        ]);
+
+                        if ($createLog) {
+                            return response()->json([
+                                'message' => 'Marked as done'
+                            ], Response::HTTP_OK);
+                        }
+                    }
+                } else {
+                    return response()->json([
+                        'message' => 'Order not found'
+                    ], Response::HTTP_NOT_FOUND);
+                }
+            } else {
+                return response()->json([
+                    'message' => 'Intruder'
+                ], Response::HTTP_UNAUTHORIZED);
+            }
+        } catch (\Exception $e) {
+            // Handle exceptions and return an error response with CORS headers
+            $errorMessage = $e->getMessage();
+            $errorCode = $e->getCode();
+
+            // Create a JSON error response
+            $response = [
+                'success' => false,
+                'error' => [
+                    'code' => $errorCode,
+                    'message' => $errorMessage,
+                ],
+            ];
+
+            // Add additional error details if available
+            if ($e instanceof \Illuminate\Validation\ValidationException) {
+                $response['error']['details'] = $e->errors();
+            }
+
+            // Return the JSON error response with CORS headers and an appropriate HTTP status code
+            return response()->json($response, Response::HTTP_INTERNAL_SERVER_ERROR)->header('Content-Type', 'application/json');
+        }
+    }
+
+    public function shipFailedPerItem(Request $request, $id)
+    {
+        try {
+            // Fetch User ID
+            $user = AuthModel::where('session_login', $request->input('session'))
+                ->where('status', 'VERIFIED')
+                ->first();
+
+            if ($user) {
+                $order = OrderModel::find($id)->where('status', 'SHIPPING');
+
+                if ($order) {
+                    $order->status = 'FAILED';
+                    $order->failed_at = now();
+
+                    if ($order->save()) {
+                        $userAction = 'FAILED';
+                        $details = "Failed Ship this product Information with Group ID: {$order->group_id}\n" .
+                            "Order ID: {$order->order_id}\n" .
+                            "Product Group ID: {$order->product_group_id}\n" .
+                            "Role: {$order->role}\n" .
+                            "Category: {$order->category}\n" .
+                            "Name: {$order->name}\n" .
+                            "Image Name: {$order->image}\n" .
+                            "Size: {$order->size}\n" .
+                            "Color: {$order->color}\n" .
+                            "Quantity: {$order->quantity}\n" .
+                            "Discount: {$order->discount}\n" .
+                            "Description: {$order->description}\n" .
+                            "Product Price: {$order->product_price}\n" .
+                            "Shipping Fee: {$order->shipping_fee}\n" .
+                            "Total Price: {$order->total_price}\n";
+
+                        // Create Log
+                        $createLog = LogsModel::create([
+                            'user_id' => $user->id,
+                            'ip_address' => $request->ip(),
+                            'user_action' => $userAction,
+                            'details' => $details,
+                            'created_at' => now()
+                        ]);
+
+                        if ($createLog) {
+                            return response()->json([
+                                'message' => 'Marked as done'
+                            ], Response::HTTP_OK);
+                        }
+                    }
+                } else {
+                    return response()->json([
+                        'message' => 'Order not found'
+                    ], Response::HTTP_NOT_FOUND);
+                }
+            } else {
+                return response()->json([
+                    'message' => 'Intruder'
+                ], Response::HTTP_UNAUTHORIZED);
+            }
+        } catch (\Exception $e) {
+            // Handle exceptions and return an error response with CORS headers
+            $errorMessage = $e->getMessage();
+            $errorCode = $e->getCode();
+
+            // Create a JSON error response
+            $response = [
+                'success' => false,
+                'error' => [
+                    'code' => $errorCode,
+                    'message' => $errorMessage,
+                ],
+            ];
+
+            // Add additional error details if available
+            if ($e instanceof \Illuminate\Validation\ValidationException) {
+                $response['error']['details'] = $e->errors();
+            }
+
+            // Return the JSON error response with CORS headers and an appropriate HTTP status code
+            return response()->json($response, Response::HTTP_INTERNAL_SERVER_ERROR)->header('Content-Type', 'application/json');
+        }
+    }
+
+
 }
