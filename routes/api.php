@@ -104,12 +104,11 @@ Route::get('product/unpaid/{id}', [OrderController::class, 'getUnpaid']);
 // Edit Product Selected on Unpaid
 Route::get('product/unpaid/edit/{id}', [OrderController::class, 'edit']);
 // Delete Item on Cart
-Route::delete('product/order/destroy/{id}', [OrderController::class, 'destroy']);
+Route::post('product/order/destroy/{id}', [OrderController::class, 'destroy']);
 // Check Out
 Route::post('product/checkout', [OrderController::class, 'checkOut']);
 // Cancelled
 Route::post('product/cancelled/{id}', [OrderController::class, 'cancelItemOnCart']);
-
 
 // Admin Products
 // Display order
@@ -118,3 +117,5 @@ Route::get('product/order/index', [OrderController::class, 'index']);
 Route::post('product/order/mark-as-done-per-item/{id}', [OrderController::class, 'markAsDonePerItem']);
 // Mark as done all item
 Route::post('product/order/mark-as-done-all-item/{id}', [OrderController::class, 'markAsDoneAllItem']);
+// Ship all Item
+Route::post('product/order/ship-all/{id}', [OrderController::class, 'shipAll']);

@@ -519,7 +519,6 @@ class OrderController extends Controller
 
             if ($user) {
                 if ($data->role == 'MAIN') {
-
                     // Update a single product with the same group_id to have role 'MAIN' and Shipping fee
                     $affectedRows = OrderModel::where('group_id', $data->group_id)
                         ->where('id', '!=', $id)
@@ -1016,7 +1015,7 @@ class OrderController extends Controller
                             "Description: {$order->description}\n" .
                             "Product Price: {$order->product_price}\n" .
                             "Shipping Fee: {$order->shipping_fee}\n" .
-                            "Total Price: {$order->total_price}\n" ;
+                            "Total Price: {$order->total_price}\n";
 
                         // Create Log
                         $createLog = LogsModel::create([
@@ -1074,7 +1073,7 @@ class OrderController extends Controller
             $user = AuthModel::where('session_login', $request->input('session'))
                 ->where('status', 'VERIFIED')
                 ->first();
-        
+
             if ($user) {
                 $affectedRows = OrderModel::where('group_id', $id)
                     ->where('status', 'TO SHIP / TO PROCESS')
@@ -1082,11 +1081,11 @@ class OrderController extends Controller
                         'status' => 'TO SHIP / PROCESSED',
                         'mark_as_done_at' => now()
                     ]);
-        
+
                 if ($affectedRows > 0) {
                     $userAction = 'MARK AS DONE ALL';
                     $details = "Marked as done for orders with Group ID: {$id}";
-        
+
                     // Create Log
                     $create = LogsModel::create([
                         'user_id' => $user->id,
@@ -1095,10 +1094,74 @@ class OrderController extends Controller
                         'details' => $details,
                         'created_at' => now()
                     ]);
-        
+
                     if ($create) {
                         return response()->json([
                             'message' => 'Marked as done for all'
+                        ], Response::HTTP_OK);
+                    }
+                } else {
+                    return response()->json([
+                        'message' => 'No orders found with the given criteria'
+                    ], Response::HTTP_NOT_FOUND);
+                }
+            }
+        } catch (\Exception $e) {
+            // Handle exceptions and return an error response with CORS headers
+            $errorMessage = $e->getMessage();
+            $errorCode = $e->getCode();
+
+            // Create a JSON error response
+            $response = [
+                'success' => false,
+                'error' => [
+                    'code' => $errorCode,
+                    'message' => $errorMessage,
+                ],
+            ];
+
+            // Add additional error details if available
+            if ($e instanceof \Illuminate\Validation\ValidationException) {
+                $response['error']['details'] = $e->errors();
+            }
+
+            // Return the JSON error response with CORS headers and an appropriate HTTP status code
+            return response()->json($response, Response::HTTP_INTERNAL_SERVER_ERROR)->header('Content-Type', 'application/json');
+        }
+    }
+
+    public function shipAll(Request $request, $id)
+    {
+        try {
+            // Fetch User ID
+            $user = AuthModel::where('session_login', $request->input('session'))
+                ->where('status', 'VERIFIED')
+                ->first();
+
+            if ($user) {
+                $affectedRows = OrderModel::where('group_id', $id)
+                    ->where('status', 'TO SHIP / PROCESSED')
+                    ->update([
+                        'status' => 'SHIPPING',
+                        'ship_at' => now()
+                    ]);
+
+                if ($affectedRows > 0) {
+                    $userAction = 'SHIP ALL';
+                    $details = "Ship all orders with Group ID: {$id}";
+
+                    // Create Log
+                    $create = LogsModel::create([
+                        'user_id' => $user->id,
+                        'ip_address' => $request->ip(),
+                        'user_action' => $userAction,
+                        'details' => $details,
+                        'created_at' => now()
+                    ]);
+
+                    if ($create) {
+                        return response()->json([
+                            'message' => 'Ship all'
                         ], Response::HTTP_OK);
                     }
                 } else {
