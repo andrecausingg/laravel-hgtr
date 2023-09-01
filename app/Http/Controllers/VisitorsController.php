@@ -59,12 +59,12 @@ class VisitorsController extends Controller
     {
         try {
             $ipAddress = $request->ip();
-            $location = Location::get($ipAddress);
+            // $location = Location::get($ipAddress);
 
             // Create a new visitor record in the database
             $visitor = VisitorModel::create([
                 'ip_address' => $ipAddress,
-                'country' => $location,
+                // 'country' => $location,
             ]);
     
             return response()->json([

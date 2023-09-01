@@ -12,6 +12,6 @@ class VisitorModel extends Model
     protected $primaryKey = 'id';
     protected $fillable = [
         'ip_address',
-        'country',
+        // 'country',
     ];
 }

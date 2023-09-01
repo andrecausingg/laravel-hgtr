@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('visitors_tbl', function (Blueprint $table) {
             $table->id();
             $table->string('ip_address');
-            $table->string('country');
+            // $table->string('country');
             $table->timestamps();
         });
     }

@@ -107,10 +107,13 @@ Route::get('product/unpaid/edit/{id}', [OrderController::class, 'edit']);
 Route::delete('product/order/destroy/{id}', [OrderController::class, 'destroy']);
 // Check Out
 Route::post('product/checkout', [OrderController::class, 'checkOut']);
-// Cancelled
+// Edit Product Selected on Unpaid
+Route::get('product/to-ship/get-cancel-item/{id}', [OrderController::class, 'getCancelItemOnCart']);
+
+// Cancel
 Route::post('product/cancelled/{id}', [OrderController::class, 'cancelItemOnCart']);
 
-// Admin Products
+// Admin Orders
 // Display order
 Route::get('product/order/index', [OrderController::class, 'index']);
 // Mark as done per item
@@ -119,3 +122,11 @@ Route::post('product/order/mark-as-done-per-item/{id}', [OrderController::class,
 Route::post('product/order/mark-as-done-all-item/{id}', [OrderController::class, 'markAsDoneAllItem']);
 // Ship all Item
 Route::post('product/order/ship-all/{id}', [OrderController::class, 'shipAll']);
+// Complete per item
+Route::post('product/order/complete-per-item/{id}', [OrderController::class, 'completePerItem']);
+// Fail per item
+Route::post('product/order/fail-per-item/{id}', [OrderController::class, 'failedPerItem']);
+// Complete All item
+Route::post('product/order/complete-all-item/{id}', [OrderController::class, 'completeAll']);
+// Complete All item
+Route::post('product/order/fail-all-item/{id}', [OrderController::class, 'failAll']);
