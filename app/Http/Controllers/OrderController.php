@@ -8,7 +8,6 @@ use App\Models\OrderModel;
 use App\Models\ProductModel;
 use App\Models\UserInfoModel;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -983,6 +982,62 @@ class OrderController extends Controller
         }
     }
 
+    // RETURN ON TO RECEIVED | CLIENT
+    public function return(Request $request, $id)
+    {
+        try {
+            // Fetch User ID
+            $user = AuthModel::where('session_login', $request->input('session'))
+                ->where('status', 'VERIFIED')
+                ->first();
+            if ($user) {
+                // Retrieve the order to cancel
+                $data = OrderModel::where('user_id', $user->id)
+                    ->where('status', 'SHIPPING')
+                    ->where('id', $id)
+                    ->first(); // Use "first()" to retrieve a single record
+
+                if($data){
+                    $request->validate([
+                        'color' => 'required|string|max:255',
+                        'size' => 'required|string|max:255',
+                        'quantity' => 'required|min:1',
+                        'group_id' => 'required|string',
+                    ]);
+
+                    
+                }
+
+            } else {
+                return response()->json([
+                    'message' => 'Intruder'
+                ], Response::HTTP_OK);
+            }
+
+        } catch (\Exception $e) {
+            // Handle exceptions and return an error response with CORS headers
+            $errorMessage = $e->getMessage();
+            $errorCode = $e->getCode();
+
+            // Create a JSON error response
+            $response = [
+                'success' => false,
+                'error' => [
+                    'code' => $errorCode,
+                    'message' => $errorMessage,
+                ],
+            ];
+
+            // Add additional error details if available
+            if ($e instanceof \Illuminate\Validation\ValidationException) {
+                $response['error']['details'] = $e->errors();
+            }
+
+            // Return the JSON error response with CORS headers and an appropriate HTTP status code
+            return response()->json($response, Response::HTTP_INTERNAL_SERVER_ERROR)->header('Content-Type', 'application/json');
+        }
+    }
+
     // MARK AS DONE PER ITEM | ADMIN
     public function markAsDonePerItem(Request $request, $id)
     {
@@ -1066,6 +1121,7 @@ class OrderController extends Controller
         }
     }
 
+    // MARK AS DONE ALL | ADMIN
     public function markAsDoneAllItem(Request $request, $id)
     {
         try {
@@ -1130,6 +1186,7 @@ class OrderController extends Controller
         }
     }
 
+    // SHIP ALL | ADMIN
     public function shipAll(Request $request, $id)
     {
         try {
