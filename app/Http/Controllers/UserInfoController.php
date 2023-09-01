@@ -196,7 +196,7 @@ class UserInfoController extends Controller
                 ->where('status', 'VERIFIED')
                 ->first();
             if ($user) {
-                $data = UserInfoModel::where('user_id', $user->id)->get();
+                $data = UserInfoModel::where('user_id', $user->id)->first();
                 return response()->json([
                     'data' => $data
                 ], Response::HTTP_OK); // Change the status code to 200 (OK)

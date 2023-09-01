@@ -20,21 +20,21 @@ class OrderController extends Controller
         try {
             // Get the order records with their associated userInfo
             $orders = OrderModel::get();
-        
+
             // Initialize an array to store user information for each order
             $orderData = [];
-        
+
             foreach ($orders as $order) {
                 // Fetch the user information using user_id
                 $userInfo = UserInfoModel::where('user_id', $order->user_id)->first();
-        
+
                 // Add order and user information to the array
                 $orderData[] = [
                     'order' => $order,
                     'userInfo' => $userInfo
                 ];
             }
-        
+
             return response()->json([
                 'data' => $orderData
             ], Response::HTTP_OK);
@@ -771,10 +771,66 @@ class OrderController extends Controller
 
     public function checkOut(Request $request)
     {
+        try {
+            // Fetch User ID
+            $user = AuthModel::where('session_login', $request->input('session'))
+                ->where('status', 'VERIFIED')
+                ->first();
+            if ($user) {
+                // Retrieving unpaid products for the user
+                $data = OrderModel::where('user_id', $user->id)->where('status', 'UNPAID')->get();
 
+                // Updating product status and payment method
+                foreach ($data as $order) {
+                    $order->status = "TO SHIP / TO PROCESS";
+                    $order->payment_method = $request->input('payment');
+                    $order->check_out_at = now();
+                    $order->save();
+                }
+
+                // Creating a log for the checkout
+                $userAction = 'CHECK OUT';
+                $details = 'Checked out products with Group ID: ' . $data->pluck('group_id')->implode(', ');
+
+                $create = LogsModel::create([
+                    'user_id' => $user->id,
+                    'ip_address' => $request->ip(),
+                    'user_action' => $userAction,
+                    'details' => $details,
+                    'created_at' => now()
+                ]);
+
+                // Checking if the log was created successfully
+                if ($create) {
+                    return response()->json([
+                        'message' => 'Checkout',
+                    ], Response::HTTP_OK);
+                }
+            }
+            return response()->json([
+                'message' => 'Intruder',
+            ], Response::HTTP_OK);
+        } catch (\Exception $e) {
+            // Handle exceptions and return an error response with CORS headers
+            $errorMessage = $e->getMessage();
+            $errorCode = $e->getCode();
+
+            // Create a JSON error response
+            $response = [
+                'success' => false,
+                'error' => [
+                    'code' => $errorCode,
+                    'message' => $errorMessage,
+                ],
+            ];
+
+            // Add additional error details if available
+            if ($e instanceof \Illuminate\Validation\ValidationException) {
+                $response['error']['details'] = $e->errors();
+            }
+
+            // Return the JSON error response with CORS headers and an appropriate HTTP status code
+            return response()->json($response, Response::HTTP_INTERNAL_SERVER_ERROR)->header('Content-Type', 'application/json');
+        }
     }
-
-
-
-
 }
