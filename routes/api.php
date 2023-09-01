@@ -107,6 +107,9 @@ Route::get('product/unpaid/edit/{id}', [OrderController::class, 'edit']);
 Route::delete('product/order/destroy/{id}', [OrderController::class, 'destroy']);
 // Check Out
 Route::post('product/checkout', [OrderController::class, 'checkOut']);
+// Cancelled
+Route::post('product/cancelled/{id}', [OrderController::class, 'cancelItemOnCart']);
+
 
 // Admin  Products
 Route::get('product/order/index', [OrderController::class, 'index']);
