@@ -553,41 +553,41 @@ class OrderController extends Controller
                     ]);
 
                     if ($create) {
-                        // Fetch the total Quantity
-                        $fetchAllQuantityAndCalculateShippingFee = OrderModel::where('user_id', $user->id)
-                            ->where('status', 'UNPAID')
-                            ->get();
-                        $totalQuantity = 0;
-                        foreach ($fetchAllQuantityAndCalculateShippingFee as $order) {
-                            $totalQuantity += $order->quantity;
-                        }
-    
-                        // Calculate the Shipping Fee
-                        function calculateShippingFee($totalQuantity)
-                        {
-                            $shippingFee = 100; // Base shipping fee
-                            $rangeSize = 5; // Size of each range
-                            $feeIncrement = 100; // Fee increment for each range
-    
-                            // Calculate the range index based on the quantity
-                            $rangeIndex = ceil($totalQuantity / $rangeSize);
-    
-                            // Calculate the shipping fee based on the range index and quantity
-                            $shippingFee += ($rangeIndex - 1) * $feeIncrement;
-    
-                            return number_format($shippingFee, 2); // Format the shipping fee with two decimal places
-                        }
-    
-                        // Saving Now
-                        $updateShippingFeeNow = OrderModel::where('user_id', $user->id)
-                            ->where('status', 'UNPAID')
-                            ->where('role', 'MAIN')
-                            ->first();
-                        $updateShippingFeeNow->shipping_fee = calculateShippingFee($totalQuantity);
-                        if ($updateShippingFeeNow->save() && $data->delete()) {
-                            return response()->json([
-                                'message' => 'Deleted'
-                            ], Response::HTTP_OK);
+                        if ($data->delete()) {
+                            $fetchAllQuantityAndCalculateShippingFee = OrderModel::where('user_id', $user->id)
+                                ->where('status', 'UNPAID')
+                                ->get();
+                            $totalQuantity = 0;
+
+                            foreach ($fetchAllQuantityAndCalculateShippingFee as $order) {
+                                $totalQuantity += $order->quantity;
+                            }
+
+                            function calculateShippingFee($totalQuantity)
+                            {
+                                $shippingFee = 100; // Base shipping fee
+                                $rangeSize = 5; // Size of each range
+                                $feeIncrement = 100; // Fee increment for each range
+
+                                // Calculate the range index based on the quantity
+                                $rangeIndex = ceil($totalQuantity / $rangeSize);
+
+                                // Calculate the shipping fee based on the range index and quantity
+                                $shippingFee += ($rangeIndex - 1) * $feeIncrement;
+
+                                return number_format($shippingFee, 2); // Format the shipping fee with two decimal places
+                            }
+
+                            $updateShippingFeeNow = OrderModel::where('user_id', $user->id)
+                                ->where('status', 'UNPAID')
+                                ->where('role', 'MAIN')
+                                ->first();
+                            $updateShippingFeeNow->shipping_fee = calculateShippingFee($totalQuantity);
+                            if ($updateShippingFeeNow->save()) {
+                                return response()->json([
+                                    'message' => 'Deleted'
+                                ], Response::HTTP_OK);
+                            }
                         }
                     }
                 } else {
@@ -627,41 +627,41 @@ class OrderController extends Controller
                         ]);
 
                         if ($create) {
-                            // Fetch the total Quantity
-                            $fetchAllQuantityAndCalculateShippingFee = OrderModel::where('user_id', $user->id)
-                                ->where('status', 'UNPAID')
-                                ->get();
-                            $totalQuantity = 0;
-                            foreach ($fetchAllQuantityAndCalculateShippingFee as $order) {
-                                $totalQuantity += $order->quantity;
-                            }
-        
-                            // Calculate the Shipping Fee
-                            function calculateShippingFee($totalQuantity)
-                            {
-                                $shippingFee = 100; // Base shipping fee
-                                $rangeSize = 5; // Size of each range
-                                $feeIncrement = 100; // Fee increment for each range
-        
-                                // Calculate the range index based on the quantity
-                                $rangeIndex = ceil($totalQuantity / $rangeSize);
-        
-                                // Calculate the shipping fee based on the range index and quantity
-                                $shippingFee += ($rangeIndex - 1) * $feeIncrement;
-        
-                                return number_format($shippingFee, 2); // Format the shipping fee with two decimal places
-                            }
-        
-                            // Saving Now
-                            $updateShippingFeeNow = OrderModel::where('user_id', $user->id)
-                                ->where('status', 'UNPAID')
-                                ->where('role', 'MAIN')
-                                ->first();
-                            $updateShippingFeeNow->shipping_fee = calculateShippingFee($totalQuantity);
-                            if ($updateShippingFeeNow->save() && $data->delete()) {
-                                return response()->json([
-                                    'message' => 'Deleted'
-                                ], Response::HTTP_OK);
+                            if ($data->delete()) {
+                                $fetchAllQuantityAndCalculateShippingFee = OrderModel::where('user_id', $user->id)
+                                    ->where('status', 'UNPAID')
+                                    ->get();
+                                $totalQuantity = 0;
+
+                                foreach ($fetchAllQuantityAndCalculateShippingFee as $order) {
+                                    $totalQuantity += $order->quantity;
+                                }
+
+                                function calculateShippingFee($totalQuantity)
+                                {
+                                    $shippingFee = 100; // Base shipping fee
+                                    $rangeSize = 5; // Size of each range
+                                    $feeIncrement = 100; // Fee increment for each range
+
+                                    // Calculate the range index based on the quantity
+                                    $rangeIndex = ceil($totalQuantity / $rangeSize);
+
+                                    // Calculate the shipping fee based on the range index and quantity
+                                    $shippingFee += ($rangeIndex - 1) * $feeIncrement;
+
+                                    return number_format($shippingFee, 2); // Format the shipping fee with two decimal places
+                                }
+
+                                $updateShippingFeeNow = OrderModel::where('user_id', $user->id)
+                                    ->where('status', 'UNPAID')
+                                    ->where('role', 'MAIN')
+                                    ->first();
+                                $updateShippingFeeNow->shipping_fee = calculateShippingFee($totalQuantity);
+                                if ($updateShippingFeeNow->save()) {
+                                    return response()->json([
+                                        'message' => 'Deleted'
+                                    ], Response::HTTP_OK);
+                                }
                             }
                         }
                     }
@@ -693,42 +693,43 @@ class OrderController extends Controller
                     'created_at' => now()
                 ]);
 
+                // Calculate Shipping Fee Always
                 if ($create) {
-                    // Fetch the total Quantity
-                    $fetchAllQuantityAndCalculateShippingFee = OrderModel::where('user_id', $user->id)
-                        ->where('status', 'UNPAID')
-                        ->get();
-                    $totalQuantity = 0;
-                    foreach ($fetchAllQuantityAndCalculateShippingFee as $order) {
-                        $totalQuantity += $order->quantity;
-                    }
+                    if ($data->delete()) {
+                        $fetchAllQuantityAndCalculateShippingFee = OrderModel::where('user_id', $user->id)
+                            ->where('status', 'UNPAID')
+                            ->get();
+                        $totalQuantity = 0;
 
-                    // Calculate the Shipping Fee
-                    function calculateShippingFee($totalQuantity)
-                    {
-                        $shippingFee = 100; // Base shipping fee
-                        $rangeSize = 5; // Size of each range
-                        $feeIncrement = 100; // Fee increment for each range
+                        foreach ($fetchAllQuantityAndCalculateShippingFee as $order) {
+                            $totalQuantity += $order->quantity;
+                        }
 
-                        // Calculate the range index based on the quantity
-                        $rangeIndex = ceil($totalQuantity / $rangeSize);
+                        function calculateShippingFee($totalQuantity)
+                        {
+                            $shippingFee = 100; // Base shipping fee
+                            $rangeSize = 5; // Size of each range
+                            $feeIncrement = 100; // Fee increment for each range
 
-                        // Calculate the shipping fee based on the range index and quantity
-                        $shippingFee += ($rangeIndex - 1) * $feeIncrement;
+                            // Calculate the range index based on the quantity
+                            $rangeIndex = ceil($totalQuantity / $rangeSize);
 
-                        return number_format($shippingFee, 2); // Format the shipping fee with two decimal places
-                    }
+                            // Calculate the shipping fee based on the range index and quantity
+                            $shippingFee += ($rangeIndex - 1) * $feeIncrement;
 
-                    // Saving Now
-                    $updateShippingFeeNow = OrderModel::where('user_id', $user->id)
-                        ->where('status', 'UNPAID')
-                        ->where('role', 'MAIN')
-                        ->first();
-                    $updateShippingFeeNow->shipping_fee = calculateShippingFee($totalQuantity);
-                    if ($updateShippingFeeNow->save() && $data->delete()) {
-                        return response()->json([
-                            'message' => 'Deleted'
-                        ], Response::HTTP_OK);
+                            return number_format($shippingFee, 2); // Format the shipping fee with two decimal places
+                        }
+
+                        $updateShippingFeeNow = OrderModel::where('user_id', $user->id)
+                            ->where('status', 'UNPAID')
+                            ->where('role', 'MAIN')
+                            ->first();
+                        $updateShippingFeeNow->shipping_fee = calculateShippingFee($totalQuantity);
+                        if ($updateShippingFeeNow->save()) {
+                            return response()->json([
+                                'message' => 'Deleted'
+                            ], Response::HTTP_OK);
+                        }
                     }
                 }
             }
