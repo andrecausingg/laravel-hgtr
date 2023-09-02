@@ -171,10 +171,8 @@ class OrderController extends Controller
                                 $fetchAllQuantityAndCalculateShippingFee = OrderModel::where('user_id', $user->id)
                                     ->where('status', 'UNPAID')
                                     ->get();
-                                $totalQuantity = 0;
-                                foreach ($fetchAllQuantityAndCalculateShippingFee as $order) {
-                                    $totalQuantity += $order->quantity;
-                                }
+
+                                $totalQuantity = $fetchAllQuantityAndCalculateShippingFee->sum('quantity');
 
                                 // Calculate the Shipping Fee
                                 function calculateShippingFee($totalQuantity)
@@ -259,14 +257,13 @@ class OrderController extends Controller
 
                                 // Calculate Shipping Fee Always
                                 if ($created) {
+                                    // Fetch the total Quantity
                                     $fetchAllQuantityAndCalculateShippingFee = OrderModel::where('user_id', $user->id)
                                         ->where('status', 'UNPAID')
                                         ->get();
-                                    $totalQuantity = 0;
 
-                                    foreach ($fetchAllQuantityAndCalculateShippingFee as $order) {
-                                        $totalQuantity += $order->quantity;
-                                    }
+                                    $totalQuantity = $fetchAllQuantityAndCalculateShippingFee->sum('quantity');
+
 
                                     function calculateShippingFee($totalQuantity)
                                     {
@@ -330,10 +327,9 @@ class OrderController extends Controller
                                 $fetchAllQuantityAndCalculateShippingFee = OrderModel::where('user_id', $user->id)
                                     ->where('status', 'UNPAID')
                                     ->get();
-                                $totalQuantity = 0;
-                                foreach ($fetchAllQuantityAndCalculateShippingFee as $order) {
-                                    $totalQuantity += $order->quantity;
-                                }
+
+                                $totalQuantity = $fetchAllQuantityAndCalculateShippingFee->sum('quantity');
+
 
                                 // Calculate the Shipping Fee
                                 function calculateShippingFee($totalQuantity)
