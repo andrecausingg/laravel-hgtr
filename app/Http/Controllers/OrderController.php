@@ -525,7 +525,7 @@ class OrderController extends Controller
             if ($data->role == 'MAIN') {
                 // Delete if the role is MAIN and one only on group_od
                 $count = OrderModel::where('group_id', $data->group_id)->count();
-                if ($count == 1) {
+                if ($count === 1) {
                     // Delete if not role MAIN
                     $userAction = 'DELETE';
                     $details = 'Deleted Product Information with Group ID: ' . $data->group_id . "\n" .
@@ -554,40 +554,9 @@ class OrderController extends Controller
 
                     if ($create) {
                         if ($data->delete()) {
-                            $fetchAllQuantityAndCalculateShippingFee = OrderModel::where('user_id', $user->id)
-                                ->where('status', 'UNPAID')
-                                ->get();
-                            $totalQuantity = 0;
-
-                            foreach ($fetchAllQuantityAndCalculateShippingFee as $order) {
-                                $totalQuantity += $order->quantity;
-                            }
-
-                            function calculateShippingFee($totalQuantity)
-                            {
-                                $shippingFee = 100; // Base shipping fee
-                                $rangeSize = 5; // Size of each range
-                                $feeIncrement = 100; // Fee increment for each range
-
-                                // Calculate the range index based on the quantity
-                                $rangeIndex = ceil($totalQuantity / $rangeSize);
-
-                                // Calculate the shipping fee based on the range index and quantity
-                                $shippingFee += ($rangeIndex - 1) * $feeIncrement;
-
-                                return number_format($shippingFee, 2); // Format the shipping fee with two decimal places
-                            }
-
-                            $updateShippingFeeNow = OrderModel::where('user_id', $user->id)
-                                ->where('status', 'UNPAID')
-                                ->where('role', 'MAIN')
-                                ->first();
-                            $updateShippingFeeNow->shipping_fee = calculateShippingFee($totalQuantity);
-                            if ($updateShippingFeeNow->save()) {
-                                return response()->json([
-                                    'message' => 'Deleted'
-                                ], Response::HTTP_OK);
-                            }
+                            return response()->json([
+                                'message' => 'Deleted'
+                            ], Response::HTTP_OK);
                         }
                     }
                 } else {
