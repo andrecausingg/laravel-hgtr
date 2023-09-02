@@ -803,36 +803,185 @@ class OrderController extends Controller
 
                 // Retrieve the order to cancel
                 $data = OrderModel::where('user_id', $user->id)
-                    ->where('status', 'TO SHIP / TO PROCESS')
                     ->where('id', $id)
-                    ->first(); // Use "first()" to retrieve a single record
+                    ->first();
 
-                if ($data->role === 'MAIN') {
-                    // Pass the role main to the others
-                    $affectedRows = OrderModel::where('group_id', $data->group_id)
-                        ->where('id', '!=', $id)
-                        ->where('user_id', $user->id)
-                        ->limit(1)
-                        ->update([
-                            'role' => 'MAIN',
-                            'shipping_fee' => $data->shipping_fee,
-                        ]);
-
-                    if ($affectedRows) {
-                        // Remove self Role and shipping Fee then change status to CANCELLED
-                        $affectedRowsSelf = OrderModel::where('group_id', $data->group_id)
-                            ->where('id', '=', $id)
+                if ($data) { // Check if the order was found
+                    if ($data->role == 'MAIN') {
+                        // Pass the role main to the others
+                        $affectedRows = OrderModel::where('group_id', $data->group_id)
+                            ->where('id', '!=', $id)
                             ->where('user_id', $user->id)
-                            ->limit(1)
                             ->update([
-                                'role' => '',
-                                'shipping_fee' => 0.00,
-                                'status' => 'CANCELLED',
-                                'reason_cancel' => $request->input('reasonCancel'),
-                                'cancel_at' => now()
+                                'role' => 'MAIN',
+                                'shipping_fee' => $data->shipping_fee,
                             ]);
 
-                        if ($affectedRowsSelf) {
+                        if ($affectedRows) {
+                            // Remove self Role and shipping Fee then change status to CANCELLED
+                            $affectedRowsSelf = OrderModel::where('group_id', $data->group_id)
+                                ->where('id', '=', $id)
+                                ->where('user_id', $user->id)
+                                ->update([
+                                    'role' => '',
+                                    'shipping_fee' => 0.00,
+                                    'status' => 'CANCELLED',
+                                    'reason_cancel' => $request->input('reasonCancel'),
+                                    'cancel_at' => now()
+                                ]);
+
+                            if ($affectedRowsSelf) {
+                                $userAction = 'CANCELLED';
+                                $details = 'Cancelled Product Information with Group ID: ' . $data->group_id . "\n" .
+                                    'Order ID: ' . $data->order_id . "\n" .
+                                    'Product Group ID: ' . $data->product_group_id . "\n" .
+                                    'Role: ' . $data->role . "\n" .
+                                    'Category: ' . $data->category . "\n" .
+                                    'Name: ' . $data->name . "\n" .
+                                    'Image Name: ' . $data->image . "\n" .
+                                    'Size: ' . $data->size . "\n" .
+                                    'Color: ' . $data->color . "\n" .
+                                    'Quantity: ' . $data->quantity . "\n" .
+                                    'Discount: ' . $data->discount . "\n" .
+                                    'Description: ' . $data->description . "\n" .
+                                    'Product Price: ' . $data->product_price . "\n" .
+                                    'Shipping Fee: ' . $data->shipping_fee . "\n" .
+                                    'Total Price: ' . $data->total_price . "\n" .
+                                    'Reason to Cancel' . $request->input('reasonCancel') . "\n";
+
+                                // Create Log
+                                $create = LogsModel::create([
+                                    'user_id' => $user->id,
+                                    'ip_address' => $request->ip(),
+                                    'user_action' => $userAction,
+                                    'details' => $details,
+                                    'created_at' => now()
+                                ]);
+
+                                if ($create) {
+                                    // Updating the Total Shipping fee now
+                                    // Fetch the total Quantity
+                                    $fetchAllQuantityAndCalculateShippingFee = OrderModel::where('user_id', $user->id)
+                                        ->where('status', 'TO SHIP / TO PROCESS')
+                                        ->get();
+
+                                    $totalQuantity = 0;
+                                    foreach ($fetchAllQuantityAndCalculateShippingFee as $order) {
+                                        $totalQuantity += $order->quantity;
+                                    }
+
+                                    // Calculate the Shipping Fee
+                                    function calculateShippingFee($totalQuantity)
+                                    {
+                                        $shippingFee = 100; // Base shipping fee
+                                        $rangeSize = 5; // Size of each range
+                                        $feeIncrement = 100; // Fee increment for each range
+
+                                        // Calculate the range index based on the quantity
+                                        $rangeIndex = ceil($totalQuantity / $rangeSize);
+
+                                        // Calculate the shipping fee based on the range index and quantity
+                                        $shippingFee += ($rangeIndex - 1) * $feeIncrement;
+
+                                        return number_format($shippingFee, 2); // Format the shipping fee with two decimal places
+                                    }
+
+                                    // Saving Now
+                                    $updateShippingFeeNow = OrderModel::where('user_id', $user->id)
+                                        ->where('status', 'TO SHIP / TO PROCESS')
+                                        ->where('role', 'MAIN')
+                                        ->first();
+                                    $updateShippingFeeNow->shipping_fee = calculateShippingFee($totalQuantity);
+
+                                    if ($updateShippingFeeNow->save()) {
+                                        return response()->json([
+                                            'message' => 'Cancelled'
+                                        ], Response::HTTP_OK);
+                                    }
+                                }
+                            }
+                        } else {
+                            // Cancelled immediate if role is not MAIN
+                            $data->status = 'CANCELLED';
+                            $data->cancel_at = now();
+                            $data->reason_cancel = $request->input('reasonCancel');
+                            if ($data->save()) {
+                                $userAction = 'CANCELLED';
+                                $details = 'Cancelled Product Information with Group ID: ' . $data->group_id . "\n" .
+                                    'Order ID: ' . $data->order_id . "\n" .
+                                    'Product Group ID: ' . $data->product_group_id . "\n" .
+                                    'Role: ' . $data->role . "\n" .
+                                    'Category: ' . $data->category . "\n" .
+                                    'Name: ' . $data->name . "\n" .
+                                    'Image Name: ' . $data->image . "\n" .
+                                    'Size: ' . $data->size . "\n" .
+                                    'Color: ' . $data->color . "\n" .
+                                    'Quantity: ' . $data->quantity . "\n" .
+                                    'Discount: ' . $data->discount . "\n" .
+                                    'Description: ' . $data->description . "\n" .
+                                    'Product Price: ' . $data->product_price . "\n" .
+                                    'Shipping Fee: ' . $data->shipping_fee . "\n" .
+                                    'Total Price: ' . $data->total_price . "\n" .
+                                    'Reason to Cancel' . $request->input('reasonCancel') . "\n";
+
+                                // Create Log
+                                $create = LogsModel::create([
+                                    'user_id' => $user->id,
+                                    'ip_address' => $request->ip(),
+                                    'user_action' => $userAction,
+                                    'details' => $details,
+                                    'created_at' => now()
+                                ]);
+
+                                if ($create) {
+                                    // Updating the Total Shipping fee now
+                                    // Fetch the total Quantity
+                                    $fetchAllQuantityAndCalculateShippingFee = OrderModel::where('user_id', $user->id)
+                                        ->where('status', 'TO SHIP / TO PROCESS')
+                                        ->get();
+
+                                    $totalQuantity = 0;
+                                    foreach ($fetchAllQuantityAndCalculateShippingFee as $order) {
+                                        $totalQuantity += $order->quantity;
+                                    }
+
+                                    // Calculate the Shipping Fee
+                                    function calculateShippingFee($totalQuantity)
+                                    {
+                                        $shippingFee = 100; // Base shipping fee
+                                        $rangeSize = 5; // Size of each range
+                                        $feeIncrement = 100; // Fee increment for each range
+
+                                        // Calculate the range index based on the quantity
+                                        $rangeIndex = ceil($totalQuantity / $rangeSize);
+
+                                        // Calculate the shipping fee based on the range index and quantity
+                                        $shippingFee += ($rangeIndex - 1) * $feeIncrement;
+
+                                        return number_format($shippingFee, 2); // Format the shipping fee with two decimal places
+                                    }
+
+                                    // Saving Now
+                                    $updateShippingFeeNow = OrderModel::where('user_id', $user->id)
+                                        ->where('status', 'TO SHIP / TO PROCESS')
+                                        ->where('role', 'MAIN')
+                                        ->first();
+                                    $updateShippingFeeNow->shipping_fee = calculateShippingFee($totalQuantity);
+
+                                    if ($updateShippingFeeNow->save()) {
+                                        return response()->json([
+                                            'message' => 'Cancelled'
+                                        ], Response::HTTP_OK);
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        // Cancelled imidate if role is not MAIN
+                        $data->status = 'CANCELLED';
+                        $data->cancel_at = now();
+                        $data->reason_cancel = $request->input('reasonCancel');
+                        if ($data->save()) {
                             $userAction = 'CANCELLED';
                             $details = 'Cancelled Product Information with Group ID: ' . $data->group_id . "\n" .
                                 'Order ID: ' . $data->order_id . "\n" .
@@ -848,8 +997,8 @@ class OrderController extends Controller
                                 'Description: ' . $data->description . "\n" .
                                 'Product Price: ' . $data->product_price . "\n" .
                                 'Shipping Fee: ' . $data->shipping_fee . "\n" .
-                                'Total Price: ' . $data->total_price . "\n";
-                            'Reason to Cancel' . $request->input('reasonCancel') . "\n";
+                                'Total Price: ' . $data->total_price . "\n" .
+                                'Reason to Cancel' . $request->input('reasonCancel') . "\n";
 
                             // Create Log
                             $create = LogsModel::create([
@@ -900,87 +1049,10 @@ class OrderController extends Controller
                                         'message' => 'Cancelled'
                                     ], Response::HTTP_OK);
                                 }
-
-                            }
-                        }
-                    }
-                } else {
-                    // Cancelled imidate if role is not MAIN
-                    $data->status = 'CANCELLED';
-                    $data->cancel_at = now();
-                    $data->reason_cancel = $request->input('reasonCancel');
-                    if ($data->save()) {
-                        $userAction = 'CANCELLED';
-                        $details = 'Cancelled Product Information with Group ID: ' . $data->group_id . "\n" .
-                            'Order ID: ' . $data->order_id . "\n" .
-                            'Product Group ID: ' . $data->product_group_id . "\n" .
-                            'Role: ' . $data->role . "\n" .
-                            'Category: ' . $data->category . "\n" .
-                            'Name: ' . $data->name . "\n" .
-                            'Image Name: ' . $data->image . "\n" .
-                            'Size: ' . $data->size . "\n" .
-                            'Color: ' . $data->color . "\n" .
-                            'Quantity: ' . $data->quantity . "\n" .
-                            'Discount: ' . $data->discount . "\n" .
-                            'Description: ' . $data->description . "\n" .
-                            'Product Price: ' . $data->product_price . "\n" .
-                            'Shipping Fee: ' . $data->shipping_fee . "\n" .
-                            'Total Price: ' . $data->total_price . "\n" .
-                            'Reason to Cancel' . $request->input('reasonCancel') . "\n";
-
-                        // Create Log
-                        $create = LogsModel::create([
-                            'user_id' => $user->id,
-                            'ip_address' => $request->ip(),
-                            'user_action' => $userAction,
-                            'details' => $details,
-                            'created_at' => now()
-                        ]);
-
-                        if ($create) {
-                            // Updating the Total Shipping fee now
-                            // Fetch the total Quantity
-                            $fetchAllQuantityAndCalculateShippingFee = OrderModel::where('user_id', $user->id)
-                                ->where('status', 'TO SHIP / TO PROCESS')
-                                ->get();
-
-                            $totalQuantity = 0;
-                            foreach ($fetchAllQuantityAndCalculateShippingFee as $order) {
-                                $totalQuantity += $order->quantity;
-                            }
-
-                            // Calculate the Shipping Fee
-                            function calculateShippingFee($totalQuantity)
-                            {
-                                $shippingFee = 100; // Base shipping fee
-                                $rangeSize = 5; // Size of each range
-                                $feeIncrement = 100; // Fee increment for each range
-
-                                // Calculate the range index based on the quantity
-                                $rangeIndex = ceil($totalQuantity / $rangeSize);
-
-                                // Calculate the shipping fee based on the range index and quantity
-                                $shippingFee += ($rangeIndex - 1) * $feeIncrement;
-
-                                return number_format($shippingFee, 2); // Format the shipping fee with two decimal places
-                            }
-
-                            // Saving Now
-                            $updateShippingFeeNow = OrderModel::where('user_id', $user->id)
-                                ->where('status', 'TO SHIP / TO PROCESS')
-                                ->where('role', 'MAIN')
-                                ->first();
-                            $updateShippingFeeNow->shipping_fee = calculateShippingFee($totalQuantity);
-
-                            if ($updateShippingFeeNow->save()) {
-                                return response()->json([
-                                    'message' => 'Cancelled'
-                                ], Response::HTTP_OK);
                             }
                         }
                     }
                 }
-
             } else {
                 return response()->json([
                     'message' => 'Intruder'
@@ -1078,9 +1150,9 @@ class OrderController extends Controller
 
             if ($user) {
                 $order = OrderModel::where('id', $id)
-                ->where('status', 'TO SHIP / TO PROCESS')
-                ->first();
-            
+                    ->where('status', 'TO SHIP / TO PROCESS')
+                    ->first();
+
                 if ($order) {
                     $order->status = 'TO SHIP / PROCESSED';
                     $order->mark_as_done_at = now();
@@ -1192,7 +1264,7 @@ class OrderController extends Controller
                         'message' => 'No orders found with the given criteria'
                     ], Response::HTTP_NOT_FOUND);
                 }
-            }else{
+            } else {
                 return response()->json([
                     'message' => 'Intruder'
                 ], Response::HTTP_NOT_FOUND);
