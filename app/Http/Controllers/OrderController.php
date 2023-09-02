@@ -114,7 +114,7 @@ class OrderController extends Controller
                 $request->validate([
                     'color' => 'required|string|max:255',
                     'size' => 'required|string|max:255',
-                    'quantity' => 'required|min:1',
+                    'quantity' => 'required|number|min:1',
                     'group_id' => 'required|string',
                 ]);
 
