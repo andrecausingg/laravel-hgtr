@@ -109,7 +109,6 @@ Route::delete('product/order/destroy/{id}', [OrderController::class, 'destroy'])
 Route::post('product/checkout', [OrderController::class, 'checkOut']);
 // Edit Product Selected on Unpaid
 Route::get('product/to-ship/get-cancel-item/{id}', [OrderController::class, 'getCancelItemOnCart']);
-
 // Cancel
 Route::post('product/cancelled/{id}', [OrderController::class, 'cancelItemOnCart']);
 

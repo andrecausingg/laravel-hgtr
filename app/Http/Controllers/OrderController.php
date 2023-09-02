@@ -797,6 +797,10 @@ class OrderController extends Controller
                 ->where('status', 'VERIFIED')
                 ->first();
             if ($user) {
+                $request->validate([
+                    'reasonCancel' => 'required|string',
+                ]);
+
                 // Retrieve the order to cancel
                 $data = OrderModel::where('user_id', $user->id)
                     ->where('status', 'TO SHIP / TO PROCESS')
@@ -1073,8 +1077,10 @@ class OrderController extends Controller
                 ->first();
 
             if ($user) {
-                $order = OrderModel::find($id)->where('status', 'TO SHIP / TO PROCESS');
-
+                $order = OrderModel::where('id', $id)
+                ->where('status', 'TO SHIP / TO PROCESS')
+                ->first();
+            
                 if ($order) {
                     $order->status = 'TO SHIP / PROCESSED';
                     $order->mark_as_done_at = now();
@@ -1186,6 +1192,10 @@ class OrderController extends Controller
                         'message' => 'No orders found with the given criteria'
                     ], Response::HTTP_NOT_FOUND);
                 }
+            }else{
+                return response()->json([
+                    'message' => 'Intruder'
+                ], Response::HTTP_NOT_FOUND);
             }
         } catch (\Exception $e) {
             // Handle exceptions and return an error response with CORS headers
