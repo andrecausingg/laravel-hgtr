@@ -1180,6 +1180,7 @@ class OrderController extends Controller
                     ]);
         
                     if ($created) {
+                        $data->status = "RETURN REFUND / TO RESPOND";
                         $data->return_reason = $request->input('returnReason');
                         $data->return_description = $request->input('description');
                         $data->return_solution = $request->input('returnSolution');
