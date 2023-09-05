@@ -8,6 +8,7 @@ use App\Models\OrderModel;
 use App\Models\ProductModel;
 use App\Models\UserInfoModel;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -1106,31 +1107,102 @@ class OrderController extends Controller
             $user = AuthModel::where('session_login', $request->input('session'))
                 ->where('status', 'VERIFIED')
                 ->first();
+        
             if ($user) {
                 // Retrieve the order to cancel
                 $data = OrderModel::where('user_id', $user->id)
                     ->where('status', 'SHIPPING')
                     ->where('id', $id)
-                    ->first(); // Use "first()" to retrieve a single record
-
+                    ->first();
+        
                 if ($data) {
                     $request->validate([
-                        'color' => 'required|string|max:255',
-                        'size' => 'required|string|max:255',
-                        'quantity' => 'required|min:1',
-                        'group_id' => 'required|string',
+                        'returnReason' => 'required|string|max:255',
+                        'image1' => 'required|image|mimes:jpeg,png,jpg|max:2048',
+                        'image2' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+                        'image3' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+                        'image4' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+                        'description' => 'string|max:255',
+                        'returnSolution' => 'required|string|max:255',
                     ]);
-
-
+        
+                    // Generate unique filenames for images
+                    $image1 = $request->file('image1');
+                    $image2 = $request->file('image2');
+                    $image3 = $request->file('image3');
+                    $image4 = $request->file('image4');
+        
+                    $imageActualExt1 = $image1->getClientOriginalExtension();
+                    $imageActualExt2 = $image2 ? $image2->getClientOriginalExtension() : '';
+                    $imageActualExt3 = $image3 ? $image3->getClientOriginalExtension() : '';
+                    $imageActualExt4 = $image4 ? $image4->getClientOriginalExtension() : '';
+        
+                    $filename1 = uniqid() . "_" . time() . "_" . mt_rand() . "." . $imageActualExt1;
+                    $filename2 = $image2 ? uniqid() . "_" . time() . "_" . mt_rand() . "." . $imageActualExt2 : '';
+                    $filename3 = $image3 ? uniqid() . "_" . time() . "_" . mt_rand() . "." . $imageActualExt3 : '';
+                    $filename4 = $image4 ? uniqid() . "_" . time() . "_" . mt_rand() . "." . $imageActualExt4 : '';
+        
+                    // Store the images on the 'public' disk with the generated filenames
+                    Storage::disk('public')->put($filename1, file_get_contents($image1));
+                    if ($image2) Storage::disk('public')->put($filename2, file_get_contents($image2));
+                    if ($image3) Storage::disk('public')->put($filename3, file_get_contents($image3));
+                    if ($image4) Storage::disk('public')->put($filename4, file_get_contents($image4));
+        
+                    // Delete if not role MAIN
+                    $userAction = 'RETURN';
+                    $details = 'Return Product Information with Group ID: ' . $data->group_id . "\n" .
+                        'Order ID: ' . $data->id . "\n" .  // Changed $data to $data->id
+                        'Product Group ID: ' . $data->group_id . "\n" .
+                        'Role: ' . $data->role . "\n" .
+                        'Category: ' . $data->category . "\n" .
+                        'Product Name: ' . $data->name . "\n" .
+                        'Image Name: ' . $data->image . "\n" .
+                        'Size: ' . $data->size . "\n" .
+                        'Color: ' . $data->color . "\n" .
+                        'Quantity: ' . $data->quantity . "\n" .  // Changed $data to $data->quantity
+                        'Discount: ' . $data->discount . "\n" .
+                        'Description: ' . $data->description . "\n" .
+                        'Product Price: ' . $data->price . "\n" .
+                        'Shipping Fee: ' . $data->shipping_fee . "\n" .  // Changed $data to $data->shipping_fee
+                        'Total Price: ' . $data->total_price . "\n" .  // Changed $data to $data->total_price
+                        'Status: ' . $data->status . "\n" .
+                        'Reason: ' . $request->input('returnReason') . "\n" .
+                        'Description: ' . $request->input('description') . "\n" .
+                        'Solution: ' . $request->input('returnSolution') . "\n";
+        
+                    // Create Log
+                    $created = LogsModel::create([
+                        'user_id' => $user->id,
+                        'ip_address' => $request->ip(),
+                        'user_action' => $userAction,
+                        'details' => $details,
+                        'created_at' => now(),
+                    ]);
+        
+                    if ($created) {
+                        $data->return_reason = $request->input('returnReason');
+                        $data->return_description = $request->input('description');
+                        $data->return_solution = $request->input('returnSolution');
+        
+                        $data->return_image1 = $filename1;
+                        $data->return_image2 = $filename2;
+                        $data->return_image3 = $filename3;
+                        $data->return_image4 = $filename4;
+                        $data->return_at = now();
+        
+                        if ($data->save()) {
+                            return response()->json([
+                                'message' => 'Created',
+                            ], Response::HTTP_OK);
+                        }
+                    }
                 }
-
             } else {
                 return response()->json([
-                    'message' => 'Intruder'
+                    'message' => 'Intruder',
                 ], Response::HTTP_OK);
             }
-
-        } catch (\Exception $e) {
+        }catch (\Exception $e) {
             // Handle exceptions and return an error response with CORS headers
             $errorMessage = $e->getMessage();
             $errorCode = $e->getCode();

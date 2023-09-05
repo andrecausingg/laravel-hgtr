@@ -111,6 +111,8 @@ Route::post('product/checkout', [OrderController::class, 'checkOut']);
 Route::get('product/to-ship/get-cancel-item/{id}', [OrderController::class, 'getCancelItemOnCart']);
 // Cancel
 Route::post('product/cancelled/{id}', [OrderController::class, 'cancelItemOnCart']);
+// Return
+Route::post('product/return/{id}', [OrderController::class, 'return']);
 
 // Admin Orders
 // Display order
