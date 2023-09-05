@@ -134,3 +134,11 @@ Route::post('product/order/fail-per-item/{id}', [OrderController::class, 'failed
 Route::post('product/order/complete-all-item/{id}', [OrderController::class, 'completeAll']);
 // Complete All item
 Route::post('product/order/fail-all-item/{id}', [OrderController::class, 'failAll']);
+// Accept Return item
+Route::post('product/order/return-accept/{id}', [OrderController::class, 'returnAccept']);
+// Decline Return item
+Route::post('product/order/return-decline/{id}', [OrderController::class, 'returnDecline']);
+// Complete Return item
+Route::post('product/order/return-complete/{id}', [OrderController::class, 'returnComplete']);
+// Fail Return item
+Route::post('product/order/return-fail/{id}', [OrderController::class, 'returnFail']);

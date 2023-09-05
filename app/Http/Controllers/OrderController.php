@@ -8,6 +8,7 @@ use App\Models\OrderModel;
 use App\Models\ProductModel;
 use App\Models\UserInfoModel;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
@@ -253,7 +254,7 @@ class OrderController extends Controller
                                     'ip_address' => $request->ip(),
                                     'user_action' => $userAction,
                                     'details' => $details,
-                                    'created_at' => now()
+                                    'created_at' => Carbon::now()
                                 ]);
 
                                 // Calculate Shipping Fee Always
@@ -416,7 +417,7 @@ class OrderController extends Controller
                                     'ip_address' => $request->ip(),
                                     'user_action' => $userAction,
                                     'details' => $details,
-                                    'created_at' => now()
+                                    'created_at' => Carbon::now()
                                 ]);
 
                                 if ($create) {
@@ -546,7 +547,7 @@ class OrderController extends Controller
                         'ip_address' => $request->ip(),
                         'user_action' => $userAction,
                         'details' => $details,
-                        'created_at' => now()
+                        'created_at' => Carbon::now()
                     ]);
 
                     if ($create) {
@@ -589,7 +590,7 @@ class OrderController extends Controller
                             'ip_address' => $request->ip(),
                             'user_action' => $userAction,
                             'details' => $details,
-                            'created_at' => now()
+                            'created_at' => Carbon::now()
                         ]);
 
                         if ($create) {
@@ -656,7 +657,7 @@ class OrderController extends Controller
                     'ip_address' => $request->ip(),
                     'user_action' => $userAction,
                     'details' => $details,
-                    'created_at' => now()
+                    'created_at' => Carbon::now()
                 ]);
 
                 // Calculate Shipping Fee Always
@@ -743,7 +744,7 @@ class OrderController extends Controller
                 foreach ($data as $order) {
                     $order->status = "TO SHIP / TO PROCESS";
                     $order->payment_method = $request->input('payment');
-                    $order->check_out_at = now();
+                    $order->check_out_at = Carbon::now();
                     $order->save();
                 }
 
@@ -756,7 +757,7 @@ class OrderController extends Controller
                     'ip_address' => $request->ip(),
                     'user_action' => $userAction,
                     'details' => $details,
-                    'created_at' => now()
+                    'created_at' => Carbon::now()
                 ]);
 
                 // Checking if the log was created successfully
@@ -861,7 +862,7 @@ class OrderController extends Controller
                         if ($count == 1) {
                             // Cancelled imidate if role is not MAIN
                             $data->status = 'CANCELLED';
-                            $data->cancel_at = now();
+                            $data->cancel_at = Carbon::now();
                             $data->reason_cancel = $request->input('reasonCancel');
                             if ($data->save()) {
                                 $userAction = 'CANCELLED';
@@ -888,7 +889,7 @@ class OrderController extends Controller
                                     'ip_address' => $request->ip(),
                                     'user_action' => $userAction,
                                     'details' => $details,
-                                    'created_at' => now()
+                                    'created_at' => Carbon::now()
                                 ]);
 
                                 if ($create) {
@@ -917,7 +918,7 @@ class OrderController extends Controller
                                         'shipping_fee' => 0.00,
                                         'status' => 'CANCELLED',
                                         'reason_cancel' => $request->input('reasonCancel'),
-                                        'cancel_at' => now()
+                                        'cancel_at' => Carbon::now()
                                     ]);
 
                                 if ($affectedRowsSelf) {
@@ -945,7 +946,7 @@ class OrderController extends Controller
                                         'ip_address' => $request->ip(),
                                         'user_action' => $userAction,
                                         'details' => $details,
-                                        'created_at' => now()
+                                        'created_at' => Carbon::now()
                                     ]);
 
                                     if ($create) {
@@ -995,7 +996,7 @@ class OrderController extends Controller
                     } else {
                         // Cancelled imidate if role is not MAIN
                         $data->status = 'CANCELLED';
-                        $data->cancel_at = now();
+                        $data->cancel_at = Carbon::now();
                         $data->reason_cancel = $request->input('reasonCancel');
                         if ($data->save()) {
                             $userAction = 'CANCELLED';
@@ -1022,7 +1023,7 @@ class OrderController extends Controller
                                 'ip_address' => $request->ip(),
                                 'user_action' => $userAction,
                                 'details' => $details,
-                                'created_at' => now()
+                                'created_at' => Carbon::now()
                             ]);
 
                             if ($create) {
@@ -1179,7 +1180,7 @@ class OrderController extends Controller
                         'ip_address' => $request->ip(),
                         'user_action' => $userAction,
                         'details' => $details,
-                        'created_at' => now(),
+                        'created_at' => Carbon::now(),
                     ]);
 
                     if ($created) {
@@ -1192,7 +1193,7 @@ class OrderController extends Controller
                         $data->return_image2 = $filename2;
                         $data->return_image3 = $filename3;
                         $data->return_image4 = $filename4;
-                        $data->return_at = now();
+                        $data->return_at = Carbon::now();
 
                         if ($data->save()) {
                             return response()->json([
@@ -1240,13 +1241,13 @@ class OrderController extends Controller
 
             if ($user) {
                 $order = OrderModel::where('id', $id)
-                ->where('status', 'SHIPPING')
-                ->where('user_id', $user->id)
-                ->first(); // Use first() to retrieve the order
+                    ->where('status', 'SHIPPING')
+                    ->where('user_id', $user->id)
+                    ->first(); // Use first() to retrieve the order
 
                 if ($order) {
                     $order->status = 'COMPLETED';
-                    $order->completed_at = now();
+                    $order->completed_at = Carbon::now();
 
                     if ($order->save()) {
                         $userAction = 'COMPLETE';
@@ -1272,7 +1273,7 @@ class OrderController extends Controller
                             'ip_address' => $request->ip(),
                             'user_action' => $userAction,
                             'details' => $details,
-                            'created_at' => now()
+                            'created_at' => Carbon::now()
                         ]);
 
                         if ($createLog) {
@@ -1331,7 +1332,7 @@ class OrderController extends Controller
 
                 if ($order) {
                     $order->status = 'TO SHIP / PROCESSED';
-                    $order->mark_as_done_at = now();
+                    $order->mark_as_done_at = Carbon::now();
 
                     if ($order->save()) {
                         $userAction = 'MARK AS DONE';
@@ -1357,7 +1358,7 @@ class OrderController extends Controller
                             'ip_address' => $request->ip(),
                             'user_action' => $userAction,
                             'details' => $details,
-                            'created_at' => now()
+                            'created_at' => Carbon::now()
                         ]);
 
                         if ($createLog) {
@@ -1414,7 +1415,7 @@ class OrderController extends Controller
                     ->where('status', 'TO SHIP / TO PROCESS')
                     ->update([
                         'status' => 'TO SHIP / PROCESSED',
-                        'mark_as_done_at' => now()
+                        'mark_as_done_at' => Carbon::now()
                     ]);
 
                 if ($affectedRows > 0) {
@@ -1427,7 +1428,7 @@ class OrderController extends Controller
                         'ip_address' => $request->ip(),
                         'user_action' => $userAction,
                         'details' => $details,
-                        'created_at' => now()
+                        'created_at' => Carbon::now()
                     ]);
 
                     if ($create) {
@@ -1483,7 +1484,7 @@ class OrderController extends Controller
                     ->where('status', 'TO SHIP / PROCESSED')
                     ->update([
                         'status' => 'SHIPPING',
-                        'ship_at' => now()
+                        'ship_at' => Carbon::now()
                     ]);
 
                 if ($affectedRows > 0) {
@@ -1496,7 +1497,7 @@ class OrderController extends Controller
                         'ip_address' => $request->ip(),
                         'user_action' => $userAction,
                         'details' => $details,
-                        'created_at' => now()
+                        'created_at' => Carbon::now()
                     ]);
 
                     if ($create) {
@@ -1509,7 +1510,7 @@ class OrderController extends Controller
                         'message' => 'No orders found with the given criteria'
                     ], Response::HTTP_NOT_FOUND);
                 }
-            }else {
+            } else {
                 return response()->json([
                     'message' => 'Intruder'
                 ], Response::HTTP_NOT_FOUND);
@@ -1552,7 +1553,7 @@ class OrderController extends Controller
 
                 if ($order) {
                     $order->status = 'COMPLETED';
-                    $order->completed_at = now();
+                    $order->completed_at = Carbon::now();
 
                     if ($order->save()) {
                         $userAction = 'COMPLETE';
@@ -1578,7 +1579,7 @@ class OrderController extends Controller
                             'ip_address' => $request->ip(),
                             'user_action' => $userAction,
                             'details' => $details,
-                            'created_at' => now()
+                            'created_at' => Carbon::now()
                         ]);
 
                         if ($createLog) {
@@ -1635,7 +1636,7 @@ class OrderController extends Controller
 
                 if ($order) {
                     $order->status = 'FAILED';
-                    $order->failed_at = now();
+                    $order->failed_at = Carbon::now();
 
                     if ($order->save()) {
                         $userAction = 'FAIL';
@@ -1661,7 +1662,7 @@ class OrderController extends Controller
                             'ip_address' => $request->ip(),
                             'user_action' => $userAction,
                             'details' => $details,
-                            'created_at' => now()
+                            'created_at' => Carbon::now()
                         ]);
 
                         if ($createLog) {
@@ -1718,7 +1719,7 @@ class OrderController extends Controller
                     ->where('status', 'SHIPPING')
                     ->update([
                         'status' => 'COMPLETED',
-                        'completed_at' => now()
+                        'completed_at' => Carbon::now()
                     ]);
 
                 if ($affectedRows > 0) {
@@ -1731,7 +1732,7 @@ class OrderController extends Controller
                         'ip_address' => $request->ip(),
                         'user_action' => $userAction,
                         'details' => $details,
-                        'created_at' => now()
+                        'created_at' => Carbon::now()
                     ]);
 
                     if ($create) {
@@ -1783,7 +1784,7 @@ class OrderController extends Controller
                     ->where('status', 'SHIPPING')
                     ->update([
                         'status' => 'FAILED',
-                        'failed_at' => now()
+                        'failed_at' => Carbon::now()
                     ]);
 
                 if ($affectedRows > 0) {
@@ -1796,7 +1797,7 @@ class OrderController extends Controller
                         'ip_address' => $request->ip(),
                         'user_action' => $userAction,
                         'details' => $details,
-                        'created_at' => now()
+                        'created_at' => Carbon::now()
                     ]);
 
                     if ($create) {
@@ -1809,6 +1810,353 @@ class OrderController extends Controller
                         'message' => 'No orders found with the given criteria'
                     ], Response::HTTP_NOT_FOUND);
                 }
+            }
+        } catch (\Exception $e) {
+            // Handle exceptions and return an error response with CORS headers
+            $errorMessage = $e->getMessage();
+            $errorCode = $e->getCode();
+
+            // Create a JSON error response
+            $response = [
+                'success' => false,
+                'error' => [
+                    'code' => $errorCode,
+                    'message' => $errorMessage,
+                ],
+            ];
+
+            // Add additional error details if available
+            if ($e instanceof \Illuminate\Validation\ValidationException) {
+                $response['error']['details'] = $e->errors();
+            }
+
+            // Return the JSON error response with CORS headers and an appropriate HTTP status code
+            return response()->json($response, Response::HTTP_INTERNAL_SERVER_ERROR)->header('Content-Type', 'application/json');
+        }
+    }
+
+    // RETURN TO ACcEPT PER ITEM | ADMIN
+    public function returnAccept(Request $request, $id)
+    {
+        try {
+            // Fetch User ID
+            $user = AuthModel::where('session_login', $request->input('session'))
+                ->where('status', 'VERIFIED')
+                ->first();
+
+            if ($user) {
+                $order = OrderModel::find($id);
+
+                if ($order) {
+                    $order->status = 'RETURN REFUND / ACCEPT';
+                    $order->return_accept_at = Carbon::now();
+
+                    if ($order->save()) {
+                        $userAction = 'RETURN ACCEPT';
+                        $details = "Return Accept this product Information with Group ID: {$order->group_id}\n" .
+                            "Order ID: {$order->order_id}\n" .
+                            "Product Group ID: {$order->product_group_id}\n" .
+                            "Role: {$order->role}\n" .
+                            "Category: {$order->category}\n" .
+                            "Name: {$order->name}\n" .
+                            "Image Name: {$order->image}\n" .
+                            "Size: {$order->size}\n" .
+                            "Color: {$order->color}\n" .
+                            "Quantity: {$order->quantity}\n" .
+                            "Discount: {$order->discount}\n" .
+                            "Description: {$order->description}\n" .
+                            "Product Price: {$order->product_price}\n" .
+                            "Shipping Fee: {$order->shipping_fee}\n" .
+                            "Total Price: {$order->total_price}\n".
+                            "Status: {$order->status}\n".
+                            "Reason: {$order->return_reason}\n".
+                            "Description: {$order->return_description}\n".
+                            "Solution: {$order->return_solution}\n";
+
+                        // Create Log
+                        $createLog = LogsModel::create([
+                            'user_id' => $user->id,
+                            'ip_address' => $request->ip(),
+                            'user_action' => $userAction,
+                            'details' => $details,
+                            'created_at' => Carbon::now()
+                        ]);
+
+                        if ($createLog) {
+                            return response()->json([
+                                'message' => 'Return Accept'
+                            ], Response::HTTP_OK);
+                        }
+                    }
+                } else {
+                    return response()->json([
+                        'message' => 'Order not found'
+                    ], Response::HTTP_NOT_FOUND);
+                }
+            } else {
+                return response()->json([
+                    'message' => 'Intruder'
+                ], Response::HTTP_UNAUTHORIZED);
+            }
+        } catch (\Exception $e) {
+            // Handle exceptions and return an error response with CORS headers
+            $errorMessage = $e->getMessage();
+            $errorCode = $e->getCode();
+
+            // Create a JSON error response
+            $response = [
+                'success' => false,
+                'error' => [
+                    'code' => $errorCode,
+                    'message' => $errorMessage,
+                ],
+            ];
+
+            // Add additional error details if available
+            if ($e instanceof \Illuminate\Validation\ValidationException) {
+                $response['error']['details'] = $e->errors();
+            }
+
+            // Return the JSON error response with CORS headers and an appropriate HTTP status code
+            return response()->json($response, Response::HTTP_INTERNAL_SERVER_ERROR)->header('Content-Type', 'application/json');
+        }
+    }
+
+    // RETURN TO DECLINE PER ITEM | ADMIN
+    public function returnDecline(Request $request, $id)
+    {
+        try {
+            // Fetch User ID
+            $user = AuthModel::where('session_login', $request->input('session'))
+                ->where('status', 'VERIFIED')
+                ->first();
+
+            if ($user) {
+                $order = OrderModel::find($id);
+
+                if ($order) {
+                    $order->status = 'RETURN REFUND / DECLINE';
+                    $order->return_decline_at = Carbon::now();
+
+                    if ($order->save()) {
+                        $userAction = 'RETURN ACCEPT';
+                        $details = "Return Accept this product Information with Group ID: {$order->group_id}\n" .
+                            "Order ID: {$order->order_id}\n" .
+                            "Product Group ID: {$order->product_group_id}\n" .
+                            "Role: {$order->role}\n" .
+                            "Category: {$order->category}\n" .
+                            "Name: {$order->name}\n" .
+                            "Image Name: {$order->image}\n" .
+                            "Size: {$order->size}\n" .
+                            "Color: {$order->color}\n" .
+                            "Quantity: {$order->quantity}\n" .
+                            "Discount: {$order->discount}\n" .
+                            "Description: {$order->description}\n" .
+                            "Product Price: {$order->product_price}\n" .
+                            "Shipping Fee: {$order->shipping_fee}\n" .
+                            "Total Price: {$order->total_price}\n".
+                            "Status: {$order->status}\n".
+                            "Reason: {$order->return_reason}\n".
+                            "Description: {$order->return_description}\n".
+                            "Solution: {$order->return_solution}\n";
+
+                        // Create Log
+                        $createLog = LogsModel::create([
+                            'user_id' => $user->id,
+                            'ip_address' => $request->ip(),
+                            'user_action' => $userAction,
+                            'details' => $details,
+                            'created_at' => Carbon::now()
+                        ]);
+
+                        if ($createLog) {
+                            return response()->json([
+                                'message' => 'Return Decline'
+                            ], Response::HTTP_OK);
+                        }
+                    }
+                } else {
+                    return response()->json([
+                        'message' => 'Order not found'
+                    ], Response::HTTP_NOT_FOUND);
+                }
+            } else {
+                return response()->json([
+                    'message' => 'Intruder'
+                ], Response::HTTP_UNAUTHORIZED);
+            }
+        } catch (\Exception $e) {
+            // Handle exceptions and return an error response with CORS headers
+            $errorMessage = $e->getMessage();
+            $errorCode = $e->getCode();
+
+            // Create a JSON error response
+            $response = [
+                'success' => false,
+                'error' => [
+                    'code' => $errorCode,
+                    'message' => $errorMessage,
+                ],
+            ];
+
+            // Add additional error details if available
+            if ($e instanceof \Illuminate\Validation\ValidationException) {
+                $response['error']['details'] = $e->errors();
+            }
+
+            // Return the JSON error response with CORS headers and an appropriate HTTP status code
+            return response()->json($response, Response::HTTP_INTERNAL_SERVER_ERROR)->header('Content-Type', 'application/json');
+        }
+    }
+
+    public function returnComplete(Request $request, $id)
+    {
+        try {
+            // Fetch User ID
+            $user = AuthModel::where('session_login', $request->input('session'))
+                ->where('status', 'VERIFIED')
+                ->first();
+
+            if ($user) {
+                $order = OrderModel::find($id);
+
+                if ($order) {
+                    $order->status = 'RETURN REFUND / COMPLETED';
+                    $order->return_completed_at = Carbon::now();
+                    $order->completed_at = Carbon::now();
+                    if ($order->save()) {
+                        $userAction = 'RETURN ACCEPT';
+                        $details = "Return Accept this product Information with Group ID: {$order->group_id}\n" .
+                            "Order ID: {$order->order_id}\n" .
+                            "Product Group ID: {$order->product_group_id}\n" .
+                            "Role: {$order->role}\n" .
+                            "Category: {$order->category}\n" .
+                            "Name: {$order->name}\n" .
+                            "Image Name: {$order->image}\n" .
+                            "Size: {$order->size}\n" .
+                            "Color: {$order->color}\n" .
+                            "Quantity: {$order->quantity}\n" .
+                            "Discount: {$order->discount}\n" .
+                            "Description: {$order->description}\n" .
+                            "Product Price: {$order->product_price}\n" .
+                            "Shipping Fee: {$order->shipping_fee}\n" .
+                            "Total Price: {$order->total_price}\n".
+                            "Status: {$order->status}\n".
+                            "Reason: {$order->return_reason}\n".
+                            "Description: {$order->return_description}\n".
+                            "Solution: {$order->return_solution}\n";
+
+                        // Create Log
+                        $createLog = LogsModel::create([
+                            'user_id' => $user->id,
+                            'ip_address' => $request->ip(),
+                            'user_action' => $userAction,
+                            'details' => $details,
+                            'created_at' => Carbon::now()
+                        ]);
+
+                        if ($createLog) {
+                            return response()->json([
+                                'message' => 'Return Complete'
+                            ], Response::HTTP_OK);
+                        }
+                    }
+                } else {
+                    return response()->json([
+                        'message' => 'Order not found'
+                    ], Response::HTTP_NOT_FOUND);
+                }
+            } else {
+                return response()->json([
+                    'message' => 'Intruder'
+                ], Response::HTTP_UNAUTHORIZED);
+            }
+        } catch (\Exception $e) {
+            // Handle exceptions and return an error response with CORS headers
+            $errorMessage = $e->getMessage();
+            $errorCode = $e->getCode();
+
+            // Create a JSON error response
+            $response = [
+                'success' => false,
+                'error' => [
+                    'code' => $errorCode,
+                    'message' => $errorMessage,
+                ],
+            ];
+
+            // Add additional error details if available
+            if ($e instanceof \Illuminate\Validation\ValidationException) {
+                $response['error']['details'] = $e->errors();
+            }
+
+            // Return the JSON error response with CORS headers and an appropriate HTTP status code
+            return response()->json($response, Response::HTTP_INTERNAL_SERVER_ERROR)->header('Content-Type', 'application/json');
+        }
+    }
+
+    public function returnFail(Request $request, $id)
+    {
+        try {
+            // Fetch User ID
+            $user = AuthModel::where('session_login', $request->input('session'))
+                ->where('status', 'VERIFIED')
+                ->first();
+
+            if ($user) {
+                $order = OrderModel::find($id);
+
+                if ($order) {
+                    $order->status = 'RETURN REFUND / COMPLETED';
+                    $order->return_completed_at = Carbon::now();
+                    $order->failed_at = Carbon::now();
+
+                    if ($order->save()) {
+                        $userAction = 'RETURN FAILED';
+                        $details = "Return Accept this product Information with Group ID: {$order->group_id}\n" .
+                            "Order ID: {$order->order_id}\n" .
+                            "Product Group ID: {$order->product_group_id}\n" .
+                            "Role: {$order->role}\n" .
+                            "Category: {$order->category}\n" .
+                            "Name: {$order->name}\n" .
+                            "Image Name: {$order->image}\n" .
+                            "Size: {$order->size}\n" .
+                            "Color: {$order->color}\n" .
+                            "Quantity: {$order->quantity}\n" .
+                            "Discount: {$order->discount}\n" .
+                            "Description: {$order->description}\n" .
+                            "Product Price: {$order->product_price}\n" .
+                            "Shipping Fee: {$order->shipping_fee}\n" .
+                            "Total Price: {$order->total_price}\n".
+                            "Status: {$order->status}\n".
+                            "Reason: {$order->return_reason}\n".
+                            "Description: {$order->return_description}\n".
+                            "Solution: {$order->return_solution}\n";
+
+                        // Create Log
+                        $createLog = LogsModel::create([
+                            'user_id' => $user->id,
+                            'ip_address' => $request->ip(),
+                            'user_action' => $userAction,
+                            'details' => $details,
+                            'created_at' => Carbon::now()
+                        ]);
+
+                        if ($createLog) {
+                            return response()->json([
+                                'message' => 'Return Fail'
+                            ], Response::HTTP_OK);
+                        }
+                    }
+                } else {
+                    return response()->json([
+                        'message' => 'Order not found'
+                    ], Response::HTTP_NOT_FOUND);
+                }
+            } else {
+                return response()->json([
+                    'message' => 'Intruder'
+                ], Response::HTTP_UNAUTHORIZED);
             }
         } catch (\Exception $e) {
             // Handle exceptions and return an error response with CORS headers
