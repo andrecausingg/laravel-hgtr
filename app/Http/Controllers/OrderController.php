@@ -527,8 +527,8 @@ class OrderController extends Controller
                         $totalPrice = $discountedPrice * $quantity;
 
                         // Final total Quantity and Price
-                        $finalTotalPrice = $totalPrice; 
-                        $finalTotalQuantity = $quantity; 
+                        $finalTotalPrice = $totalPrice;
+                        $finalTotalQuantity = $quantity;
 
                         // Saving
                         $order->total_price = $finalTotalPrice;
@@ -1344,6 +1344,7 @@ class OrderController extends Controller
         }
     }
 
+    // RETURN ON TO RECEIVED | CLIENT
     public function completedClient(Request $request, $id)
     {
         try {
@@ -1360,6 +1361,223 @@ class OrderController extends Controller
 
                 if ($order) {
                     $order->status = 'COMPLETED';
+                    $order->completed_at = Carbon::now();
+
+                    if ($order->save()) {
+                        $userAction = 'COMPLETE';
+                        $details = "Complete Ship this product Information with Group ID: {$order->group_id}\n" .
+                            "Order ID: {$order->order_id}\n" .
+                            "Product Group ID: {$order->product_group_id}\n" .
+                            "Role: {$order->role}\n" .
+                            "Category: {$order->category}\n" .
+                            "Name: {$order->name}\n" .
+                            "Image Name: {$order->image}\n" .
+                            "Size: {$order->size}\n" .
+                            "Color: {$order->color}\n" .
+                            "Quantity: {$order->quantity}\n" .
+                            "Discount: {$order->discount}\n" .
+                            "Description: {$order->description}\n" .
+                            "Product Price: {$order->product_price}\n" .
+                            "Shipping Fee: {$order->shipping_fee}\n" .
+                            "Total Price: {$order->total_price}\n";
+
+                        // Create Log
+                        $createLog = LogsModel::create([
+                            'user_id' => $user->id,
+                            'ip_address' => $request->ip(),
+                            'user_action' => $userAction,
+                            'details' => $details,
+                            'created_at' => Carbon::now()
+                        ]);
+
+                        if ($createLog) {
+                            return response()->json([
+                                'message' => 'Complete'
+                            ], Response::HTTP_OK);
+                        }
+                    }
+                } else {
+                    return response()->json([
+                        'message' => 'Order not found'
+                    ], Response::HTTP_NOT_FOUND);
+                }
+            } else {
+                return response()->json([
+                    'message' => 'Intruder'
+                ], Response::HTTP_UNAUTHORIZED);
+            }
+        } catch (\Exception $e) {
+            // Handle exceptions and return an error response with CORS headers
+            $errorMessage = $e->getMessage();
+            $errorCode = $e->getCode();
+
+            // Create a JSON error response
+            $response = [
+                'success' => false,
+                'error' => [
+                    'code' => $errorCode,
+                    'message' => $errorMessage,
+                ],
+            ];
+
+            // Add additional error details if available
+            if ($e instanceof \Illuminate\Validation\ValidationException) {
+                $response['error']['details'] = $e->errors();
+            }
+
+            // Return the JSON error response with CORS headers and an appropriate HTTP status code
+            return response()->json($response, Response::HTTP_INTERNAL_SERVER_ERROR)->header('Content-Type', 'application/json');
+        }
+    }
+
+    // RETURN REFUND RETURN | CLIENT
+    public function returnReturn(Request $request, $id)
+    {
+        try {
+            // Fetch User ID
+            $user = AuthModel::where('session_login', $request->input('session'))
+                ->where('status', 'VERIFIED')
+                ->first();
+
+            if ($user) {
+                // Retrieve the order to cancel
+                $data = OrderModel::where('user_id', $user->id)
+                    ->where('status', 'RETURN REFUND / ACCEPT')
+                    ->where('id', $id)
+                    ->first();
+
+                if ($data) {
+                    $request->validate([
+                        'returnReason' => 'required|string|max:255',
+                        'image1' => 'required|image|mimes:jpeg,png,jpg|max:2048',
+                        'image2' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+                        'image3' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+                        'image4' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+                        'description' => 'string|max:255',
+                        'returnSolution' => 'required|string|max:255',
+                    ]);
+
+                    // Generate unique filenames for images
+                    $image1 = $request->file('image1');
+                    $image2 = $request->file('image2');
+                    $image3 = $request->file('image3');
+                    $image4 = $request->file('image4');
+
+                    $imageActualExt1 = $image1->getClientOriginalExtension();
+                    $imageActualExt2 = $image2 ? $image2->getClientOriginalExtension() : '';
+                    $imageActualExt3 = $image3 ? $image3->getClientOriginalExtension() : '';
+                    $imageActualExt4 = $image4 ? $image4->getClientOriginalExtension() : '';
+
+                    $filename1 = uniqid() . "_" . time() . "_" . mt_rand() . "." . $imageActualExt1;
+                    $filename2 = $image2 ? uniqid() . "_" . time() . "_" . mt_rand() . "." . $imageActualExt2 : '';
+                    $filename3 = $image3 ? uniqid() . "_" . time() . "_" . mt_rand() . "." . $imageActualExt3 : '';
+                    $filename4 = $image4 ? uniqid() . "_" . time() . "_" . mt_rand() . "." . $imageActualExt4 : '';
+
+                    // Store the images on the 'public' disk with the generated filenames
+                    Storage::disk('public')->put($filename1, file_get_contents($image1));
+                    if ($image2)
+                        Storage::disk('public')->put($filename2, file_get_contents($image2));
+                    if ($image3)
+                        Storage::disk('public')->put($filename3, file_get_contents($image3));
+                    if ($image4)
+                        Storage::disk('public')->put($filename4, file_get_contents($image4));
+
+                    // Delete if not role MAIN
+                    $userAction = 'RETURN';
+                    $details = 'Return Product Information with Group ID: ' . $data->group_id . "\n" .
+                        'Order ID: ' . $data->id . "\n" . // Changed $data to $data->id
+                        'Product Group ID: ' . $data->group_id . "\n" .
+                        'Role: ' . $data->role . "\n" .
+                        'Category: ' . $data->category . "\n" .
+                        'Product Name: ' . $data->name . "\n" .
+                        'Image Name: ' . $data->image . "\n" .
+                        'Size: ' . $data->size . "\n" .
+                        'Color: ' . $data->color . "\n" .
+                        'Quantity: ' . $data->quantity . "\n" . // Changed $data to $data->quantity
+                        'Discount: ' . $data->discount . "\n" .
+                        'Description: ' . $data->description . "\n" .
+                        'Product Price: ' . $data->price . "\n" .
+                        'Shipping Fee: ' . $data->shipping_fee . "\n" . // Changed $data to $data->shipping_fee
+                        'Total Price: ' . $data->total_price . "\n" . // Changed $data to $data->total_price
+                        'Status: ' . $data->status . "\n" .
+                        'Reason: ' . $request->input('returnReason') . "\n" .
+                        'Description: ' . $request->input('description') . "\n" .
+                        'Solution: ' . $request->input('returnSolution') . "\n";
+
+                    // Create Log
+                    $created = LogsModel::create([
+                        'user_id' => $user->id,
+                        'ip_address' => $request->ip(),
+                        'user_action' => $userAction,
+                        'details' => $details,
+                        'created_at' => Carbon::now(),
+                    ]);
+
+                    if ($created) {
+                        $data->status = "RETURN REFUND / TO RESPOND";
+                        $data->return_reason = $request->input('returnReason');
+                        $data->return_description = $request->input('description');
+                        $data->return_solution = $request->input('returnSolution');
+
+                        $data->return_image1 = $filename1;
+                        $data->return_image2 = $filename2;
+                        $data->return_image3 = $filename3;
+                        $data->return_image4 = $filename4;
+                        $data->return_at = Carbon::now();
+
+                        if ($data->save()) {
+                            return response()->json([
+                                'message' => 'Created',
+                            ], Response::HTTP_OK);
+                        }
+                    }
+                }
+            } else {
+                return response()->json([
+                    'message' => 'Intruder',
+                ], Response::HTTP_OK);
+            }
+        } catch (\Exception $e) {
+            // Handle exceptions and return an error response with CORS headers
+            $errorMessage = $e->getMessage();
+            $errorCode = $e->getCode();
+
+            // Create a JSON error response
+            $response = [
+                'success' => false,
+                'error' => [
+                    'code' => $errorCode,
+                    'message' => $errorMessage,
+                ],
+            ];
+
+            // Add additional error details if available
+            if ($e instanceof \Illuminate\Validation\ValidationException) {
+                $response['error']['details'] = $e->errors();
+            }
+
+            // Return the JSON error response with CORS headers and an appropriate HTTP status code
+            return response()->json($response, Response::HTTP_INTERNAL_SERVER_ERROR)->header('Content-Type', 'application/json');
+        }
+    }
+
+    // RETURN REFUND COMPLETED  | CLIENT
+    public function returnCompletedClient(Request $request, $id)
+    {
+        try {
+            // Fetch User ID
+            $user = AuthModel::where('session_login', $request->input('session'))
+                ->where('status', 'VERIFIED')
+                ->first();
+
+            if ($user) {
+                $order = OrderModel::where('id', $id)
+                    ->where('status', 'RETURN REFUND / ACCEPT')
+                    ->where('user_id', $user->id)
+                    ->first(); // Use first() to retrieve the order
+
+                if ($order) {
+                    $order->status = 'RETURN REFUND / COMPLETED';
                     $order->completed_at = Carbon::now();
 
                     if ($order->save()) {
@@ -2221,7 +2439,7 @@ class OrderController extends Controller
 
                 if ($order) {
                     $order->status = 'RETURN REFUND / FAILED';
-                    $order->return_completed_at = Carbon::now();
+                    $order->return_failed_at = Carbon::now();
                     $order->failed_at = Carbon::now();
 
                     if ($order->save()) {
@@ -2294,7 +2512,5 @@ class OrderController extends Controller
             return response()->json($response, Response::HTTP_INTERNAL_SERVER_ERROR)->header('Content-Type', 'application/json');
         }
     }
-
-
 
 }

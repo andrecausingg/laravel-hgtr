@@ -117,7 +117,10 @@ Route::post('product/cancelled/{id}', [OrderController::class, 'cancelItemOnCart
 Route::post('product/return/{id}', [OrderController::class, 'return']);
 // Completed
 Route::post('product/completed-client/{id}', [OrderController::class, 'completedClient']);
-
+// Return Refund | Return
+Route::post('product/return-refund-client/return/{id}', [OrderController::class, 'returnReturn']);
+// Return Refund | Completed
+Route::post('product/return-refund-client-/completed/{id}', [OrderController::class, 'returnCompletedClient']);
 
 // Admin Orders
 // Display order
