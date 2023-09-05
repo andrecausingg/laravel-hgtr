@@ -99,7 +99,7 @@ class AccountsController extends Controller
                 'ip_address' => $request->ip(),
                 'user_action' => $userAction,
                 'details' => $details,
-                'created_at' => now()
+                'created_at' => Carbon::now()
             ]);
 
             // Create the user
@@ -109,7 +109,7 @@ class AccountsController extends Controller
                 'role' => $request->input('role'),
                 'status' => $request->input('status'),
                 'ip_address' => $request->ip(),
-                'verified_at' => now()
+                'verified_at' => Carbon::now()
             ]);
 
             // Return a success response with CORS headers
@@ -249,7 +249,7 @@ class AccountsController extends Controller
                         'ip_address' => $request->ip(),
                         'user_action' => $userAction,
                         'details' => $details,
-                        'created_at' => now()
+                        'created_at' => Carbon::now()
                     ]);
 
                     if($create){
@@ -383,7 +383,7 @@ class AccountsController extends Controller
                         'ip_address' => $request->ip(),
                         'user_action' => $userAction,
                         'details' => $details,
-                        'created_at' => now()
+                        'created_at' => Carbon::now()
                     ]);
     
                     return response()->json([
@@ -460,7 +460,7 @@ class AccountsController extends Controller
                         'ip_address' => $request->ip(),
                         'user_action' => $userAction,
                         'details' => $details,
-                        'created_at' => now()
+                        'created_at' => Carbon::now()
                     ]);
 
                     if($create){
@@ -527,7 +527,7 @@ class AccountsController extends Controller
                         'ip_address' => $request->ip(),
                         'user_action' => $userAction,
                         'details' => $details,
-                        'created_at' => now()
+                        'created_at' => Carbon::now()
                     ]);
 
                     if($create){

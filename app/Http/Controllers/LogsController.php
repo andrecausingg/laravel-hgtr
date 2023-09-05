@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\LogsModel;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Symfony\Component\HttpFoundation\Response;
 
 class LogsController extends Controller
@@ -19,7 +20,7 @@ class LogsController extends Controller
             $totalLogsCount = $allLogs->count();
         
             // Query logs for today's date
-            $todaysLogs = LogsModel::whereDate('created_at', now())->get();
+            $todaysLogs = LogsModel::whereDate('created_at', Carbon::now())->get();
             $todaysLogsCount = $todaysLogs->count();
         
             return response()->json([

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\VisitorModel;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Symfony\Component\HttpFoundation\Response;
 use Stevebauman\Location\Facades\Location;
 
@@ -21,7 +22,7 @@ class VisitorsController extends Controller
             $totalVisitorsCount = $allVisitors->count();
         
             // Query visitors for today's date
-            $todaysVisitors = VisitorModel::whereDate('created_at', now())->get();
+            $todaysVisitors = VisitorModel::whereDate('created_at', Carbon::now())->get();
         
             return response()->json([
                 'total_visitors' => $totalVisitorsCount,

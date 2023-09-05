@@ -6,6 +6,7 @@ use App\Models\AuthModel;
 use App\Models\LogsModel;
 use App\Models\UserInfoModel;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Symfony\Component\HttpFoundation\Response;
 
 class UserInfoController extends Controller
@@ -102,7 +103,7 @@ class UserInfoController extends Controller
                         'ip_address' => $request->ip(),
                         'user_action' => $userAction,
                         'details' => $details,
-                        'created_at' => now()
+                        'created_at' => Carbon::now()
                     ]);
 
                     // Return a success response with CORS headers
@@ -322,7 +323,7 @@ class UserInfoController extends Controller
                             'ip_address' => $request->ip(),
                             'user_action' => $userAction,
                             'details' => $details,
-                            'created_at' => now()
+                            'created_at' => Carbon::now()
                         ]);
 
                         return response()->json([

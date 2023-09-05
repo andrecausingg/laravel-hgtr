@@ -7,6 +7,7 @@ use App\Models\LogsModel;
 use App\Models\OrderModel;
 use App\Models\ProductModel;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
@@ -118,7 +119,7 @@ class ProductController extends Controller
                         'ip_address' => $request->ip(),
                         'user_action' => $userAction,
                         'details' => $details,
-                        'created_at' => now()
+                        'created_at' => Carbon::now()
                     ]);
                     if ($create) {
                         // Return a success response with CORS headers
@@ -223,7 +224,7 @@ class ProductController extends Controller
                             'ip_address' => $request->ip(),
                             'user_action' => $userAction,
                             'details' => $details,
-                            'created_at' => now()
+                            'created_at' => Carbon::now()
                         ]);
                         if ($create) {
                             // Return a success response with CORS headers
@@ -384,7 +385,7 @@ class ProductController extends Controller
                         'ip_address' => $request->ip(),
                         'user_action' => $userAction,
                         'details' => $details,
-                        'created_at' => now()
+                        'created_at' => Carbon::now()
                     ]);
                     return response()->json([
                         'message' => 'Updated'
@@ -466,7 +467,7 @@ class ProductController extends Controller
                                 'ip_address' => $request->ip(),
                                 'user_action' => $userAction,
                                 'details' => $details,
-                                'created_at' => now()
+                                'created_at' => Carbon::now()
                             ]);
 
                             if ($create) {
@@ -510,7 +511,7 @@ class ProductController extends Controller
                                     'ip_address' => $request->ip(),
                                     'user_action' => $userAction,
                                     'details' => $details,
-                                    'created_at' => now()
+                                    'created_at' => Carbon::now()
                                 ]);
 
                                 if ($create) {
@@ -549,7 +550,7 @@ class ProductController extends Controller
                             'ip_address' => $request->ip(),
                             'user_action' => $userAction,
                             'details' => $details,
-                            'created_at' => now()
+                            'created_at' => Carbon::now()
                         ]);
 
                         if ($create) {
@@ -614,7 +615,7 @@ class ProductController extends Controller
                         'ip_address' => $request->ip(),
                         'user_action' => $userAction,
                         'details' => $details,
-                        'created_at' => now()
+                        'created_at' => Carbon::now()
                     ]);
 
                     if ($create) {

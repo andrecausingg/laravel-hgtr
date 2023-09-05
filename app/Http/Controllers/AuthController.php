@@ -43,7 +43,7 @@ class AuthController extends Controller
                     'ip_address' => $request->ip(),
                     'user_action' => $userAction,
                     'details' => $details,
-                    'created_at' => now()
+                    'created_at' => Carbon::now()
                 ]);
 
                 if ($create) {
@@ -283,7 +283,7 @@ class AuthController extends Controller
                 $user->verification_num = $verificationNumber;
                 $user->session_verify_email = $verificationToken;
                 $user->status = $status;
-                $user->verified_at = now();
+                $user->verified_at = Carbon::now();
                 $user->save();
 
                 // Return a success response with CORS headers
@@ -375,7 +375,7 @@ class AuthController extends Controller
             if ($user) {
                 // Update the user record with the new verification number
                 $user->session_pass_reset = $verificationToken;
-                $user->update_pass_reset_at = now();
+                $user->update_pass_reset_at = Carbon::now();
                 $user->save();
 
                 // Send the verification number to the user's email
@@ -432,7 +432,7 @@ class AuthController extends Controller
             if ($user) {
                 $user->password = Hash::make($request->input('password'));
                 $user->session_pass_reset = $verificationToken;
-                $user->updated_at = now();
+                $user->updated_at = Carbon::now();
                 $user->save();
 
                 // Return a success response with CORS headers
@@ -507,7 +507,7 @@ class AuthController extends Controller
                             'ip_address' => $request->ip(),
                             'user_action' => $userAction,
                             'details' => $details,
-                            'created_at' => now()
+                            'created_at' => Carbon::now()
                         ]);
                         return response()->json([
                             'message' => 'Updated'
@@ -575,7 +575,7 @@ class AuthController extends Controller
                             'ip_address' => $request->ip(),
                             'user_action' => $userAction,
                             'details' => $details,
-                            'created_at' => now()
+                            'created_at' => Carbon::now()
                         ]);
 
                         return response()->json([
