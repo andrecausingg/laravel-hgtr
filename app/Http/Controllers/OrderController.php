@@ -509,73 +509,76 @@ class OrderController extends Controller
                 ]);
 
                 $order = OrderModel::where('user_id', $user->id)
-                ->where('id', $id);
+                    ->where('id', $id)
+                    ->first(); // Retrieve the order from the database
 
-                $product = ProductModel::where('color', $order->color)
-                    ->where('size', $order->size)
-                    ->where('group_id', $order->product_group_id)
-                    ->first();
+                if ($order) {
+                    $product = ProductModel::where('color', $order->color)
+                        ->where('size', $order->size)
+                        ->where('group_id', $order->product_group_id)
+                        ->first();
 
-                if ($product && $product->quantity >= 1){
-                    // Declare
-                    $quantity = (int) $request->input('quantity');
+                    if ($product && $product->quantity >= 1) {
+                        // Declare
+                        $quantity = (int) $request->input('quantity');
 
-                    // Compute the total Price Now by Check on the product table
-                    $discountedPrice = $product->price * (1 - ($product->discount / 100));
-                    $totalPrice = $discountedPrice * $quantity;
+                        // Compute the total Price Now by Check on the product table
+                        $discountedPrice = $product->price * (1 - ($product->discount / 100));
+                        $totalPrice = $discountedPrice * $quantity;
 
-                    // Fetch the value same order
-                    $totalPriceDb = $order->total_price;
-                    $totalQuantityDb = $order->quantity;
+                        // Final total Quantity and Price
+                        $finalTotalPrice = $totalPrice; 
+                        $finalTotalQuantity = $quantity; 
 
-                    // Finalt total Quantity and Price
-                    $finalTotalPrice = $totalPrice += $totalPriceDb;
-                    $finalTotalQuantity = $quantity += $totalQuantityDb;
+                        // Saving
+                        $order->total_price = $finalTotalPrice;
+                        $order->quantity = $finalTotalQuantity;
 
-                    // Saving
-                    $order->total_price = $finalTotalPrice;
-                    $order->quantity = $finalTotalQuantity;
+                        if ($order->save()) {
+                            $fetchAllQuantityAndCalculateShippingFee = OrderModel::where('user_id', $user->id)
+                                ->where('status', 'UNPAID')
+                                ->get();
+                            $totalQuantity = 0;
 
-                    if ($order->save()) {
-                        $fetchAllQuantityAndCalculateShippingFee = OrderModel::where('user_id', $user->id)
-                            ->where('status', 'UNPAID')
-                            ->get();
-                        $totalQuantity = 0;
+                            foreach ($fetchAllQuantityAndCalculateShippingFee as $order) {
+                                $totalQuantity += $order->quantity;
+                            }
 
-                        foreach ($fetchAllQuantityAndCalculateShippingFee as $order) {
-                            $totalQuantity += $order->quantity;
+                            function calculateShippingFee($totalQuantity)
+                            {
+                                $shippingFee = 100; // Base shipping fee
+                                $rangeSize = 5; // Size of each range
+                                $feeIncrement = 100; // Fee increment for each range
+
+                                // Calculate the range index based on the quantity
+                                $rangeIndex = ceil($totalQuantity / $rangeSize);
+
+                                // Calculate the shipping fee based on the range index and quantity
+                                $shippingFee += ($rangeIndex - 1) * $feeIncrement;
+
+                                return number_format($shippingFee, 2); // Format the shipping fee with two decimal places
+                            }
+
+                            $updateShippingFeeNow = OrderModel::where('user_id', $user->id)
+                                ->where('status', 'UNPAID')
+                                ->where('role', 'MAIN')
+                                ->first();
+                            $updateShippingFeeNow->shipping_fee = calculateShippingFee($totalQuantity);
+                            if ($updateShippingFeeNow->save()) {
+                                return response()->json([
+                                    'message' => 'Updated'
+                                ], Response::HTTP_OK);
+                            }
                         }
-
-                        function calculateShippingFee($totalQuantity)
-                        {
-                            $shippingFee = 100; // Base shipping fee
-                            $rangeSize = 5; // Size of each range
-                            $feeIncrement = 100; // Fee increment for each range
-
-                            // Calculate the range index based on the quantity
-                            $rangeIndex = ceil($totalQuantity / $rangeSize);
-
-                            // Calculate the shipping fee based on the range index and quantity
-                            $shippingFee += ($rangeIndex - 1) * $feeIncrement;
-
-                            return number_format($shippingFee, 2); // Format the shipping fee with two decimal places
-                        }
-
-                        $updateShippingFeeNow = OrderModel::where('user_id', $user->id)
-                            ->where('status', 'UNPAID')
-                            ->where('role', 'MAIN')
-                            ->first();
-                        $updateShippingFeeNow->shipping_fee = calculateShippingFee($totalQuantity);
-                        if ($updateShippingFeeNow->save()) {
-                            return response()->json([
-                                'message' => 'Deleted'
-                            ], Response::HTTP_OK);
-                        }
+                    } else {
+                        return response()->json([
+                            'message' => 'Selected product is unavailable or out of stock.'
+                        ], Response::HTTP_OK);
                     }
                 } else {
                     return response()->json([
-                        'message' => 'Selected product is unavailable or out of stock.'
-                    ], Response::HTTP_OK);
+                        'message' => 'Order not found.'
+                    ], Response::HTTP_NOT_FOUND);
                 }
             } else {
                 return response()->json([
