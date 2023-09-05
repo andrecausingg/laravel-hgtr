@@ -255,16 +255,16 @@ class UserInfoController extends Controller
                     'first_name' => 'string|max:255',
                     'middle_name' => 'nullable|string|max:255',
                     'last_name' => 'string|max:255',
-                    'contact_num' => 'nullable|string|max:255|min:11',
-                    'address_1' => 'nullable|string|max:255',
+                    'contact_num' => 'required|string|max:255|min:11',
+                    'address_1' => 'required|string|max:255',
                     'address_2' => 'nullable|string|max:255',
-                    'region_code' => 'nullable|string|max:255',
-                    'province_code' => 'nullable|string|max:255',
-                    'city_or_municipality_code' => 'nullable|string|max:255',
-                    'region_name' => 'nullable|string|max:255',
-                    'province_name' => 'nullable|string|max:255',
-                    'city_or_municipality_name' => 'nullable|string|max:255',
-                    'barangay' => 'nullable|string|max:255',
+                    'region_code' => 'required|string|max:255',
+                    'province_code' => 'required|string|max:255',
+                    'city_or_municipality_code' => 'required|string|max:255',
+                    'region_name' => 'required|string|max:255',
+                    'province_name' => 'required|string|max:255',
+                    'city_or_municipality_name' => 'required|string|max:255',
+                    'barangay' => 'required|string|max:255',
                     'description_location' => 'nullable|string',
                 ]);
 
@@ -290,7 +290,16 @@ class UserInfoController extends Controller
                 if ($data->isDirty('address_2')) {
                     $changes[] = 'Address 2 changed from "' . $data->getOriginal('address_2') . '" to "' . $data->address_2 . '".';
                 }
-                if ($data->isDirty('address_2')) {
+                if ($data->isDirty('region_code')) {
+                    $changes[] = 'Region changed from "' . $data->getOriginal('region_code') . '" to "' . $data->region_code . '".';
+                }
+                if ($data->isDirty('province_code')) {
+                    $changes[] = 'Province changed from "' . $data->getOriginal('province_code') . '" to "' . $data->province_code . '".';
+                }
+                if ($data->isDirty('city_or_municipality_code')) {
+                    $changes[] = 'City / Municipality from "' . $data->getOriginal('city_or_municipality_code') . '" to "' . $data->city_or_municipality_code . '".';
+                }
+                if ($data->isDirty('region_name')) {
                     $changes[] = 'Region changed from "' . $data->getOriginal('region_name') . '" to "' . $data->region_name . '".';
                 }
                 if ($data->isDirty('province_name')) {
