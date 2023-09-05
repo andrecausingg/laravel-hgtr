@@ -9,6 +9,7 @@ use App\Models\AuthModel;
 use App\Models\LogsModel;
 use App\Models\UserInfoModel;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;

@@ -496,6 +496,62 @@ class OrderController extends Controller
         }
     }
 
+    public function updateItemOnCart(Request $request)
+    {
+        try {
+            $user = AuthModel::where('session_login', $request->input('session'))
+                ->where('status', 'VERIFIED')
+                ->first();
+
+            if ($user) {
+                $request->validate([
+                    'color' => 'required|string|max:255',
+                    'size' => 'required|string|max:255',
+                    'quantity' => 'required|numeric|min:1',
+                    'group_id' => 'required|string',
+                ]);
+
+                $product = ProductModel::where('color', $request->input('color'))
+                    ->where('size', $request->input('size'))
+                    ->where('group_id', $request->input('group_id'))
+                    ->first();
+
+                if ($product && $product->quantity >= 1) {
+                    
+                } else {
+                    return response()->json([
+                        'message' => 'Selected product is unavailable or out of stock.'
+                    ], Response::HTTP_OK);
+                }
+            } else {
+                return response()->json([
+                    'message' => 'Intruder'
+                ], Response::HTTP_OK);
+            }
+        } catch (\Exception $e) {
+            // Handle exceptions and return an error response with CORS headers
+            $errorMessage = $e->getMessage();
+            $errorCode = $e->getCode();
+
+            // Create a JSON error response
+            $response = [
+                'success' => false,
+                'error' => [
+                    'code' => $errorCode,
+                    'message' => $errorMessage,
+                ],
+            ];
+
+            // Add additional error details if available
+            if ($e instanceof \Illuminate\Validation\ValidationException) {
+                $response['error']['details'] = $e->errors();
+            }
+
+            // Return the JSON error response with CORS headers and an appropriate HTTP status code
+            return response()->json($response, Response::HTTP_INTERNAL_SERVER_ERROR)->header('Content-Type', 'application/json');
+        }
+    }
+
     // Destroy Item on TO PAY | CLIENT
     public function destroy(Request $request, $id)
     {
