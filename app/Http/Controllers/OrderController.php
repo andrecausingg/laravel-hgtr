@@ -1509,6 +1509,10 @@ class OrderController extends Controller
                         'message' => 'No orders found with the given criteria'
                     ], Response::HTTP_NOT_FOUND);
                 }
+            }else {
+                return response()->json([
+                    'message' => 'Intruder'
+                ], Response::HTTP_NOT_FOUND);
             }
         } catch (\Exception $e) {
             // Handle exceptions and return an error response with CORS headers
