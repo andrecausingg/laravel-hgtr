@@ -258,9 +258,9 @@ class UserInfoController extends Controller
                     'contact_num' => 'required|string|max:255|min:11',
                     'address_1' => 'required|string|max:255',
                     'address_2' => 'nullable|string|max:255',
-                    'region_code' => 'required|string|max:255',
-                    'province_code' => 'required|string|max:255',
-                    'city_or_municipality_code' => 'required|string|max:255',
+                    'region_code' => 'required|max:255',
+                    'province_code' => 'required|max:255',
+                    'city_or_municipality_code' => 'required|max:255',
                     'region_name' => 'required|string|max:255',
                     'province_name' => 'required|string|max:255',
                     'city_or_municipality_name' => 'required|string|max:255',
@@ -291,22 +291,22 @@ class UserInfoController extends Controller
                     $changes[] = 'Address 2 changed from "' . $data->getOriginal('address_2') . '" to "' . $data->address_2 . '".';
                 }
                 if ($data->isDirty('region_code')) {
-                    $changes[] = 'Region changed from "' . $data->getOriginal('region_code') . '" to "' . $data->region_code . '".';
+                    $changes[] = 'Region Code changed from "' . $data->getOriginal('region_code') . '" to "' . $data->region_code . '".';
                 }
                 if ($data->isDirty('province_code')) {
-                    $changes[] = 'Province changed from "' . $data->getOriginal('province_code') . '" to "' . $data->province_code . '".';
+                    $changes[] = 'Province Code changed from "' . $data->getOriginal('province_code') . '" to "' . $data->province_code . '".';
                 }
                 if ($data->isDirty('city_or_municipality_code')) {
-                    $changes[] = 'City / Municipality from "' . $data->getOriginal('city_or_municipality_code') . '" to "' . $data->city_or_municipality_code . '".';
+                    $changes[] = 'City / Municipality Code change from "' . $data->getOriginal('city_or_municipality_code') . '" to "' . $data->city_or_municipality_code . '".';
                 }
                 if ($data->isDirty('region_name')) {
-                    $changes[] = 'Region changed from "' . $data->getOriginal('region_name') . '" to "' . $data->region_name . '".';
+                    $changes[] = 'Region Name changed from "' . $data->getOriginal('region_name') . '" to "' . $data->region_name . '".';
                 }
                 if ($data->isDirty('province_name')) {
-                    $changes[] = 'Province changed from "' . $data->getOriginal('province_name') . '" to "' . $data->province_name . '".';
+                    $changes[] = 'Province Name changed from "' . $data->getOriginal('province_name') . '" to "' . $data->province_name . '".';
                 }
                 if ($data->isDirty('city_or_municipality_name')) {
-                    $changes[] = 'City / Municipality from "' . $data->getOriginal('city_or_municipality_name') . '" to "' . $data->city_or_municipality_name . '".';
+                    $changes[] = 'City / Municipality Name change from "' . $data->getOriginal('city_or_municipality_name') . '" to "' . $data->city_or_municipality_name . '".';
                 }
                 if ($data->isDirty('barangay')) {
                     $changes[] = 'Barangay from "' . $data->getOriginal('barangay') . '" to "' . $data->barangay . '".';

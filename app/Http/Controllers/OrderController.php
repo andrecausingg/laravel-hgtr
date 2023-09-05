@@ -2220,7 +2220,7 @@ class OrderController extends Controller
                 $order = OrderModel::find($id);
 
                 if ($order) {
-                    $order->status = 'RETURN REFUND / COMPLETED';
+                    $order->status = 'RETURN REFUND / FAILED';
                     $order->return_completed_at = Carbon::now();
                     $order->failed_at = Carbon::now();
 
