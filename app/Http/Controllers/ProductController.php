@@ -657,6 +657,8 @@ class ProductController extends Controller
         }
     }
 
+
+    // Client
     public function displaySelectedProduct(string $id)
     {
         //
