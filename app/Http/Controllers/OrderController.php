@@ -1289,7 +1289,7 @@ class OrderController extends Controller
                 }else {
                     return response()->json([
                         'message' => 'Order not found'
-                    ], Response::HTTP_NOT_FOUND);
+                    ], Response::HTTP_OK);
                 }
             } else {
                 return response()->json([
@@ -1809,7 +1809,7 @@ class OrderController extends Controller
                 } else {
                     return response()->json([
                         'message' => 'Order not found'
-                    ], Response::HTTP_NOT_FOUND);
+                    ], Response::HTTP_OK);
                 }
             } else {
                 return response()->json([
@@ -1886,12 +1886,12 @@ class OrderController extends Controller
                 } else {
                     return response()->json([
                         'message' => 'No orders found with the given criteria'
-                    ], Response::HTTP_NOT_FOUND);
+                    ], Response::HTTP_OK);
                 }
             } else {
                 return response()->json([
                     'message' => 'Intruder'
-                ], Response::HTTP_NOT_FOUND);
+                ], Response::HTTP_OK);
             }
         } catch (\Exception $e) {
             // Handle exceptions and return an error response with CORS headers
