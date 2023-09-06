@@ -1069,6 +1069,7 @@ class OrderController extends Controller
                 // Retrieve the order to cancel
                 $data = OrderModel::where('user_id', $user->id)
                     ->where('id', $id)
+                    ->where('status', 'TO SHIP / TO PROCESS')
                     ->first();
 
                 if ($data) { // Check if the order was found
@@ -1285,6 +1286,10 @@ class OrderController extends Controller
                             }
                         }
                     }
+                }else {
+                    return response()->json([
+                        'message' => 'Order not found'
+                    ], Response::HTTP_NOT_FOUND);
                 }
             } else {
                 return response()->json([
@@ -1839,6 +1844,14 @@ class OrderController extends Controller
     public function markAsDoneAllItem(Request $request, $id)
     {
         try {
+            $orderNow = OrderModel::where('group_id', $id)
+            ->where('status', 'TO SHIP / TO PROCESS');
+            if(!$orderNow){
+                return response()->json([
+                    'message' => 'Sorry already cancel'
+                ], Response::HTTP_OK);
+            }
+
             // Fetch User ID
             $user = AuthModel::where('session_login', $request->input('session'))
                 ->where('status', 'VERIFIED')
