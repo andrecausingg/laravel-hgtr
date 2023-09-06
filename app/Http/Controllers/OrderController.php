@@ -1885,7 +1885,7 @@ class OrderController extends Controller
                     }
                 } else {
                     return response()->json([
-                        'message' => 'No orders found with the given criteria'
+                        'message' => 'Order not found'
                     ], Response::HTTP_OK);
                 }
             } else {
