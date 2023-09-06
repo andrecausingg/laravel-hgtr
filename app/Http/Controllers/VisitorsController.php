@@ -20,16 +20,16 @@ class VisitorsController extends Controller
             // Query all visitors
             $allVisitors = VisitorModel::all();
             $totalVisitorsCount = $allVisitors->count();
-        
+
             // Query visitors for today's date
             $todaysVisitors = VisitorModel::whereDate('created_at', Carbon::now())->get();
-        
+
             return response()->json([
                 'total_visitors' => $totalVisitorsCount,
                 'todays_visitors' => $todaysVisitors,
                 'visitors' => $allVisitors
             ], Response::HTTP_OK); // Change the status code to 200 (OK)
-        }catch (\Exception $e) {
+        } catch (\Exception $e) {
             // Handle exceptions and return an error response with CORS headers
             $errorMessage = $e->getMessage();
             $errorCode = $e->getCode();
@@ -60,19 +60,29 @@ class VisitorsController extends Controller
     {
         try {
             $ipAddress = $request->ip();
-            // $location = Location::get($ipAddress);
 
-            // Create a new visitor record in the database
-            $visitor = VisitorModel::create([
-                'ip_address' => $ipAddress,
-                // 'country' => $location,
-            ]);
-    
-            return response()->json([
-                'message' => 'Visitor information recorded successfully',
-                'visitor' => $visitor, // Return the created visitor data
-            ], Response::HTTP_OK);
-        }  catch (\Exception $e) {
+            // Find or create a visitor record by IP address
+            $visitor = VisitorModel::firstOrNew(['ip_address' => $ipAddress]);
+
+            // Check if the visitor was recorded today
+            $today = Carbon::now()->format('Y-m-d');
+
+            if ($visitor->recorded_date !== $today) {
+                // Record the visitor for today
+                $visitor->recorded_date = $today;
+                $visitor->save();
+
+                return response()->json([
+                    'message' => 'Visitor information recorded successfully',
+                    'visitor' => $visitor,
+                ], Response::HTTP_OK);
+            } else {
+                return response()->json([
+                    'message' => 'Visitor already recorded today',
+                    'visitor' => $visitor,
+                ], Response::HTTP_OK);
+            }
+        } catch (\Exception $e) {
             // Handle exceptions and return an error response with CORS headers
             $errorMessage = $e->getMessage();
             $errorCode = $e->getCode();

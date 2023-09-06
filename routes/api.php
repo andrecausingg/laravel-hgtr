@@ -125,6 +125,8 @@ Route::post('product/return-refund-client-/completed/{id}', [OrderController::cl
 // Admin Orders
 // Display order
 Route::get('product/order/index', [OrderController::class, 'index']);
+// Top 5 Product
+Route::get('product/top-5-product', [OrderController::class, 'top5Product']);
 // Mark as done per item
 Route::post('product/order/mark-as-done-per-item/{id}', [OrderController::class, 'markAsDonePerItem']);
 // Mark as done all item
