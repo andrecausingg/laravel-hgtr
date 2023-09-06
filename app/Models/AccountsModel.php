@@ -16,6 +16,7 @@ class AccountsModel extends Model
         'password',
         'status',
         'ip_address',
+        'verification_num',
         'verified_at',
         'created_at'
     ];
