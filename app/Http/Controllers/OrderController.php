@@ -73,11 +73,76 @@ class OrderController extends Controller
                 ->orderByDesc('totalSold')
                 ->take(5)
                 ->get();
-        
+
             return response()->json([
                 'data' => $orders,
             ], Response::HTTP_OK);
-        }catch (\Exception $e) {
+        } catch (\Exception $e) {
+            // Handle exceptions and return an error response with CORS headers
+            $errorMessage = $e->getMessage();
+            $errorCode = $e->getCode();
+
+            // Create a JSON error response
+            $response = [
+                'success' => false,
+                'error' => [
+                    'code' => $errorCode,
+                    'message' => $errorMessage,
+                ],
+            ];
+
+            // Add additional error details if available
+            if ($e instanceof \Illuminate\Validation\ValidationException) {
+                $response['error']['details'] = $e->errors();
+            }
+
+            // Return the JSON error response with CORS headers and an appropriate HTTP status code
+            return response()->json($response, Response::HTTP_INTERNAL_SERVER_ERROR)->header('Content-Type', 'application/json');
+        }
+    }
+
+    public function top5ProductBarChart()
+    {
+        try {
+            // Create an array to store the results for each month
+            $monthlyTopProducts = [];
+
+            for ($month = 1; $month <= 12; $month++) {
+                // Get the top 5 highest sold orders for the product "Babero" for the current month
+                $orders = OrderModel::selectRaw('id, user_id, group_id, order_id, product_group_id, role, category, name, image, size, color, discount, description, product_price, shipping_fee, total_price, payment_method, status, reason_cancel, return_reason, return_image1, return_image2, return_image3, return_image4, return_description, return_solution, return_shipping_at, return_accept_at, return_decline_at, return_completed_at, return_failed_at, check_out_at, cancel_at, order_receive_at, mark_as_done_at, ship_at, completed_at, failed_at, return_at, created_at, updated_at, SUM(quantity) as totalSold')
+                    ->whereIn('status', ['COMPLETED', 'RETURN REFUND / COMPLETED'])
+                    ->whereMonth('created_at', $month) // Filter by the current month
+                    ->groupBy('id', 'user_id', 'group_id', 'order_id', 'product_group_id', 'role', 'category', 'name', 'image', 'size', 'color', 'discount', 'description', 'product_price', 'shipping_fee', 'total_price', 'payment_method', 'status', 'reason_cancel', 'return_reason', 'return_image1', 'return_image2', 'return_image3', 'return_image4', 'return_description', 'return_solution', 'return_shipping_at', 'return_accept_at', 'return_decline_at', 'return_completed_at', 'return_failed_at', 'check_out_at', 'cancel_at', 'order_receive_at', 'mark_as_done_at', 'ship_at', 'completed_at', 'failed_at', 'return_at', 'created_at', 'updated_at')
+                    ->orderByDesc('totalSold')
+                    ->take(5)
+                    ->get();
+
+                // Create an array to store the top products for the current month
+                $topProducts = [];
+                foreach ($orders as $order) {
+                    $topProducts[] = [
+                        'category' => $order->category,
+                        'name' => $order->name,
+                        'size' => $order->size,
+                        'color' => $order->color,
+                        'totalSold' => $order->totalSold,
+                    ];
+                }
+
+                // Add the results to the monthlyTopProducts array
+                $monthlyTopProducts[] = [
+                    'name' => date('M', mktime(0, 0, 0, $month, 1)),
+                    // Get the month name
+                    'topProducts' => $topProducts,
+                ];
+            }
+
+            // Return the results as JSON
+            return response()->json([
+                'data' => $monthlyTopProducts,
+            ], Response::HTTP_OK);
+
+        } catch (\Exception $e) {
             // Handle exceptions and return an error response with CORS headers
             $errorMessage = $e->getMessage();
             $errorCode = $e->getCode();
