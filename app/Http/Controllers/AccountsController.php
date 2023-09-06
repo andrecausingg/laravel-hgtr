@@ -68,6 +68,8 @@ class AccountsController extends Controller
     {
         //
         try {
+            $verificationNumber = mt_rand(100000, 999999);
+
             // Validate Email and Password
             $request->validate([
                 'email' => 'required|string|email|max:255', 
@@ -110,6 +112,7 @@ class AccountsController extends Controller
                 'role' => $request->input('role'),
                 'status' => $request->input('status'),
                 'ip_address' => $request->ip(),
+                'verification_num' => $verificationNumber,
                 'verified_at' => Carbon::now()
             ]);
 
