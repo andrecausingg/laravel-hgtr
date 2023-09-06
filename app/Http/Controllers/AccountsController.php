@@ -6,6 +6,7 @@ use App\Models\AccountsModel;
 use App\Models\AuthModel;
 use App\Models\LogsModel;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
 use Symfony\Component\HttpFoundation\Response;
 
