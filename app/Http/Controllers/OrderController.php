@@ -1509,7 +1509,7 @@ class OrderController extends Controller
                 } else {
                     return response()->json([
                         'message' => 'Order not found'
-                    ], Response::HTTP_NOT_FOUND);
+                    ], Response::HTTP_OK);
                 }
             } else {
                 return response()->json([
@@ -1726,7 +1726,7 @@ class OrderController extends Controller
                 } else {
                     return response()->json([
                         'message' => 'Order not found'
-                    ], Response::HTTP_NOT_FOUND);
+                    ], Response::HTTP_OK);
                 }
             } else {
                 return response()->json([
@@ -2042,7 +2042,7 @@ class OrderController extends Controller
                 } else {
                     return response()->json([
                         'message' => 'Order not found'
-                    ], Response::HTTP_NOT_FOUND);
+                    ], Response::HTTP_OK);
                 }
             } else {
                 return response()->json([
@@ -2128,7 +2128,7 @@ class OrderController extends Controller
                 } else {
                     return response()->json([
                         'message' => 'Order not found'
-                    ], Response::HTTP_NOT_FOUND);
+                    ], Response::HTTP_OK);
                 }
             } else {
                 return response()->json([
@@ -2197,7 +2197,7 @@ class OrderController extends Controller
                 } else {
                     return response()->json([
                         'message' => 'Order not found'
-                    ], Response::HTTP_NOT_FOUND);
+                    ], Response::HTTP_OK);
                 }
             }else {
                 return response()->json([
@@ -2266,7 +2266,7 @@ class OrderController extends Controller
                 } else {
                     return response()->json([
                         'message' => 'Order not found'
-                    ], Response::HTTP_NOT_FOUND);
+                    ], Response::HTTP_OK);
                 }
             }
         } catch (\Exception $e) {
@@ -2349,7 +2349,7 @@ class OrderController extends Controller
                 } else {
                     return response()->json([
                         'message' => 'Order not found'
-                    ], Response::HTTP_NOT_FOUND);
+                    ], Response::HTTP_OK);
                 }
             } else {
                 return response()->json([
@@ -2436,7 +2436,7 @@ class OrderController extends Controller
                 } else {
                     return response()->json([
                         'message' => 'Order not found'
-                    ], Response::HTTP_NOT_FOUND);
+                    ], Response::HTTP_OK);
                 }
             } else {
                 return response()->json([
@@ -2522,7 +2522,7 @@ class OrderController extends Controller
                 } else {
                     return response()->json([
                         'message' => 'Order not found'
-                    ], Response::HTTP_NOT_FOUND);
+                    ], Response::HTTP_OK);
                 }
             } else {
                 return response()->json([
@@ -2609,7 +2609,7 @@ class OrderController extends Controller
                 } else {
                     return response()->json([
                         'message' => 'Order not found'
-                    ], Response::HTTP_NOT_FOUND);
+                    ], Response::HTTP_OK);
                 }
             } else {
                 return response()->json([
