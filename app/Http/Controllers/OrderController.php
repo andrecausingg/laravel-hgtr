@@ -1422,6 +1422,8 @@ class OrderController extends Controller
                             ], Response::HTTP_OK);
                         }
                     }
+                }else{
+
                 }
             } else {
                 return response()->json([
@@ -1996,7 +1998,9 @@ class OrderController extends Controller
                 ->first();
 
             if ($user) {
-                $order = OrderModel::find($id);
+                $order = OrderModel::where('id',$id)
+                ->where('status', 'SHIPPING')
+                ->first();
 
                 if ($order) {
                     $order->status = 'COMPLETED';
@@ -2079,7 +2083,10 @@ class OrderController extends Controller
                 ->first();
 
             if ($user) {
-                $order = OrderModel::find($id);
+                $order = OrderModel::where('id',$id)
+                ->where('status', 'SHIPPING')
+                ->first();
+
 
                 if ($order) {
                     $order->status = 'FAILED';
@@ -2189,9 +2196,13 @@ class OrderController extends Controller
                     }
                 } else {
                     return response()->json([
-                        'message' => 'No orders found with the given criteria'
+                        'message' => 'Order not found'
                     ], Response::HTTP_NOT_FOUND);
                 }
+            }else {
+                return response()->json([
+                    'message' => 'Intruder'
+                ], Response::HTTP_OK);
             }
         } catch (\Exception $e) {
             // Handle exceptions and return an error response with CORS headers
@@ -2254,7 +2265,7 @@ class OrderController extends Controller
                     }
                 } else {
                     return response()->json([
-                        'message' => 'No orders found with the given criteria'
+                        'message' => 'Order not found'
                     ], Response::HTTP_NOT_FOUND);
                 }
             }
