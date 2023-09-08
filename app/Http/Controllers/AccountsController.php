@@ -119,7 +119,7 @@ class AccountsController extends Controller
             // Return a success response with CORS headers
             return response()->json([
                 'message' => 'Created'
-            ], Response::HTTP_CREATED);
+            ], Response::HTTP_OK);
         
         } catch (\Exception $e) {
             // Handle exceptions and return an error response with CORS headers
