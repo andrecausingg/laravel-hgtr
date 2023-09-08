@@ -61,7 +61,7 @@ class ProductController extends Controller
             if ($user) {
                 $request->validate([
                     'role' => 'nullable|string',
-                    'image' => 'required|image|mimes:jpeg,png,jpg|max:2048',
+                    'image' => 'required|image|mimes:jpeg,png,jpg|max:8192',
                     'name' => 'required|string|nullable|max:255',
                     'price' => 'required|numeric|min:0',
                     'quantity' => 'required|numeric|min:1',
@@ -171,7 +171,7 @@ class ProductController extends Controller
                 if ($product) {
                     $request->validate([
                         'role' => 'nullable|string',
-                        'image' => 'required|image|mimes:jpeg,png,jpg|max:2048',
+                        'image' => 'required|image|mimes:jpeg,png,jpg|max:8192',
                         'name' => 'required|string|nullable|max:255',
                         'price' => 'required|numeric|min:0',
                         'quantity' => 'required|numeric|min:1',
@@ -319,7 +319,7 @@ class ProductController extends Controller
             if ($user) {
                 // Validate the Input
                 $validatedData = $request->validate([
-                    'image' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
+                    'image' => 'image|mimes:jpeg,png,jpg,gif|max:8192',
                     'price' => 'required|numeric|min:0',
                     'quantity' => 'required|numeric|min:0',
                     'color' => 'required|string|max:255',
