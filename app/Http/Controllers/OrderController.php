@@ -9,6 +9,7 @@ use App\Models\ProductModel;
 use App\Models\UserInfoModel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
@@ -29,10 +30,39 @@ class OrderController extends Controller
                 // Fetch the user information using user_id
                 $userInfo = UserInfoModel::where('user_id', $order->user_id)->first();
 
+                // Define an array of fields to decrypt
+                $fieldsToDecrypt = [
+                    'first_name',
+                    'middle_name',
+                    'last_name',
+                    'contact_num',
+                    'address_1',
+                    'address_2',
+                    'region_code',
+                    'province_code',
+                    'city_or_municipality_code',
+                    'region_name',
+                    'province_name',
+                    'city_or_municipality_name',
+                    'barangay',
+                    'description_location'
+                ];
+
+                $decryptedData = [];
+
+                // Loop through the fields and decrypt each one
+                foreach ($fieldsToDecrypt as $field) {
+                    $decryptedData[$field] = Crypt::decrypt($userInfo->$field);
+                }
+
+                // Include 'id' and 'user_id' in the decrypted data
+                $decryptedData['id'] = $userInfo->id;
+                $decryptedData['user_id'] = $userInfo->user_id;
+
                 // Add order and user information to the array
                 $orderData[] = [
                     'order' => $order,
-                    'userInfo' => $userInfo
+                    'userInfo' => $decryptedData
                 ];
             }
 
@@ -1286,7 +1316,7 @@ class OrderController extends Controller
                             }
                         }
                     }
-                }else {
+                } else {
                     return response()->json([
                         'message' => 'Order not found'
                     ], Response::HTTP_OK);
@@ -1422,7 +1452,7 @@ class OrderController extends Controller
                             ], Response::HTTP_OK);
                         }
                     }
-                }else{
+                } else {
 
                 }
             } else {
@@ -1847,8 +1877,8 @@ class OrderController extends Controller
     {
         try {
             $orderNow = OrderModel::where('group_id', $id)
-            ->where('status', 'TO SHIP / TO PROCESS');
-            if(!$orderNow){
+                ->where('status', 'TO SHIP / TO PROCESS');
+            if (!$orderNow) {
                 return response()->json([
                     'message' => 'Sorry already cancel'
                 ], Response::HTTP_OK);
@@ -1998,9 +2028,9 @@ class OrderController extends Controller
                 ->first();
 
             if ($user) {
-                $order = OrderModel::where('id',$id)
-                ->where('status', 'SHIPPING')
-                ->first();
+                $order = OrderModel::where('id', $id)
+                    ->where('status', 'SHIPPING')
+                    ->first();
 
                 if ($order) {
                     $order->status = 'COMPLETED';
@@ -2083,9 +2113,9 @@ class OrderController extends Controller
                 ->first();
 
             if ($user) {
-                $order = OrderModel::where('id',$id)
-                ->where('status', 'SHIPPING')
-                ->first();
+                $order = OrderModel::where('id', $id)
+                    ->where('status', 'SHIPPING')
+                    ->first();
 
 
                 if ($order) {
@@ -2199,7 +2229,7 @@ class OrderController extends Controller
                         'message' => 'Order not found'
                     ], Response::HTTP_OK);
                 }
-            }else {
+            } else {
                 return response()->json([
                     'message' => 'Intruder'
                 ], Response::HTTP_OK);

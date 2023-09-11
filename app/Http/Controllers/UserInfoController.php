@@ -7,6 +7,7 @@ use App\Models\LogsModel;
 use App\Models\UserInfoModel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Crypt;
 use Symfony\Component\HttpFoundation\Response;
 
 class UserInfoController extends Controller
@@ -19,9 +20,50 @@ class UserInfoController extends Controller
         //
         try {
             $data = UserInfoModel::all();
+            $decryptedData = [];
+
+            foreach ($data as $item) {
+                $decryptedItem = [
+                    'id' => $item->id,
+                    'user_id' => $item->user_id,
+                    'first_name' =>  Crypt::decrypt($item->first_name),
+                    // Decrypt 'first_name' column
+                    'middle_name' => Crypt::decrypt($item->middle_name),
+                    // Decrypt 'middle_name' column
+                    'last_name' => Crypt::decrypt($item->last_name),
+                    // Decrypt 'last_name' column
+                    'contact_num' => Crypt::decrypt($item->contact_num),
+                    // Decrypt 'contact_num' column
+                    'address_1' => Crypt::decrypt($item->address_1),
+                    // Decrypt 'address_1' column
+                    'address_2' => Crypt::decrypt($item->address_2),
+                    // Decrypt 'address_2' column
+                    'region_code' => Crypt::decrypt($item->region_code),
+                    // Decrypt 'region_code' column
+                    'province_code' => Crypt::decrypt($item->province_code),
+                    // Decrypt 'province_code' column
+                    'city_or_municipality_code' => Crypt::decrypt($item->city_or_municipality_code),
+                    // Decrypt 'city_or_municipality_code' column
+                    'region_name' => Crypt::decrypt($item->region_name),
+                    // Decrypt 'region_name' column
+                    'province_name' => Crypt::decrypt($item->province_name),
+                    // Decrypt 'province_name' column
+                    'city_or_municipality_name' => Crypt::decrypt($item->city_or_municipality_name),
+                    // Decrypt 'city_or_municipality_name' column
+                    'barangay' => Crypt::decrypt($item->barangay),
+                    // Decrypt 'barangay' column
+                    'description_location' => Crypt::decrypt($item->description_location),
+                    // Decrypt 'description_location' column
+                    'created_at' => $item->created_at,
+                    'updated_at' => $item->updated_at
+                ];
+
+                $decryptedData[] = $decryptedItem;
+            }
+
             return response()->json([
-                'data' => $data
-            ], Response::HTTP_OK); // Change the status code to 200 (OK)
+                'data' => $decryptedData
+            ], Response::HTTP_OK);
         } catch (\Exception $e) {
             // Handle exceptions and return an error response with CORS headers
             $errorMessage = $e->getMessage();
@@ -65,6 +107,7 @@ class UserInfoController extends Controller
             $user = AuthModel::where('session_login', $request->input('session'))
                 ->where('status', 'VERIFIED')
                 ->first();
+
             if ($user) {
                 // Set the user_id value for validation
                 $request->merge(['user_id' => $user->id]);
@@ -90,8 +133,21 @@ class UserInfoController extends Controller
 
                 $validatedData = $request->validate($rules);
 
+                // Encrypt sensitive fields except user_id
+                $encryptedFields = $validatedData;
+                unset($encryptedFields['user_id']); // Remove user_id from encryption
+                foreach ($encryptedFields as $key => $value) {
+                    $encryptedFields[$key] = Crypt::encrypt($value);
+                }
+
+                // Combine the encrypted and non-encrypted data
+                $encryptedData = $validatedData;
+                foreach ($encryptedFields as $key => $value) {
+                    $encryptedData[$key] = $value;
+                }
+
                 // Create the user info
-                $created = UserInfoModel::create($validatedData);
+                $created = UserInfoModel::create($encryptedData);
 
                 if ($created) {
                     $userAction = 'CREATED';
@@ -103,7 +159,7 @@ class UserInfoController extends Controller
                         'ip_address' => $request->ip(),
                         'user_action' => $userAction,
                         'details' => $details,
-                        'created_at' => Carbon::now()
+                        'created_at' => now()
                     ]);
 
                     // Return a success response with CORS headers
@@ -151,16 +207,47 @@ class UserInfoController extends Controller
             $user = AuthModel::where('session_login', $id)
                 ->where('status', 'VERIFIED')
                 ->first();
+
             if ($user) {
-                $data = UserInfoModel::where('user_id', $user->id)->get();
+                $userInfo = UserInfoModel::where('user_id', $user->id)->first();
+
+                // Define an array of fields to decrypt
+                $fieldsToDecrypt = [
+                    'first_name',
+                    'middle_name',
+                    'last_name',
+                    'contact_num',
+                    'address_1',
+                    'address_2',
+                    'region_code',
+                    'province_code',
+                    'city_or_municipality_code',
+                    'region_name',
+                    'province_name',
+                    'city_or_municipality_name',
+                    'barangay',
+                    'description_location'
+                ];
+
+                $decryptedData = [];
+
+                // Loop through the fields and decrypt each one
+                foreach ($fieldsToDecrypt as $field) {
+                    $decryptedData[$field] = Crypt::decrypt($userInfo->$field);
+                }
+
+                // Include 'id' and 'user_id' in the decrypted data
+                $decryptedData['id'] = $userInfo->id;
+                $decryptedData['user_id'] = $userInfo->user_id;
+
                 return response()->json([
-                    'data' => $data
-                ], Response::HTTP_OK); // Change the status code to 200 (OK)
+                    'data' => $decryptedData
+                ], Response::HTTP_OK);
             } else {
                 // Return a success response with CORS headers
                 return response()->json([
                     'message' => 'Intruder'
-                ], Response::HTTP_OK);
+                ], Response::HTTP_FORBIDDEN);
             }
         } catch (\Exception $e) {
             // Handle exceptions and return an error response with CORS headers
@@ -196,11 +283,28 @@ class UserInfoController extends Controller
             $user = AuthModel::where('session_login', $id)
                 ->where('status', 'VERIFIED')
                 ->first();
+
             if ($user) {
                 $data = UserInfoModel::where('user_id', $user->id)->first();
-                return response()->json([
-                    'data' => $data
-                ], Response::HTTP_OK); // Change the status code to 200 (OK)
+
+                if ($data) {
+                    // Decrypt sensitive fields
+                    $decryptedData = $data->toArray();
+                    foreach ($decryptedData as $key => $value) {
+                        if ($key !== 'user_id') { // Skip user_id, as it should not be decrypted
+                            $decryptedData[$key] = decrypt($value);
+                        }
+                    }
+
+                    return response()->json([
+                        'data' => $decryptedData
+                    ], Response::HTTP_OK);
+                } else {
+                    // Handle the case where user info is not found
+                    return response()->json([
+                        'message' => 'User information not found'
+                    ], Response::HTTP_NOT_FOUND);
+                }
             } else {
                 // Return a success response with CORS headers
                 return response()->json([
