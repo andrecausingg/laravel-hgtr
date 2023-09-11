@@ -26,7 +26,7 @@ class UserInfoController extends Controller
                 $decryptedItem = [
                     'id' => $item->id,
                     'user_id' => $item->user_id,
-                    'first_name' =>  Crypt::decrypt($item->first_name),
+                    'first_name' => Crypt::decrypt($item->first_name),
                     // Decrypt 'first_name' column
                     'middle_name' => Crypt::decrypt($item->middle_name),
                     // Decrypt 'middle_name' column
@@ -285,31 +285,45 @@ class UserInfoController extends Controller
                 ->first();
 
             if ($user) {
-                $data = UserInfoModel::where('user_id', $user->id)->first();
+                $userInfo = UserInfoModel::where('user_id', $user->id)->first();
 
-                if ($data) {
-                    // Decrypt sensitive fields
-                    $decryptedData = $data->toArray();
-                    foreach ($decryptedData as $key => $value) {
-                        if ($key !== 'user_id') { // Skip user_id, as it should not be decrypted
-                            $decryptedData[$key] = decrypt($value);
-                        }
-                    }
+                // Define an array of fields to decrypt
+                $fieldsToDecrypt = [
+                    'first_name',
+                    'middle_name',
+                    'last_name',
+                    'contact_num',
+                    'address_1',
+                    'address_2',
+                    'region_code',
+                    'province_code',
+                    'city_or_municipality_code',
+                    'region_name',
+                    'province_name',
+                    'city_or_municipality_name',
+                    'barangay',
+                    'description_location'
+                ];
 
-                    return response()->json([
-                        'data' => $decryptedData
-                    ], Response::HTTP_OK);
-                } else {
-                    // Handle the case where user info is not found
-                    return response()->json([
-                        'message' => 'User information not found'
-                    ], Response::HTTP_NOT_FOUND);
+                $decryptedData = [];
+
+                // Loop through the fields and decrypt each one
+                foreach ($fieldsToDecrypt as $field) {
+                    $decryptedData[$field] = Crypt::decrypt($userInfo->$field);
                 }
+
+                // Include 'id' and 'user_id' in the decrypted data
+                $decryptedData['id'] = $userInfo->id;
+                $decryptedData['user_id'] = $userInfo->user_id;
+
+                return response()->json([
+                    'data' => $decryptedData
+                ], Response::HTTP_OK);
             } else {
                 // Return a success response with CORS headers
                 return response()->json([
                     'message' => 'Intruder'
-                ], Response::HTTP_OK);
+                ], Response::HTTP_FORBIDDEN);
             }
         } catch (\Exception $e) {
             // Handle exceptions and return an error response with CORS headers
@@ -340,7 +354,7 @@ class UserInfoController extends Controller
      */
     public function update(Request $request, $id)
     {
-        //
+
         try {
             $data = UserInfoModel::find($id);
             if (!$data) {
@@ -372,63 +386,76 @@ class UserInfoController extends Controller
                     'description_location' => 'nullable|string',
                 ]);
 
+                // Encrypt sensitive data
+                $validatedData['first_name'] = Crypt::encrypt($validatedData['first_name']);
+                $validatedData['middle_name'] = Crypt::encrypt($validatedData['middle_name']);
+                $validatedData['last_name'] = Crypt::encrypt($validatedData['last_name']);
+                $validatedData['contact_num'] = Crypt::encrypt($validatedData['contact_num']);
+                $validatedData['address_1'] = Crypt::encrypt($validatedData['address_1']);
+                $validatedData['address_2'] = Crypt::encrypt($validatedData['address_2']);
+                $validatedData['region_code'] = Crypt::encrypt($validatedData['region_code']);
+                $validatedData['province_code'] = Crypt::encrypt($validatedData['province_code']);
+                $validatedData['city_or_municipality_code'] = Crypt::encrypt($validatedData['city_or_municipality_code']);
+                $validatedData['region_name'] = Crypt::encrypt($validatedData['region_name']);
+                $validatedData['province_name'] = Crypt::encrypt($validatedData['province_name']);
+                $validatedData['city_or_municipality_name'] = Crypt::encrypt($validatedData['city_or_municipality_name']);
+                $validatedData['barangay'] = Crypt::encrypt($validatedData['barangay']);
+                $validatedData['description_location'] = Crypt::encrypt($validatedData['description_location']);
+                // ... (encrypt other sensitive fields)
+
                 // Update account properties
                 $data->fill($validatedData);
                 $changes = [];
 
                 if ($data->isDirty('first_name')) {
-                    $changes[] = 'First Name changed from "' . $data->getOriginal('first_name') . '" to "' . $data->first_name . '".';
+                    $changes[] = '-First-Name-changed-from-"' . $data->getOriginal('first_name') . '"-to-"' . $validatedData['first_name'];
                 }
                 if ($data->isDirty('middle_name')) {
-                    $changes[] = 'Middle Name changed from "' . $data->getOriginal('middle_name') . '" to "' . $data->middle_name . '".';
+                    $changes[] = '-Middle-Name-changed-from-"' . $data->getOriginal('middle_name') . '"-to-"' . $validatedData['middle_name'];
                 }
                 if ($data->isDirty('last_name')) {
-                    $changes[] = 'Last Name changed from "' . $data->getOriginal('last_name') . '" to "' . $data->last_name . '".';
+                    $changes[] = '-Last-Name-changed-from-"' . $data->getOriginal('last_name') . '"-to-"' . $validatedData['last_name'];
                 }
                 if ($data->isDirty('contact_num')) {
-                    $changes[] = 'Contact Number changed from "' . $data->getOriginal('contact_num') . '" to "' . $data->contact_num . '".';
+                    $changes[] = '-Contact-Number-changed-from-"' . $data->getOriginal('contact_num') . '"-to-"' . $validatedData['contact_num'];
                 }
                 if ($data->isDirty('address_1')) {
-                    $changes[] = 'Address 1 changed from "' . $data->getOriginal('address_1') . '" to "' . $data->address_1 . '".';
+                    $changes[] = '-Address-1-changed-from-"' . $data->getOriginal('address_1') . '"-to-"' . $validatedData['address_1'];
                 }
                 if ($data->isDirty('address_2')) {
-                    $changes[] = 'Address 2 changed from "' . $data->getOriginal('address_2') . '" to "' . $data->address_2 . '".';
+                    $changes[] = '-Address-2-changed-from-"' . $data->getOriginal('address_2') . '"-to-"' . $validatedData['address_2'];
                 }
                 if ($data->isDirty('region_code')) {
-                    $changes[] = 'Region Code changed from "' . $data->getOriginal('region_code') . '" to "' . $data->region_code . '".';
+                    $changes[] = '-Region-Code-changed-from-"' . $data->getOriginal('region_code') . '"-to-"' . $validatedData['region_code'];
                 }
                 if ($data->isDirty('province_code')) {
-                    $changes[] = 'Province Code changed from "' . $data->getOriginal('province_code') . '" to "' . $data->province_code . '".';
+                    $changes[] = '-Province-Code-changed-from-"' . $data->getOriginal('province_code') . '"-to-"' . $validatedData['province_code'];
                 }
                 if ($data->isDirty('city_or_municipality_code')) {
-                    $changes[] = 'City / Municipality Code change from "' . $data->getOriginal('city_or_municipality_code') . '" to "' . $data->city_or_municipality_code . '".';
+                    $changes[] = '-City-or-Municipality-Code-changed-from-"' . $data->getOriginal('city_or_municipality_code') . '"-to-"' . $validatedData['city_or_municipality_code'];
                 }
                 if ($data->isDirty('region_name')) {
-                    $changes[] = 'Region Name changed from "' . $data->getOriginal('region_name') . '" to "' . $data->region_name . '".';
+                    $changes[] = '-Region-Name-changed-from-"' . $data->getOriginal('region_name') . '"-to-"' . $validatedData['region_name'];
                 }
                 if ($data->isDirty('province_name')) {
-                    $changes[] = 'Province Name changed from "' . $data->getOriginal('province_name') . '" to "' . $data->province_name . '".';
+                    $changes[] = '-Province-Name-changed-from-"' . $data->getOriginal('province_name') . '"-to-"' . $validatedData['province_name'];
                 }
                 if ($data->isDirty('city_or_municipality_name')) {
-                    $changes[] = 'City / Municipality Name change from "' . $data->getOriginal('city_or_municipality_name') . '" to "' . $data->city_or_municipality_name . '".';
+                    $changes[] = '-City-or-Municipality-Name-changed-from-"' . $data->getOriginal('city_or_municipality_name') . '"-to-"' . $validatedData['city_or_municipality_name'];
                 }
                 if ($data->isDirty('barangay')) {
-                    $changes[] = 'Barangay from "' . $data->getOriginal('barangay') . '" to "' . $data->barangay . '".';
+                    $changes[] = '-Barangay-changed-from-"' . $data->getOriginal('barangay') . '"-to-"' . $validatedData['barangay'];
                 }
-                if ($data->isDirty('barangay')) {
-                    $changes[] = 'Description Location from "' . $data->getOriginal('description_location') . '" to "' . $data->description_location . '".';
-                }
-
-                if (empty($changes)) {
-                    return response()->json([
-                        'message' => 'No changes to update.'
-                    ], Response::HTTP_OK);
+                if ($data->isDirty('description_location')) {
+                    $changes[] = '-Description-location-changed-from-"' . $data->getOriginal('description_location') . '"-to-"' . $validatedData['description_location'];
                 }
 
+
+                // Save the updated data
                 if ($data->save()) {
                     if ($user) {
-                        $userAction = 'UPDATE';
-                        $details = 'Updated an Account with the following changes: ' . implode(' ', $changes);
+                        $userAction = 'UPDATE USER INFO';
+                        $details = 'Updated-an-Account-with-the-following-changes-' . implode('-', $changes);
 
                         // Create Log
                         LogsModel::create([
