@@ -27,6 +27,7 @@ class OrderModel extends Model
         'product_price',
         'shipping_fee',
         'total_price',
+        'final_total_price',
         'payment_method',
         'status',
         'reason_cancel',

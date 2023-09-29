@@ -127,6 +127,17 @@ class AuthController extends Controller
             $emailParts = explode('@', $request->input('email'));
             $name = $emailParts[0];
 
+            // Exist Email Verified then Send Error 'User Already Exist'
+            $user = AuthModel::where('email', $request->input('email'))
+                ->where('status', 'VERIFIED')
+                ->first();
+            if ($user) {
+                // Return a success response with CORS headers
+                return response()->json([
+                    'message' => 'User already exist.',
+                ], Response::HTTP_CREATED);
+            }
+
             // Exist Email Not Verified then Send Code
             $user = AuthModel::where('email', $request->input('email'))
                 ->where('status', 'NOT VERIFIED')
@@ -144,17 +155,6 @@ class AuthController extends Controller
                 return response()->json([
                     'message' => 'Sent new code.',
                     'sessionVerifyEmail' => $verificationToken
-                ], Response::HTTP_CREATED);
-            }
-
-            // Exist Email Verified then Send Error 'User Already Exist'
-            $user = AuthModel::where('email', $request->input('email'))
-                ->where('status', 'VERIFIED')
-                ->first();
-            if ($user) {
-                // Return a success response with CORS headers
-                return response()->json([
-                    'message' => 'User already exist.',
                 ], Response::HTTP_CREATED);
             }
 
@@ -480,7 +480,8 @@ class AuthController extends Controller
                 if (Hash::check($request->input('currentPassword'), $user->password)) {
                     // Validate the input
                     $validatedData = $request->validate([
-                        'newEmail' => 'required|string|email|max:255|unique:users_tbl,email', // Assuming 'users' is the table name
+                        'newEmail' => 'required|string|email|max:255|unique:users_tbl,email',
+                        // Assuming 'users' is the table name
                         // Change 'newEmail' validation rule
                         'currentPassword' => 'required|min:8',
                     ]);

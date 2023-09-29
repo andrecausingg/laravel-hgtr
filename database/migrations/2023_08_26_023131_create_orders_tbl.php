@@ -30,6 +30,7 @@ return new class extends Migration
             $table->decimal('product_price', 10, 2);
             $table->decimal('shipping_fee', 10, 2)->nullable();
             $table->decimal('total_price', 10, 2);
+            $table->decimal('final_total_price', 10, 2)->nullable();
             $table->string('payment_method')->nullable();
             $table->string('status');
 

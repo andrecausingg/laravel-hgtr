@@ -63,7 +63,7 @@ class ProductController extends Controller
                     'role' => 'nullable|string',
                     'image' => 'required|image|mimes:jpeg,png,jpg|max:8192',
                     'name' => 'required|string|nullable|max:255',
-                    'price' => 'required|numeric|min:0',
+                    'price' => 'required|numeric|min:1',
                     'quantity' => 'required|numeric|min:1',
                     'category' => 'required|string|nullable|max:255',
                     'color' => 'required|string|max:255',
