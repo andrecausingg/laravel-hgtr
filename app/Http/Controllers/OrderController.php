@@ -1387,44 +1387,6 @@ class OrderController extends Controller
                             $data->cancel_at = Carbon::now();
                             $data->reason_cancel = $request->input('reasonCancel');
                             if ($data->save()) {
-                                // ****************************//
-                                    // CALCULATING THE PRICE WITH 390
-                                    // Find the orders that match the specified conditions
-                                    $ordersToUpdate = OrderModel::where('user_id', $user->id)
-                                    ->where('status', 'TO SHIP / TO PROCESS')
-                                    ->where('product_price', 390) // Filter by product price 390
-                                    ->get(); // Get all matching orders
-
-                                    $totalQuantity = 0; // Initialize the total quantity to 0
-                                    foreach ($ordersToUpdate as $order) {
-                                        $totalQuantity += $order->quantity;
-                                    }
-
-                                    // Calculate the new total price based on the fixed price of 1000 for every 3 products
-                                    $countDivisibleBy3 = (int) ($totalQuantity / 3);
-                                    $specialPrice = $countDivisibleBy3 * 1000;
-                                    $remainder = $totalQuantity % 3;
-                                    $totalPriceRemainder = $remainder * 390;
-                                    $ordersToUpdateNot390 = OrderModel::where('user_id', $user->id)
-                                        ->where('status', 'TO SHIP / TO PROCESS')
-                                        ->where('product_price', '!=', 390)
-                                        ->get();
-                                    $totalPrice = 0; // Initialize the total price to 0
-                                    foreach ($ordersToUpdateNot390 as $order) {
-                                        $totalPrice += $order->product_price;
-                                    }
-
-                                    // SAVE THE CALCULATED FINAL PRICE
-                                    // Update the final_total_price for each order
-                                    $updateCalcuFinalPrice = OrderModel::where('user_id', $user->id)
-                                        ->where('status', 'TO SHIP / TO PROCESS')
-                                        ->where('role', 'MAIN')
-                                        ->first();
-                                    $updateCalcuFinalPrice->final_total_price = $specialPrice + $totalPriceRemainder + $totalPrice;
-                                    $updateCalcuFinalPrice->save(); // Save the changes to each order
-                                // ****************************//
-
-
                                 $userAction = 'CANCELLED';
                                 $details = 'Cancelled Product Information with Group ID: ' . $data->group_id . "\n" .
                                     'Order ID: ' . $data->order_id . "\n" .
