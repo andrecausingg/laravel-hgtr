@@ -1721,10 +1721,10 @@ class OrderController extends Controller
                 if ($data) {
                     $request->validate([
                         'returnReason' => 'required|string|max:255',
-                        'image1' => 'required|image|mimes:jpeg,png,jpg|max:2048',
-                        'image2' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-                        'image3' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-                        'image4' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+                        'image1' => 'required|image|mimes:jpeg,png,jpg|max:10000',
+                        'image2' => 'nullable|image|mimes:jpeg,png,jpg|max:10000',
+                        'image3' => 'nullable|image|mimes:jpeg,png,jpg|max:10000',
+                        'image4' => 'nullable|image|mimes:jpeg,png,jpg|max:10000',
                         'description' => 'string|max:255',
                         'returnSolution' => 'required|string|max:255',
                     ]);
@@ -1940,10 +1940,10 @@ class OrderController extends Controller
                 if ($data) {
                     $request->validate([
                         'returnReason' => 'required|string|max:255',
-                        'image1' => 'required|image|mimes:jpeg,png,jpg|max:2048',
-                        'image2' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-                        'image3' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-                        'image4' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+                        'image1' => 'required|image|mimes:jpeg,png,jpg|max:10000',
+                        'image2' => 'nullable|image|mimes:jpeg,png,jpg|max:10000',
+                        'image3' => 'nullable|image|mimes:jpeg,png,jpg|max:10000',
+                        'image4' => 'nullable|image|mimes:jpeg,png,jpg|max:10000',
                         'description' => 'string|max:255',
                         'returnSolution' => 'required|string|max:255',
                     ]);
