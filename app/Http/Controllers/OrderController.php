@@ -305,42 +305,44 @@ class OrderController extends Controller
                             $checkSameOrder->quantity = $finalTotalQuantity;
                             if ($checkSameOrder->save()) {
                                 // ****************************//
-                                    // CALCULATING THE PRICE WITH 390
-                                    // Find the orders that match the specified conditions
-                                    $ordersToUpdate = OrderModel::where('user_id', $user->id)
+                                // CALCULATING THE PRICE WITH 390
+                                // Find the orders that match the specified conditions
+                                $ordersToUpdate = OrderModel::where('user_id', $user->id)
                                     ->where('status', 'UNPAID')
                                     ->where('product_price', 390) // Filter by product price 390
                                     ->get(); // Get all matching orders
 
-                                    $totalQuantity = 0; // Initialize the total quantity to 0
-                                    foreach ($ordersToUpdate as $order) {
-                                        $totalQuantity += $order->quantity;
-                                    }
+                                $totalQuantity = 0; // Initialize the total quantity to 0
+                                foreach ($ordersToUpdate as $order) {
+                                    $totalQuantity += $order->quantity;
+                                }
 
-                                    // Calculate the new total price based on the fixed price of 1000 for every 3 products
-                                    $countDivisibleBy3 = (int) ($totalQuantity / 3);
-                                    $specialPrice = $countDivisibleBy3 * 1000;
-                                    $remainder = $totalQuantity % 3;
-                                    $totalPriceRemainder = $remainder * 390;
-                                    $ordersToUpdateNot390 = OrderModel::where('user_id', $user->id)
-                                        ->where('status', 'UNPAID')
-                                        ->where('product_price', '!=', 390)
-                                        ->get();
-                                    $totalPrice = 0; // Initialize the total price to 0
-                                    foreach ($ordersToUpdateNot390 as $order) {
-                                        $totalPrice += $order->product_price;
-                                    }
+                                // Calculate the new total price based on the fixed price of 1000 for every 3 products
+                                $countDivisibleBy3 = (int) ($totalQuantity / 3);
+                                $specialPrice = $countDivisibleBy3 * 1000;
+                                $remainder = $totalQuantity % 3;
+                                $totalPriceRemainder = $remainder * 390;
+                                $ordersToUpdateNot390 = OrderModel::where('user_id', $user->id)
+                                    ->where('status', 'UNPAID')
+                                    ->where('product_price', '!=', 390)
+                                    ->get();
+                                $totalPrice = 0; // Initialize the total price to 0
+                                foreach ($ordersToUpdateNot390 as $order) {
+                                    $totalPrice += $order->product_price;
+                                }
 
-                                    // SAVE THE CALCULATED FINAL PRICE
-                                    // Update the final_total_price for each order
-                                    $updateCalcuFinalPrice = OrderModel::where('user_id', $user->id)
-                                        ->where('status', 'UNPAID')
-                                        ->where('role', 'MAIN')
-                                        ->first();
-                                    $updateCalcuFinalPrice->final_total_price = $specialPrice + $totalPriceRemainder + $totalPrice;
-                                    $updateCalcuFinalPrice->save(); // Save the changes to each order
+                                // SAVE THE CALCULATED FINAL PRICE
+                                // Update the final_total_price for each order
+                                $updateCalcuFinalPrice = OrderModel::where('user_id', $user->id)
+                                    ->where('status', 'UNPAID')
+                                    ->where('role', 'MAIN')
+                                    ->first();
+                                $updateCalcuFinalPrice->final_total_price = $specialPrice + $totalPriceRemainder + $totalPrice;
+                                $updateCalcuFinalPrice->save(); // Save the changes to each order
                                 // ****************************//
 
+                                // ****************************//
+                                // CALCULATING SHIPPING FEE
                                 // Fetch the total Quantity
                                 $fetchAllQuantityAndCalculateShippingFee = OrderModel::where('user_id', $user->id)
                                     ->where('status', 'UNPAID')
@@ -375,6 +377,7 @@ class OrderController extends Controller
                                         'message' => 'Created'
                                     ], Response::HTTP_OK);
                                 }
+                                // ****************************//
                             }
                         } else {
                             // Add new item on cart with the same Group  I.D
@@ -431,13 +434,13 @@ class OrderController extends Controller
 
                                 // Calculate Shipping Fee Always
                                 if ($created) {
-                                // ****************************//
+                                    // ****************************//
                                     // CALCULATING THE PRICE WITH 390
                                     // Find the orders that match the specified conditions
                                     $ordersToUpdate = OrderModel::where('user_id', $user->id)
-                                    ->where('status', 'UNPAID')
-                                    ->where('product_price', 390) // Filter by product price 390
-                                    ->get(); // Get all matching orders
+                                        ->where('status', 'UNPAID')
+                                        ->where('product_price', 390) // Filter by product price 390
+                                        ->get(); // Get all matching orders
 
                                     $totalQuantity = 0; // Initialize the total quantity to 0
                                     foreach ($ordersToUpdate as $order) {
@@ -466,16 +469,16 @@ class OrderController extends Controller
                                         ->first();
                                     $updateCalcuFinalPrice->final_total_price = $specialPrice + $totalPriceRemainder + $totalPrice;
                                     $updateCalcuFinalPrice->save(); // Save the changes to each order
-                                // ****************************//
+                                    // ****************************//
 
+
+                                    // ****************************//
+                                    // CALCULATING SHIPPING FEE
                                     // Fetch the total Quantity
                                     $fetchAllQuantityAndCalculateShippingFee = OrderModel::where('user_id', $user->id)
                                         ->where('status', 'UNPAID')
                                         ->get();
-
                                     $totalQuantity = $fetchAllQuantityAndCalculateShippingFee->sum('quantity');
-
-
                                     function calculateShippingFee($totalQuantity)
                                     {
                                         $shippingFee = 100; // Base shipping fee
@@ -501,10 +504,11 @@ class OrderController extends Controller
                                             'message' => 'Created'
                                         ], Response::HTTP_OK);
                                     }
+                                    // ****************************//
                                 }
                             }
                         }
-                    
+
                     } else {
                         // Same Add to Cart just update the total price and quantity
                         $checkSameOrder = OrderModel::where('user_id', $user->id)
@@ -536,45 +540,46 @@ class OrderController extends Controller
                             $checkSameOrder->quantity = $finalTotalQuantity;
                             if ($checkSameOrder->save()) {
                                 // ****************************//
-                                    // CALCULATING THE PRICE WITH 390
-                                    // Find the orders that match the specified conditions
-                                    $ordersToUpdate = OrderModel::where('user_id', $user->id)
+                                // CALCULATING THE PRICE WITH 390
+                                // Find the orders that match the specified conditions
+                                $ordersToUpdate = OrderModel::where('user_id', $user->id)
                                     ->where('status', 'UNPAID')
                                     ->where('product_price', 390) // Filter by product price 390
                                     ->get(); // Get all matching orders
 
-                                    $totalQuantity = 0; // Initialize the total quantity to 0
-                                    foreach ($ordersToUpdate as $order) {
-                                        $totalQuantity += $order->quantity;
-                                    }
+                                $totalQuantity = 0; // Initialize the total quantity to 0
+                                foreach ($ordersToUpdate as $order) {
+                                    $totalQuantity += $order->quantity;
+                                }
 
-                                    // Calculate the new total price based on the fixed price of 1000 for every 3 products
-                                    $countDivisibleBy3 = (int) ($totalQuantity / 3);
-                                    $specialPrice = $countDivisibleBy3 * 1000;
-                                    $remainder = $totalQuantity % 3;
-                                    $totalPriceRemainder = $remainder * 390;
-                                    $ordersToUpdateNot390 = OrderModel::where('user_id', $user->id)
-                                        ->where('status', 'UNPAID')
-                                        ->where('product_price', '!=', 390)
-                                        ->get();
-                                    $totalPrice = 0; // Initialize the total price to 0
-                                    foreach ($ordersToUpdateNot390 as $order) {
-                                        $totalPrice += $order->product_price;
-                                    }
+                                // Calculate the new total price based on the fixed price of 1000 for every 3 products
+                                $countDivisibleBy3 = (int) ($totalQuantity / 3);
+                                $specialPrice = $countDivisibleBy3 * 1000;
+                                $remainder = $totalQuantity % 3;
+                                $totalPriceRemainder = $remainder * 390;
+                                $ordersToUpdateNot390 = OrderModel::where('user_id', $user->id)
+                                    ->where('status', 'UNPAID')
+                                    ->where('product_price', '!=', 390)
+                                    ->get();
+                                $totalPrice = 0; // Initialize the total price to 0
+                                foreach ($ordersToUpdateNot390 as $order) {
+                                    $totalPrice += $order->product_price;
+                                }
 
-                                    // SAVE THE CALCULATED FINAL PRICE
-                                    // Update the final_total_price for each order
-                                    $updateCalcuFinalPrice = OrderModel::where('user_id', $user->id)
-                                        ->where('status', 'UNPAID')
-                                        ->where('role', 'MAIN')
-                                        ->first();
-                                    $updateCalcuFinalPrice->final_total_price = $specialPrice + $totalPriceRemainder + $totalPrice;
-                                    $updateCalcuFinalPrice->save(); // Save the changes to each order
+                                // SAVE THE CALCULATED FINAL PRICE
+                                // Update the final_total_price for each order
+                                $updateCalcuFinalPrice = OrderModel::where('user_id', $user->id)
+                                    ->where('status', 'UNPAID')
+                                    ->where('role', 'MAIN')
+                                    ->first();
+                                $updateCalcuFinalPrice->final_total_price = $specialPrice + $totalPriceRemainder + $totalPrice;
+                                $updateCalcuFinalPrice->save(); // Save the changes to each order
                                 // ****************************//
 
 
 
-
+                                // ****************************//
+                                // CALCULATING SHIPPING FEE
                                 // Fetch the total Quantity
                                 $fetchAllQuantityAndCalculateShippingFee = OrderModel::where('user_id', $user->id)
                                     ->where('status', 'UNPAID')
@@ -610,6 +615,7 @@ class OrderController extends Controller
                                         'message' => 'Created'
                                     ], Response::HTTP_OK);
                                 }
+                                // ****************************//
                             }
                         } else {
                             // Fresh Create
@@ -646,40 +652,40 @@ class OrderController extends Controller
 
                             if ($created) {
                                 // ****************************//
-                                    // CALCULATING THE PRICE WITH 390
-                                    // Find the orders that match the specified conditions
-                                    $ordersToUpdate = OrderModel::where('user_id', $user->id)
+                                // CALCULATING THE PRICE WITH 390
+                                // Find the orders that match the specified conditions
+                                $ordersToUpdate = OrderModel::where('user_id', $user->id)
                                     ->where('status', 'UNPAID')
                                     ->where('product_price', 390) // Filter by product price 390
                                     ->get(); // Get all matching orders
 
-                                    $totalQuantity = 0; // Initialize the total quantity to 0
-                                    foreach ($ordersToUpdate as $order) {
-                                        $totalQuantity += $order->quantity;
-                                    }
+                                $totalQuantity = 0; // Initialize the total quantity to 0
+                                foreach ($ordersToUpdate as $order) {
+                                    $totalQuantity += $order->quantity;
+                                }
 
-                                    // Calculate the new total price based on the fixed price of 1000 for every 3 products
-                                    $countDivisibleBy3 = (int) ($totalQuantity / 3);
-                                    $specialPrice = $countDivisibleBy3 * 1000;
-                                    $remainder = $totalQuantity % 3;
-                                    $totalPriceRemainder = $remainder * 390;
-                                    $ordersToUpdateNot390 = OrderModel::where('user_id', $user->id)
-                                        ->where('status', 'UNPAID')
-                                        ->where('product_price', '!=', 390)
-                                        ->get();
-                                    $totalPrice = 0; // Initialize the total price to 0
-                                    foreach ($ordersToUpdateNot390 as $order) {
-                                        $totalPrice += $order->product_price;
-                                    }
+                                // Calculate the new total price based on the fixed price of 1000 for every 3 products
+                                $countDivisibleBy3 = (int) ($totalQuantity / 3);
+                                $specialPrice = $countDivisibleBy3 * 1000;
+                                $remainder = $totalQuantity % 3;
+                                $totalPriceRemainder = $remainder * 390;
+                                $ordersToUpdateNot390 = OrderModel::where('user_id', $user->id)
+                                    ->where('status', 'UNPAID')
+                                    ->where('product_price', '!=', 390)
+                                    ->get();
+                                $totalPrice = 0; // Initialize the total price to 0
+                                foreach ($ordersToUpdateNot390 as $order) {
+                                    $totalPrice += $order->product_price;
+                                }
 
-                                    // SAVE THE CALCULATED FINAL PRICE
-                                    // Update the final_total_price for each order
-                                    $updateCalcuFinalPrice = OrderModel::where('user_id', $user->id)
-                                        ->where('status', 'UNPAID')
-                                        ->where('role', 'MAIN')
-                                        ->first();
-                                    $updateCalcuFinalPrice->final_total_price = $specialPrice + $totalPriceRemainder + $totalPrice;
-                                    $updateCalcuFinalPrice->save(); // Save the changes to each order
+                                // SAVE THE CALCULATED FINAL PRICE
+                                // Update the final_total_price for each order
+                                $updateCalcuFinalPrice = OrderModel::where('user_id', $user->id)
+                                    ->where('status', 'UNPAID')
+                                    ->where('role', 'MAIN')
+                                    ->first();
+                                $updateCalcuFinalPrice->final_total_price = $specialPrice + $totalPriceRemainder + $totalPrice;
+                                $updateCalcuFinalPrice->save(); // Save the changes to each order
                                 // ****************************//
 
                                 // Delete if not role MAIN
@@ -718,14 +724,14 @@ class OrderController extends Controller
                         }
                     }
 
-                // Return Message Selected product is unavailable or out of stock.
+                    // Return Message Selected product is unavailable or out of stock.
                 } else {
                     return response()->json([
                         'message' => 'Selected product is unavailable or out of stock.'
                     ], Response::HTTP_OK);
                 }
 
-            // Return Intruder and redirect to Login
+                // Return Intruder and redirect to Login
             } else {
                 return response()->json([
                     'message' => 'Intruder'
@@ -828,8 +834,10 @@ class OrderController extends Controller
                         $order->quantity = $finalTotalQuantity;
 
                         if ($order->save()) {
-                            
 
+
+                            // ****************************//
+                            // CALCULATING SHIPPING FEE
                             $fetchAllQuantityAndCalculateShippingFee = OrderModel::where('user_id', $user->id)
                                 ->where('status', 'UNPAID')
                                 ->get();
@@ -859,48 +867,50 @@ class OrderController extends Controller
                                 ->where('role', 'MAIN')
                                 ->first();
                             $updateShippingFeeNow->shipping_fee = calculateShippingFee($totalQuantity);
+
                             if ($updateShippingFeeNow->save()) {
                                 // ****************************//
-                                    // CALCULATING THE PRICE WITH 390
-                                    // Find the orders that match the specified conditions
-                                    $ordersToUpdate = OrderModel::where('user_id', $user->id)
+                                // CALCULATING THE PRICE WITH 390
+                                // Find the orders that match the specified conditions
+                                $ordersToUpdate = OrderModel::where('user_id', $user->id)
                                     ->where('status', 'UNPAID')
                                     ->where('product_price', 390) // Filter by product price 390
                                     ->get(); // Get all matching orders
 
-                                    $totalQuantity = 0; // Initialize the total quantity to 0
-                                    foreach ($ordersToUpdate as $order) {
-                                        $totalQuantity += $order->quantity;
-                                    }
+                                $totalQuantity = 0; // Initialize the total quantity to 0
+                                foreach ($ordersToUpdate as $order) {
+                                    $totalQuantity += $order->quantity;
+                                }
 
-                                    // Calculate the new total price based on the fixed price of 1000 for every 3 products
-                                    $countDivisibleBy3 = (int) ($totalQuantity / 3);
-                                    $specialPrice = $countDivisibleBy3 * 1000;
-                                    $remainder = $totalQuantity % 3;
-                                    $totalPriceRemainder = $remainder * 390;
-                                    $ordersToUpdateNot390 = OrderModel::where('user_id', $user->id)
-                                        ->where('status', 'UNPAID')
-                                        ->where('product_price', '!=', 390)
-                                        ->get();
-                                    $totalPrice = 0; // Initialize the total price to 0
-                                    foreach ($ordersToUpdateNot390 as $order) {
-                                        $totalPrice += $order->product_price;
-                                    }
+                                // Calculate the new total price based on the fixed price of 1000 for every 3 products
+                                $countDivisibleBy3 = (int) ($totalQuantity / 3);
+                                $specialPrice = $countDivisibleBy3 * 1000;
+                                $remainder = $totalQuantity % 3;
+                                $totalPriceRemainder = $remainder * 390;
+                                $ordersToUpdateNot390 = OrderModel::where('user_id', $user->id)
+                                    ->where('status', 'UNPAID')
+                                    ->where('product_price', '!=', 390)
+                                    ->get();
+                                $totalPrice = 0; // Initialize the total price to 0
+                                foreach ($ordersToUpdateNot390 as $order) {
+                                    $totalPrice += $order->product_price;
+                                }
 
-                                    // SAVE THE CALCULATED FINAL PRICE
-                                    // Update the final_total_price for each order
-                                    $updateCalcuFinalPrice = OrderModel::where('user_id', $user->id)
-                                        ->where('status', 'UNPAID')
-                                        ->where('role', 'MAIN')
-                                        ->first();
-                                    $updateCalcuFinalPrice->final_total_price = $specialPrice + $totalPriceRemainder + $totalPrice;
-                                    $updateCalcuFinalPrice->save(); // Save the changes to each order
+                                // SAVE THE CALCULATED FINAL PRICE
+                                // Update the final_total_price for each order
+                                $updateCalcuFinalPrice = OrderModel::where('user_id', $user->id)
+                                    ->where('status', 'UNPAID')
+                                    ->where('role', 'MAIN')
+                                    ->first();
+                                $updateCalcuFinalPrice->final_total_price = $specialPrice + $totalPriceRemainder + $totalPrice;
+                                $updateCalcuFinalPrice->save(); // Save the changes to each order
                                 // ****************************//
 
                                 return response()->json([
                                     'message' => 'Updated'
                                 ], Response::HTTP_OK);
                             }
+                            // ****************************//
                         }
                     } else {
                         return response()->json([
@@ -1041,40 +1051,40 @@ class OrderController extends Controller
                         if ($create) {
                             if ($data->delete()) {
                                 // ****************************//
-                                    // CALCULATING THE PRICE WITH 390
-                                    // Find the orders that match the specified conditions
-                                    $ordersToUpdate = OrderModel::where('user_id', $user->id)
+                                // CALCULATING THE PRICE WITH 390
+                                // Find the orders that match the specified conditions
+                                $ordersToUpdate = OrderModel::where('user_id', $user->id)
                                     ->where('status', 'UNPAID')
                                     ->where('product_price', 390) // Filter by product price 390
                                     ->get(); // Get all matching orders
 
-                                    $totalQuantity = 0; // Initialize the total quantity to 0
-                                    foreach ($ordersToUpdate as $order) {
-                                        $totalQuantity += $order->quantity;
-                                    }
+                                $totalQuantity = 0; // Initialize the total quantity to 0
+                                foreach ($ordersToUpdate as $order) {
+                                    $totalQuantity += $order->quantity;
+                                }
 
-                                    // Calculate the new total price based on the fixed price of 1000 for every 3 products
-                                    $countDivisibleBy3 = (int) ($totalQuantity / 3);
-                                    $specialPrice = $countDivisibleBy3 * 1000;
-                                    $remainder = $totalQuantity % 3;
-                                    $totalPriceRemainder = $remainder * 390;
-                                    $ordersToUpdateNot390 = OrderModel::where('user_id', $user->id)
-                                        ->where('status', 'UNPAID')
-                                        ->where('product_price', '!=', 390)
-                                        ->get();
-                                    $totalPrice = 0; // Initialize the total price to 0
-                                    foreach ($ordersToUpdateNot390 as $order) {
-                                        $totalPrice += $order->product_price;
-                                    }
+                                // Calculate the new total price based on the fixed price of 1000 for every 3 products
+                                $countDivisibleBy3 = (int) ($totalQuantity / 3);
+                                $specialPrice = $countDivisibleBy3 * 1000;
+                                $remainder = $totalQuantity % 3;
+                                $totalPriceRemainder = $remainder * 390;
+                                $ordersToUpdateNot390 = OrderModel::where('user_id', $user->id)
+                                    ->where('status', 'UNPAID')
+                                    ->where('product_price', '!=', 390)
+                                    ->get();
+                                $totalPrice = 0; // Initialize the total price to 0
+                                foreach ($ordersToUpdateNot390 as $order) {
+                                    $totalPrice += $order->product_price;
+                                }
 
-                                    // SAVE THE CALCULATED FINAL PRICE
-                                    // Update the final_total_price for each order
-                                    $updateCalcuFinalPrice = OrderModel::where('user_id', $user->id)
-                                        ->where('status', 'UNPAID')
-                                        ->where('role', 'MAIN')
-                                        ->first();
-                                    $updateCalcuFinalPrice->final_total_price = $specialPrice + $totalPriceRemainder + $totalPrice;
-                                    $updateCalcuFinalPrice->save(); // Save the changes to each order
+                                // SAVE THE CALCULATED FINAL PRICE
+                                // Update the final_total_price for each order
+                                $updateCalcuFinalPrice = OrderModel::where('user_id', $user->id)
+                                    ->where('status', 'UNPAID')
+                                    ->where('role', 'MAIN')
+                                    ->first();
+                                $updateCalcuFinalPrice->final_total_price = $specialPrice + $totalPriceRemainder + $totalPrice;
+                                $updateCalcuFinalPrice->save(); // Save the changes to each order
                                 // ****************************//
 
 
@@ -1147,40 +1157,40 @@ class OrderController extends Controller
                 if ($create) {
                     if ($data->delete()) {
                         // ****************************//
-                            // CALCULATING THE PRICE WITH 390
-                            // Find the orders that match the specified conditions
-                            $ordersToUpdate = OrderModel::where('user_id', $user->id)
+                        // CALCULATING THE PRICE WITH 390
+                        // Find the orders that match the specified conditions
+                        $ordersToUpdate = OrderModel::where('user_id', $user->id)
                             ->where('status', 'UNPAID')
                             ->where('product_price', 390) // Filter by product price 390
                             ->get(); // Get all matching orders
 
-                            $totalQuantity = 0; // Initialize the total quantity to 0
-                            foreach ($ordersToUpdate as $order) {
-                                $totalQuantity += $order->quantity;
-                            }
+                        $totalQuantity = 0; // Initialize the total quantity to 0
+                        foreach ($ordersToUpdate as $order) {
+                            $totalQuantity += $order->quantity;
+                        }
 
-                            // Calculate the new total price based on the fixed price of 1000 for every 3 products
-                            $countDivisibleBy3 = (int) ($totalQuantity / 3);
-                            $specialPrice = $countDivisibleBy3 * 1000;
-                            $remainder = $totalQuantity % 3;
-                            $totalPriceRemainder = $remainder * 390;
-                            $ordersToUpdateNot390 = OrderModel::where('user_id', $user->id)
-                                ->where('status', 'UNPAID')
-                                ->where('product_price', '!=', 390)
-                                ->get();
-                            $totalPrice = 0; // Initialize the total price to 0
-                            foreach ($ordersToUpdateNot390 as $order) {
-                                $totalPrice += $order->product_price;
-                            }
+                        // Calculate the new total price based on the fixed price of 1000 for every 3 products
+                        $countDivisibleBy3 = (int) ($totalQuantity / 3);
+                        $specialPrice = $countDivisibleBy3 * 1000;
+                        $remainder = $totalQuantity % 3;
+                        $totalPriceRemainder = $remainder * 390;
+                        $ordersToUpdateNot390 = OrderModel::where('user_id', $user->id)
+                            ->where('status', 'UNPAID')
+                            ->where('product_price', '!=', 390)
+                            ->get();
+                        $totalPrice = 0; // Initialize the total price to 0
+                        foreach ($ordersToUpdateNot390 as $order) {
+                            $totalPrice += $order->product_price;
+                        }
 
-                            // SAVE THE CALCULATED FINAL PRICE
-                            // Update the final_total_price for each order
-                            $updateCalcuFinalPrice = OrderModel::where('user_id', $user->id)
-                                ->where('status', 'UNPAID')
-                                ->where('role', 'MAIN')
-                                ->first();
-                            $updateCalcuFinalPrice->final_total_price = $specialPrice + $totalPriceRemainder + $totalPrice;
-                            $updateCalcuFinalPrice->save(); // Save the changes to each order
+                        // SAVE THE CALCULATED FINAL PRICE
+                        // Update the final_total_price for each order
+                        $updateCalcuFinalPrice = OrderModel::where('user_id', $user->id)
+                            ->where('status', 'UNPAID')
+                            ->where('role', 'MAIN')
+                            ->first();
+                        $updateCalcuFinalPrice->final_total_price = $specialPrice + $totalPriceRemainder + $totalPrice;
+                        $updateCalcuFinalPrice->save(); // Save the changes to each order
                         // ****************************//
 
 
@@ -1472,41 +1482,41 @@ class OrderController extends Controller
                                     ]);
 
                                     if ($create) {
-                                         // ****************************//
-                                            // CALCULATING THE PRICE WITH 390
-                                            // Find the orders that match the specified conditions
-                                            $ordersToUpdate = OrderModel::where('user_id', $user->id)
+                                        // ****************************//
+                                        // CALCULATING THE PRICE WITH 390
+                                        // Find the orders that match the specified conditions
+                                        $ordersToUpdate = OrderModel::where('user_id', $user->id)
                                             ->where('status', 'TO SHIP / TO PROCESS')
                                             ->where('product_price', 390) // Filter by product price 390
                                             ->get(); // Get all matching orders
 
-                                            $totalQuantity = 0; // Initialize the total quantity to 0
-                                            foreach ($ordersToUpdate as $order) {
-                                                $totalQuantity += $order->quantity;
-                                            }
+                                        $totalQuantity = 0; // Initialize the total quantity to 0
+                                        foreach ($ordersToUpdate as $order) {
+                                            $totalQuantity += $order->quantity;
+                                        }
 
-                                            // Calculate the new total price based on the fixed price of 1000 for every 3 products
-                                            $countDivisibleBy3 = (int) ($totalQuantity / 3);
-                                            $specialPrice = $countDivisibleBy3 * 1000;
-                                            $remainder = $totalQuantity % 3;
-                                            $totalPriceRemainder = $remainder * 390;
-                                            $ordersToUpdateNot390 = OrderModel::where('user_id', $user->id)
-                                                ->where('status', 'TO SHIP / TO PROCESS')
-                                                ->where('product_price', '!=', 390)
-                                                ->get();
-                                            $totalPrice = 0; // Initialize the total price to 0
-                                            foreach ($ordersToUpdateNot390 as $order) {
-                                                $totalPrice += $order->product_price;
-                                            }
+                                        // Calculate the new total price based on the fixed price of 1000 for every 3 products
+                                        $countDivisibleBy3 = (int) ($totalQuantity / 3);
+                                        $specialPrice = $countDivisibleBy3 * 1000;
+                                        $remainder = $totalQuantity % 3;
+                                        $totalPriceRemainder = $remainder * 390;
+                                        $ordersToUpdateNot390 = OrderModel::where('user_id', $user->id)
+                                            ->where('status', 'TO SHIP / TO PROCESS')
+                                            ->where('product_price', '!=', 390)
+                                            ->get();
+                                        $totalPrice = 0; // Initialize the total price to 0
+                                        foreach ($ordersToUpdateNot390 as $order) {
+                                            $totalPrice += $order->product_price;
+                                        }
 
-                                            // SAVE THE CALCULATED FINAL PRICE
-                                            // Update the final_total_price for each order
-                                            $updateCalcuFinalPrice = OrderModel::where('user_id', $user->id)
-                                                ->where('status', 'TO SHIP / TO PROCESS')
-                                                ->where('role', 'MAIN')
-                                                ->first();
-                                            $updateCalcuFinalPrice->final_total_price = $specialPrice + $totalPriceRemainder + $totalPrice;
-                                            $updateCalcuFinalPrice->save(); // Save the changes to each order
+                                        // SAVE THE CALCULATED FINAL PRICE
+                                        // Update the final_total_price for each order
+                                        $updateCalcuFinalPrice = OrderModel::where('user_id', $user->id)
+                                            ->where('status', 'TO SHIP / TO PROCESS')
+                                            ->where('role', 'MAIN')
+                                            ->first();
+                                        $updateCalcuFinalPrice->final_total_price = $specialPrice + $totalPriceRemainder + $totalPrice;
+                                        $updateCalcuFinalPrice->save(); // Save the changes to each order
                                         // ****************************//
 
 
@@ -1588,40 +1598,40 @@ class OrderController extends Controller
 
                             if ($create) {
                                 // ****************************//
-                                    // CALCULATING THE PRICE WITH 390
-                                    // Find the orders that match the specified conditions
-                                    $ordersToUpdate = OrderModel::where('user_id', $user->id)
+                                // CALCULATING THE PRICE WITH 390
+                                // Find the orders that match the specified conditions
+                                $ordersToUpdate = OrderModel::where('user_id', $user->id)
                                     ->where('status', 'TO SHIP / TO PROCESS')
                                     ->where('product_price', 390) // Filter by product price 390
                                     ->get(); // Get all matching orders
 
-                                    $totalQuantity = 0; // Initialize the total quantity to 0
-                                    foreach ($ordersToUpdate as $order) {
-                                        $totalQuantity += $order->quantity;
-                                    }
+                                $totalQuantity = 0; // Initialize the total quantity to 0
+                                foreach ($ordersToUpdate as $order) {
+                                    $totalQuantity += $order->quantity;
+                                }
 
-                                    // Calculate the new total price based on the fixed price of 1000 for every 3 products
-                                    $countDivisibleBy3 = (int) ($totalQuantity / 3);
-                                    $specialPrice = $countDivisibleBy3 * 1000;
-                                    $remainder = $totalQuantity % 3;
-                                    $totalPriceRemainder = $remainder * 390;
-                                    $ordersToUpdateNot390 = OrderModel::where('user_id', $user->id)
-                                        ->where('status', 'TO SHIP / TO PROCESS')
-                                        ->where('product_price', '!=', 390)
-                                        ->get();
-                                    $totalPrice = 0; // Initialize the total price to 0
-                                    foreach ($ordersToUpdateNot390 as $order) {
-                                        $totalPrice += $order->product_price;
-                                    }
+                                // Calculate the new total price based on the fixed price of 1000 for every 3 products
+                                $countDivisibleBy3 = (int) ($totalQuantity / 3);
+                                $specialPrice = $countDivisibleBy3 * 1000;
+                                $remainder = $totalQuantity % 3;
+                                $totalPriceRemainder = $remainder * 390;
+                                $ordersToUpdateNot390 = OrderModel::where('user_id', $user->id)
+                                    ->where('status', 'TO SHIP / TO PROCESS')
+                                    ->where('product_price', '!=', 390)
+                                    ->get();
+                                $totalPrice = 0; // Initialize the total price to 0
+                                foreach ($ordersToUpdateNot390 as $order) {
+                                    $totalPrice += $order->product_price;
+                                }
 
-                                    // SAVE THE CALCULATED FINAL PRICE
-                                    // Update the final_total_price for each order
-                                    $updateCalcuFinalPrice = OrderModel::where('user_id', $user->id)
-                                        ->where('status', 'TO SHIP / TO PROCESS')
-                                        ->where('role', 'MAIN')
-                                        ->first();
-                                    $updateCalcuFinalPrice->final_total_price = $specialPrice + $totalPriceRemainder + $totalPrice;
-                                    $updateCalcuFinalPrice->save(); // Save the changes to each order
+                                // SAVE THE CALCULATED FINAL PRICE
+                                // Update the final_total_price for each order
+                                $updateCalcuFinalPrice = OrderModel::where('user_id', $user->id)
+                                    ->where('status', 'TO SHIP / TO PROCESS')
+                                    ->where('role', 'MAIN')
+                                    ->first();
+                                $updateCalcuFinalPrice->final_total_price = $specialPrice + $totalPriceRemainder + $totalPrice;
+                                $updateCalcuFinalPrice->save(); // Save the changes to each order
                                 // ****************************//
 
 
