@@ -1448,6 +1448,7 @@ class OrderController extends Controller
                                     ->update([
                                         'role' => '',
                                         'shipping_fee' => 0.00,
+                                        'final_total_price' => 0.00,
                                         'status' => 'CANCELLED',
                                         'reason_cancel' => $request->input('reasonCancel'),
                                         'cancel_at' => Carbon::now()
