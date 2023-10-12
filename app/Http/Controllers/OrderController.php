@@ -618,6 +618,7 @@ class OrderController extends Controller
                                 // ****************************//
                             }
                         } else {
+                            
                             // Fresh Create
                             // Calculate Shipping Fee
                             $quantity = (int) $request->input('quantity');
