@@ -69,7 +69,7 @@ class ProductController extends Controller
                     'color' => 'required|string|max:255',
                     'size' => 'required|string|max:255',
                     'discount' => 'nullable|between:0,100',
-                    'description' => 'nullable|string',
+                    'description' => 'nullable',
                     'promo' => 'nullable|string',
                 ]);
 
@@ -332,8 +332,8 @@ class ProductController extends Controller
                     'color' => 'required|string|max:255',
                     'size' => 'required|string|max:255',
                     'discount' => 'nullable|numeric|between:0,100',
-                    'description' => 'nullable|string|min:1',
-                    'promo' => 'nullable|string'
+                    'description' => 'nullable',
+                    'promo' => 'nullable'
                 ]);
 
                 // Update account properties
