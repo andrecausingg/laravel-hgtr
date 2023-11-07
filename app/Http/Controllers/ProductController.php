@@ -184,6 +184,7 @@ class ProductController extends Controller
                         'size' => 'required|string|max:255',
                         'discount' => 'nullable|numeric|between:0,100',
                         'description' => 'nullable|string',
+                        'promo' => 'nullable|string',
                     ]);
                     $image = $request->file('image');
                     $imageActualExt = $image->getClientOriginalExtension();
@@ -208,6 +209,7 @@ class ProductController extends Controller
                         'size' => $request->input('size'),
                         'discount' => $request->input('discount'),
                         'description' => $request->input('description'),
+                        'promo' => $request->input('promo'),
                     ]);
                     if ($created) {
                         $userAction = 'CREATE';
@@ -221,7 +223,8 @@ class ProductController extends Controller
                             'Color: ' . $request->input('color') . "\n" .
                             'Size: ' . $request->input('size') . "\n" .
                             'Discount: ' . $request->input('discount') . "\n" .
-                            'Description: ' . $request->input('description') . "\n";
+                            'Description: ' . $request->input('description') . "\n" .
+                            'Promo: ' . $request->input('promo') . "\n";
                         // Create Log
                         $create = LogsModel::create([
                             'user_id' => $user->id,
