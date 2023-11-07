@@ -22,6 +22,7 @@ class ProductModel extends Model
         'size',
         'discount',
         'description',
+        'promo',
         'created_at',
         'updated_at'
     ];

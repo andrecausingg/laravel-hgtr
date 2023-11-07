@@ -18,6 +18,9 @@ return new class extends Migration
             $table->string('order_id');
             $table->string('product_group_id')->nullable();
 
+            $table->unsignedBigInteger('voucher_shipping_id')->nullable();
+            $table->unsignedBigInteger('voucher_discount_id')->nullable();
+
             $table->string('role')->nullable();
             $table->string('category');
             $table->string('name');
@@ -27,6 +30,15 @@ return new class extends Migration
             $table->integer('quantity');
             $table->integer('discount')->nullable();
             $table->text('description')->nullable();
+
+            $table->string('promo')->nullable();
+            $table->integer('promo_buy_and_take_count')->nullable();
+            $table->string('product_status')->nullable();
+
+            $table->string('voucher_name_shipping')->nullable();
+            $table->string('voucher_name_discount')->nullable();
+            $table->integer('voucher_discount')->nullable();
+
             $table->decimal('product_price', 10, 2);
             $table->decimal('shipping_fee', 10, 2)->nullable();
             $table->decimal('total_price', 10, 2);

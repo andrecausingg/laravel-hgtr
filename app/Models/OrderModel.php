@@ -15,6 +15,10 @@ class OrderModel extends Model
         'group_id',
         'order_id',
         'product_group_id',
+
+        'voucher_shipping_id',
+        'voucher_discount_id',
+
         'role',
         'category',
         'name',
@@ -24,6 +28,12 @@ class OrderModel extends Model
         'quantity',
         'discount',
         'description',
+
+        'promo',
+        'product_status',
+        'voucher_name_shipping',
+        'voucher_name_discount',
+
         'product_price',
         'shipping_fee',
         'total_price',
