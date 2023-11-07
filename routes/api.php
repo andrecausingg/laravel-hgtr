@@ -7,6 +7,7 @@ use App\Http\Controllers\VisitorsController;
 use App\Http\Controllers\AccountsController;
 use App\Http\Controllers\UserInfoController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\VouchersController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -153,3 +154,26 @@ Route::post('product/order/return-decline/{id}', [OrderController::class, 'retur
 Route::post('product/order/return-complete/{id}', [OrderController::class, 'returnComplete']);
 // Fail Return item
 Route::post('product/order/return-fail/{id}', [OrderController::class, 'returnFail']);
+
+
+// Client
+// Display Vouchers CLIENT | ADMIN
+Route::get('voucher/index', [VouchersController::class, 'index']);
+// Display User Info to put voucher | ADMIN
+Route::get('voucher/get-all-users-put-voucher', [VouchersController::class, 'getAllUsersPutVoucher']);
+// Display All user have voucher | ADMIN
+Route::get('voucher/get-all-users', [VouchersController::class, 'getUsersOfVoucher']);
+// Show Specific Voucher
+Route::get('voucher/show/{id}', [VouchersController::class, 'show']);
+// Store New Voucher | ADMIN
+Route::post('voucher/store', [VouchersController::class, 'store']);
+// Get specific vocuher
+Route::get('voucher-activate/getVouchers/{id}', [VouchersController::class, 'getVouchers']);
+// Change status to claimed | CLIENT VOUCHER
+Route::post('voucher-activate/update/{id}', [VouchersController::class, 'updateClaimed']);
+// Destroy Voucher | ADMIN
+Route::delete('voucher/destroy/{id}', [VouchersController::class, 'destroy']);
+// Update Voucher | ADMIN
+Route::post('voucher/update/{id}', [VouchersController::class, 'update']);
+// Show Specific Voucher Edit Voucher | ADMIN
+Route::get('voucher/edit/{id}', [VouchersController::class, 'edit']);
