@@ -89,6 +89,8 @@ Route::post('product/store', [ProductController::class, 'store']);
 Route::post('product/add', [ProductController::class, 'addProduct']);
 // Update Product
 Route::post('product/update/{id}', [ProductController::class, 'update']);
+// Update All Product
+Route::post('product/update-all', [ProductController::class, 'updateAll']);
 // Edit Product All
 Route::get('product/edit/{id}', [ProductController::class, 'edit']);
 // Delete Product | Update the other same group id with a role MAIN

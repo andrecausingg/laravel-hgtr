@@ -70,6 +70,7 @@ class ProductController extends Controller
                     'size' => 'required|string|max:255',
                     'discount' => 'nullable|between:0,100',
                     'description' => 'nullable|string',
+                    'promo' => 'nullable|string',
                 ]);
 
                 $image = $request->file('image');
@@ -97,6 +98,7 @@ class ProductController extends Controller
                     'size' => $request->input('size'),
                     'discount' => $request->input('discount'),
                     'description' => $request->input('description'),
+                    'promo' => $request->input('promo'),
                 ]);
 
                 if ($created) {
@@ -111,7 +113,9 @@ class ProductController extends Controller
                         'Color: ' . $request->input('color') . "\n" .
                         'Size: ' . $request->input('size') . "\n" .
                         'Discount: ' . $request->input('discount') . "\n" .
-                        'Description: ' . $request->input('description') . "\n";
+                        'Description: ' . $request->input('description') . "\n" .
+                        'Promo: ' . $request->input('promo') . "\n";
+
 
                     // Create Log
                     $create = LogsModel::create([
@@ -416,6 +420,105 @@ class ProductController extends Controller
         }
     }
 
+    public function updateAll(Request $request)
+    {
+        try {
+            // Fetch User ID
+            $user = AuthModel::where('session_login', $request->input('session'))
+                ->where('status', 'VERIFIED')
+                ->first();
+            if (!$user) {
+                return response()->json([
+                    'message' => 'Intruder'
+                ], Response::HTTP_OK);
+            }
+
+            // Validate the Input
+            $validatedData = $request->validate([
+                'productIds' => 'required|array',
+                'price' => 'nullable|numeric|min:0',
+                'quantity' => 'nullable|numeric|min:0',
+                'discount' => 'nullable|numeric|between:0,100',
+                'promo' => 'nullable'
+            ]);
+
+            // Fetch products with the given IDs
+            $data = ProductModel::whereIn('id', $validatedData['productIds'])->get();
+
+            if ($data->isEmpty()) {
+                return response()->json([
+                    'message' => 'No products found for the given IDs'
+                ], Response::HTTP_OK);
+            }
+
+            $changes = [];
+
+            // Iterate through products and update their properties
+            foreach ($data as $product) {
+                if (isset($validatedData['price'])) {
+                    $product->price = $validatedData['price'];
+                    $changes[] = 'Price changed from "' . $product->getOriginal('price') . '" to "' . $validatedData['price'] . '".';
+                }
+                if (isset($validatedData['quantity'])) {
+                    $product->quantity = $validatedData['quantity'];
+                    $changes[] = 'Quantity changed from "' . $product->getOriginal('quantity') . '" to "' . $validatedData['quantity'] . '".';
+                }
+                if (isset($validatedData['discount'])) {
+                    $product->discount = $validatedData['discount'];
+                    $changes[] = 'Discount changed from "' . $product->getOriginal('discount') . '" to "' . $validatedData['discount'] . '".';
+                }
+                if (isset($validatedData['promo'])) {
+                    $product->promo = $validatedData['promo'];
+                    $changes[] = 'Promo changed from "' . $product->getOriginal('promo') . '" to "' . $validatedData['promo'] . '".';
+                }
+
+                $product->save();
+            }
+
+            if (empty($changes)) {
+                return response()->json([
+                    'message' => 'No changes to update.'
+                ], Response::HTTP_OK);
+            }
+
+            $userAction = 'UPDATE PRODUCT';
+            $details = 'Updated product(s) with the following changes: ' . implode(', ', $changes);
+            // Create Log
+            LogsModel::create([
+                'user_id' => $user->id,
+                'ip_address' => $request->ip(),
+                'user_action' => $userAction,
+                'details' => $details,
+                'created_at' => now() // You can use Carbon::now() if needed
+            ]);
+
+            return response()->json([
+                'message' => 'Updated'
+            ], Response::HTTP_OK);
+        } catch (\Exception $e) {
+            // Handle exceptions and return an error response with CORS headers
+            $errorMessage = $e->getMessage();
+            $errorCode = $e->getCode();
+
+            // Create a JSON error response
+            $response = [
+                'success' => false,
+                'error' => [
+                    'code' => $errorCode,
+                    'message' => $errorMessage,
+                ],
+            ];
+
+            // Add additional error details if available
+            if ($e instanceof \Illuminate\Validation\ValidationException) {
+                $response['error']['details'] = $e->errors();
+            }
+
+            // Return the JSON error response with CORS headers and an appropriate HTTP status code
+            return response()->json($response, Response::HTTP_INTERNAL_SERVER_ERROR)->header('Content-Type', 'application/json');
+        }
+    }
+
     /**
      * Remove the specified resource from storage.
      */
@@ -656,7 +759,6 @@ class ProductController extends Controller
             return response()->json($response, Response::HTTP_INTERNAL_SERVER_ERROR)->header('Content-Type', 'application/json');
         }
     }
-
 
     // Client
     public function displaySelectedProduct(string $id)

@@ -24,6 +24,7 @@ return new class extends Migration
             $table->string('size');
             $table->integer('discount')->nullable();
             $table->text('description')->nullable();
+            $table->string('promo')->nullable(); 
             $table->timestamps();
         });
         
