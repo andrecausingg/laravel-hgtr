@@ -30,9 +30,11 @@ class OrderModel extends Model
         'description',
 
         'promo',
+        'promo_buy_and_take_count',
         'product_status',
         'voucher_name_shipping',
         'voucher_name_discount',
+        'voucher_discount',
 
         'product_price',
         'shipping_fee',
