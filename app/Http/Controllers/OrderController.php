@@ -17,57 +17,174 @@ use Symfony\Component\HttpFoundation\Response;
 class OrderController extends Controller
 {
 
+    // public function index()
+    // {
+    //     try {
+    //         // Get the order records with their associated userInfo
+    //         $orders = OrderModel::get();
+
+    //         // Initialize an array to store user information for each order
+    //         $orderData = [];
+
+    //         foreach ($orders as $order) {
+    //             // Fetch the user information using user_id
+    //             $userInfo = UserInfoModel::where('user_id', $order->user_id)->first();
+
+    //             // Define an array of fields to decrypt
+    //             $fieldsToDecrypt = [
+    //                 'first_name',
+    //                 'middle_name',
+    //                 'last_name',
+    //                 'contact_num',
+    //                 'address_1',
+    //                 'address_2',
+    //                 'region_code',
+    //                 'province_code',
+    //                 'city_or_municipality_code',
+    //                 'region_name',
+    //                 'province_name',
+    //                 'city_or_municipality_name',
+    //                 'barangay',
+    //                 'description_location'
+    //             ];
+
+    //             $decryptedData = [];
+
+    //             // Loop through the fields and decrypt each one
+    //             foreach ($fieldsToDecrypt as $field) {
+    //                 $decryptedData[$field] = Crypt::decrypt($userInfo->$field);
+    //             }
+
+    //             // Include 'id' and 'user_id' in the decrypted data
+    //             $decryptedData['id'] = $userInfo->id;
+    //             $decryptedData['user_id'] = $userInfo->user_id;
+
+    //             // Add order and user information to the array
+    //             $orderData[] = [
+    //                 'order' => $order,
+    //                 'userInfo' => $decryptedData
+    //             ];
+    //         }
+
+    //         return response()->json([
+    //             'data' => $orderData
+    //         ], Response::HTTP_OK);
+    //     } catch (\Exception $e) {
+    //         // Handle exceptions and return an error response with CORS headers
+    //         $errorMessage = $e->getMessage();
+    //         $errorCode = $e->getCode();
+
+    //         // Create a JSON error response
+    //         $response = [
+    //             'success' => false,
+    //             'error' => [
+    //                 'code' => $errorCode,
+    //                 'message' => $errorMessage,
+    //             ],
+    //         ];
+
+    //         // Add additional error details if available
+    //         if ($e instanceof \Illuminate\Validation\ValidationException) {
+    //             $response['error']['details'] = $e->errors();
+    //         }
+
+    //         // Return the JSON error response with CORS headers and an appropriate HTTP status code
+    //         return response()->json($response, Response::HTTP_INTERNAL_SERVER_ERROR)->header('Content-Type', 'application/json');
+    //     }
+    // }
+
     public function index()
     {
         try {
-            // Get the order records with their associated userInfo
             $orders = OrderModel::get();
 
-            // Initialize an array to store user information for each order
-            $orderData = [];
+            // Initialize an array to store the final data
+            $data = [];
 
             foreach ($orders as $order) {
-                // Fetch the user information using user_id
+                // Retrieve user information for the current booking
                 $userInfo = UserInfoModel::where('user_id', $order->user_id)->first();
+                $authInfo = AuthModel::where('id', $order->user_id)->first();
 
-                // Define an array of fields to decrypt
-                $fieldsToDecrypt = [
-                    'first_name',
-                    'middle_name',
-                    'last_name',
-                    'contact_num',
-                    'address_1',
-                    'address_2',
-                    'region_code',
-                    'province_code',
-                    'city_or_municipality_code',
-                    'region_name',
-                    'province_name',
-                    'city_or_municipality_name',
-                    'barangay',
-                    'description_location'
+                // Create an array for the current booking data in the desired format
+                $bookingData = [
+                    'authInfo' => [
+                        'email' => $authInfo->email,
+                    ],
+                    'userInfo' => [
+                        'first_name' => Crypt::decrypt($userInfo->first_name),
+                        'last_name' => Crypt::decrypt($userInfo->last_name),
+                        'contact_num' => Crypt::decrypt($userInfo->contact_num),
+                        'address_1' => Crypt::decrypt($userInfo->address_1),
+                        'address_2' => Crypt::decrypt($userInfo->address_2),
+                        'region_code' => Crypt::decrypt($userInfo->region_code),
+                        'province_code' => Crypt::decrypt($userInfo->province_code),
+                        'city_or_municipality_code' => Crypt::decrypt($userInfo->city_or_municipality_code),
+                        'region_name' => Crypt::decrypt($userInfo->region_name),
+                        'province_name' => Crypt::decrypt($userInfo->province_name),
+                        'city_or_municipality_name' => Crypt::decrypt($userInfo->city_or_municipality_name),
+                        'barangay' => Crypt::decrypt($userInfo->barangay),
+                        'description_location' => Crypt::decrypt($userInfo->description_location),
+                    ],
+                    'id' => $order->id,
+                    'user_id' => $order->user_id,
+                    'group_id' => $order->group_id,
+                    'order_id' => $order->order_id,
+                    'product_group_id' => $order->product_group_id,
+                    'voucher_shipping_id' => $order->voucher_shipping_id,
+                    'voucher_discount_id' => $order->voucher_discount_id,
+                    'role' => $order->role,
+                    'category' => $order->category,
+                    'name' => $order->name,
+                    'image' => $order->image,
+                    'design' => $order->design,
+                    'color' => $order->color,
+                    'quantity' => $order->quantity,
+                    'discount' => $order->discount,
+                    'description' => $order->description,
+                    'promo' => $order->promo,
+                    'promo_buy_and_take_count' => $order->promo_buy_and_take_count,
+                    'voucher_name_shipping' => $order->voucher_name_shipping,
+                    'voucher_name_discount' => $order->voucher_name_discount,
+                    'voucher_discount' => $order->voucher_discount,
+                    'product_price' => $order->product_price,
+                    'shipping_fee' => $order->shipping_fee,
+                    'total_price' => $order->total_price,
+                    'final_total_price' => $order->final_total_price,
+                    'payment_method' => $order->payment_method,
+                    'status' => $order->status,
+                    'reason_cancel' => $order->reason_cancel,
+                    'return_reason' => $order->return_reason,
+                    'return_image1' => $order->return_image1,
+                    'return_image2' => $order->return_image2,
+                    'return_image3' => $order->return_image3,
+                    'return_image4' => $order->return_image4,
+                    'return_description' => $order->return_description,
+                    'return_solution' => $order->return_solution,
+                    'return_shipping_at' => $order->return_shipping_at,
+                    'return_accept_at' => $order->return_accept_at,
+                    'return_decline_at' => $order->return_decline_at,
+                    'return_completed_at' => $order->return_completed_at,
+                    'return_failed_at' => $order->return_failed_at,
+                    'check_out_at' => $order->check_out_at,
+                    'cancel_at' => $order->cancel_at,
+                    'order_receive_at' => $order->order_receive_at,
+                    'mark_as_done_at' => $order->mark_as_done_at,
+                    'ship_at' => $order->ship_at,
+                    'completed_at' => $order->completed_at,
+                    'failed_at' => $order->failed_at,
+                    'return_at' => $order->return_at,
+                    'created_at' => $order->created_at,
+                    'updated_at' => $order->updated_at,
                 ];
 
-                $decryptedData = [];
-
-                // Loop through the fields and decrypt each one
-                foreach ($fieldsToDecrypt as $field) {
-                    $decryptedData[$field] = Crypt::decrypt($userInfo->$field);
-                }
-
-                // Include 'id' and 'user_id' in the decrypted data
-                $decryptedData['id'] = $userInfo->id;
-                $decryptedData['user_id'] = $userInfo->user_id;
-
-                // Add order and user information to the array
-                $orderData[] = [
-                    'order' => $order,
-                    'userInfo' => $decryptedData
-                ];
+                // Add the current booking data to the final data array
+                $data[] = $bookingData;
             }
 
+            // Return the user information records in JSON format
             return response()->json([
-                'data' => $orderData
+                'data' => $data
             ], Response::HTTP_OK);
         } catch (\Exception $e) {
             // Handle exceptions and return an error response with CORS headers
