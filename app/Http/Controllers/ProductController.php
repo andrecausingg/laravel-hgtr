@@ -332,7 +332,8 @@ class ProductController extends Controller
                     'color' => 'required|string|max:255',
                     'size' => 'required|string|max:255',
                     'discount' => 'nullable|numeric|between:0,100',
-                    'description' => 'nullable|string|min:1'
+                    'description' => 'nullable|string|min:1',
+                    'promo' => 'nullable|string'
                 ]);
 
                 // Update account properties
@@ -356,6 +357,9 @@ class ProductController extends Controller
                 }
                 if ($data->isDirty('description')) {
                     $changes[] = 'Description changed from "' . $data->getOriginal('description') . '" to "' . $data->description . '".';
+                }
+                if ($data->isDirty('promo')) {
+                    $changes[] = 'Promo changed from "' . $data->getOriginal('promo') . '" to "' . $data->promo . '".';
                 }
                 if (empty($changes)) {
                     return response()->json([
