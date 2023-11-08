@@ -183,7 +183,7 @@ class ProductController extends Controller
                         'color' => 'required|string|max:255',
                         'size' => 'required|string|max:255',
                         'discount' => 'nullable|numeric|between:0,100',
-                        'description' => 'nullable|string',
+                        'description' => 'nullable',
                         'promo' => 'nullable|string',
                     ]);
                     $image = $request->file('image');
@@ -363,7 +363,7 @@ class ProductController extends Controller
                     $newDescription = $data->description;
                 
                     // Check if the new description is an empty string
-                    if ($newDescription === 'REMOVE PROMO') {
+                    if ($newDescription === '') {
                         // Set 'description' to NULL in the database
                         $data->description = null;
                         $changes[] = 'Description changed from "' . $originalDescription . '" to NULL.';
@@ -371,7 +371,6 @@ class ProductController extends Controller
                         $changes[] = 'Description changed from "' . $originalDescription . '" to "' . $newDescription . '".';
                     }
                 }
-                
                 if ($data->isDirty('promo')) {
                     $changes[] = 'Promo changed from "' . $data->getOriginal('promo') . '" to "' . $data->promo . '".';
                 }
@@ -491,7 +490,7 @@ class ProductController extends Controller
                 if (array_key_exists('promo', $validatedData)) {
                     // If 'promo' is provided, including an empty string, set it to the provided value
                     $product->promo = $validatedData['promo'];
-                    if ($validatedData['promo'] === '') {
+                    if ($validatedData['promo'] === 'REMOVE PROMO') {
                         // If 'promo' is an empty string, set it to NULL
                         $product->promo = null;
                         $changes[] = 'Promo changed from "' . $product->getOriginal('promo') . '" to NULL.';
@@ -503,8 +502,6 @@ class ProductController extends Controller
                     $product->promo = null;
                     $changes[] = 'Promo changed from "' . $product->getOriginal('promo') . '" to NULL.';
                 }
-                
-                
 
                 $product->save();
             }
