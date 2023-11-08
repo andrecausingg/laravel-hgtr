@@ -130,29 +130,36 @@ class OrderController extends Controller
                     'user_id' => $order->user_id,
                     'group_id' => $order->group_id,
                     'order_id' => $order->order_id,
+
                     'product_group_id' => $order->product_group_id,
                     'voucher_shipping_id' => $order->voucher_shipping_id,
                     'voucher_discount_id' => $order->voucher_discount_id,
+
                     'role' => $order->role,
                     'category' => $order->category,
                     'name' => $order->name,
                     'image' => $order->image,
-                    'design' => $order->design,
+
+                    'size' => $order->size,
+
                     'color' => $order->color,
                     'quantity' => $order->quantity,
                     'discount' => $order->discount,
                     'description' => $order->description,
+
                     'promo' => $order->promo,
                     'promo_buy_and_take_count' => $order->promo_buy_and_take_count,
                     'voucher_name_shipping' => $order->voucher_name_shipping,
                     'voucher_name_discount' => $order->voucher_name_discount,
                     'voucher_discount' => $order->voucher_discount,
+
                     'product_price' => $order->product_price,
                     'shipping_fee' => $order->shipping_fee,
                     'total_price' => $order->total_price,
                     'final_total_price' => $order->final_total_price,
                     'payment_method' => $order->payment_method,
                     'status' => $order->status,
+
                     'reason_cancel' => $order->reason_cancel,
                     'return_reason' => $order->return_reason,
                     'return_image1' => $order->return_image1,
@@ -161,6 +168,7 @@ class OrderController extends Controller
                     'return_image4' => $order->return_image4,
                     'return_description' => $order->return_description,
                     'return_solution' => $order->return_solution,
+                    
                     'return_shipping_at' => $order->return_shipping_at,
                     'return_accept_at' => $order->return_accept_at,
                     'return_decline_at' => $order->return_decline_at,
@@ -769,7 +777,8 @@ class OrderController extends Controller
                             ]);
 
                             if ($created) {
-                                // ****************************//
+                                
+                                 // ****************************//
                                 // CALCULATING THE PRICE WITH 390
                                 // Find the orders that match the specified conditions
                                 $ordersToUpdate = OrderModel::where('user_id', $user->id)
