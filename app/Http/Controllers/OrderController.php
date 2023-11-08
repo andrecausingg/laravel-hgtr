@@ -1521,9 +1521,176 @@ class OrderController extends Controller
         }
     }
 
+    // Update TO PAY ITEM | CLIENT | HGTR 
+    // public function updateItemOnCart(Request $request, $id)
+    // {
+    //     try {
+    //         $user = AuthModel::where('session_login', $request->input('session'))
+    //             ->where('status', 'VERIFIED')
+    //             ->first();
+
+    //         if ($user) {
+    //             $request->validate([
+    //                 'quantity' => 'required|numeric|min:1',
+    //             ]);
+
+    //             $order = OrderModel::where('user_id', $user->id)
+    //                 ->where('id', $id)
+    //                 ->first(); // Retrieve the order from the database
+
+    //             if ($order) {
+    //                 $product = ProductModel::where('color', $order->color)
+    //                     ->where('size', $order->size)
+    //                     ->where('group_id', $order->product_group_id)
+    //                     ->first();
+
+    //                 if ($product && $product->quantity >= 1) {
+    //                     // Declare
+    //                     $quantity = (int) $request->input('quantity');
+
+    //                     // Compute the total Price Now by Check on the product table
+    //                     $discountedPrice = $product->price * (1 - ($product->discount / 100));
+    //                     $totalPrice = $discountedPrice * $quantity;
+
+    //                     // Final total Quantity and Price
+    //                     $finalTotalPrice = $totalPrice;
+    //                     $finalTotalQuantity = $quantity;
+
+    //                     // Saving
+    //                     $order->total_price = $finalTotalPrice;
+    //                     $order->quantity = $finalTotalQuantity;
+
+    //                     if ($order->save()) {
+
+
+    //                         // ****************************//
+    //                         // CALCULATING SHIPPING FEE
+    //                         $fetchAllQuantityAndCalculateShippingFee = OrderModel::where('user_id', $user->id)
+    //                             ->where('status', 'UNPAID')
+    //                             ->get();
+    //                         $totalQuantity = 0;
+
+    //                         foreach ($fetchAllQuantityAndCalculateShippingFee as $order) {
+    //                             $totalQuantity += $order->quantity;
+    //                         }
+
+    //                         function calculateShippingFee($totalQuantity)
+    //                         {
+    //                             $shippingFee = 100; // Base shipping fee
+    //                             $rangeSize = 5; // Size of each range
+    //                             $feeIncrement = 100; // Fee increment for each range
+
+    //                             // Calculate the range index based on the quantity
+    //                             $rangeIndex = ceil($totalQuantity / $rangeSize);
+
+    //                             // Calculate the shipping fee based on the range index and quantity
+    //                             $shippingFee += ($rangeIndex - 1) * $feeIncrement;
+
+    //                             return number_format($shippingFee, 2); // Format the shipping fee with two decimal places
+    //                         }
+
+    //                         $updateShippingFeeNow = OrderModel::where('user_id', $user->id)
+    //                             ->where('status', 'UNPAID')
+    //                             ->where('role', 'MAIN')
+    //                             ->first();
+    //                         $updateShippingFeeNow->shipping_fee = calculateShippingFee($totalQuantity);
+
+    //                         if ($updateShippingFeeNow->save()) {
+    //                             // ****************************//
+    //                             // CALCULATING THE PRICE WITH 390
+    //                             // Find the orders that match the specified conditions
+    //                             $ordersToUpdate = OrderModel::where('user_id', $user->id)
+    //                                 ->where('status', 'UNPAID')
+    //                                 ->where('product_price', 390) // Filter by product price 390
+    //                                 ->get(); // Get all matching orders
+
+    //                             $totalQuantity = 0; // Initialize the total quantity to 0
+    //                             foreach ($ordersToUpdate as $order) {
+    //                                 $totalQuantity += $order->quantity;
+    //                             }
+
+    //                             // Calculate the new total price based on the fixed price of 1000 for every 3 products
+    //                             $countDivisibleBy3 = (int) ($totalQuantity / 3);
+    //                             $specialPrice = $countDivisibleBy3 * 1000;
+    //                             $remainder = $totalQuantity % 3;
+    //                             $totalPriceRemainder = $remainder * 390;
+    //                             $ordersToUpdateNot390 = OrderModel::where('user_id', $user->id)
+    //                                 ->where('status', 'UNPAID')
+    //                                 ->where('product_price', '!=', 390)
+    //                                 ->get();
+    //                             $totalPrice = 0; // Initialize the total price to 0
+    //                             foreach ($ordersToUpdateNot390 as $order) {
+    //                                 $totalPrice += $order->product_price;
+    //                             }
+
+    //                             // SAVE THE CALCULATED FINAL PRICE
+    //                             // Update the final_total_price for each order
+    //                             $updateCalcuFinalPrice = OrderModel::where('user_id', $user->id)
+    //                                 ->where('status', 'UNPAID')
+    //                                 ->where('role', 'MAIN')
+    //                                 ->first();
+    //                             $updateCalcuFinalPrice->final_total_price = $specialPrice + $totalPriceRemainder + $totalPrice;
+    //                             $updateCalcuFinalPrice->save(); // Save the changes to each order
+    //                             // ****************************//
+
+    //                             return response()->json([
+    //                                 'message' => 'Updated'
+    //                             ], Response::HTTP_OK);
+    //                         }
+    //                         // ****************************//
+    //                     }
+    //                 } else {
+    //                     return response()->json([
+    //                         'message' => 'Selected product is unavailable or out of stock.'
+    //                     ], Response::HTTP_OK);
+    //                 }
+    //             } else {
+    //                 return response()->json([
+    //                     'message' => 'Order not found.'
+    //                 ], Response::HTTP_NOT_FOUND);
+    //             }
+    //         } else {
+    //             return response()->json([
+    //                 'message' => 'Intruder'
+    //             ], Response::HTTP_OK);
+    //         }
+    //     } catch (\Exception $e) {
+    //         // Handle exceptions and return an error response with CORS headers
+    //         $errorMessage = $e->getMessage();
+    //         $errorCode = $e->getCode();
+
+    //         // Create a JSON error response
+    //         $response = [
+    //             'success' => false,
+    //             'error' => [
+    //                 'code' => $errorCode,
+    //                 'message' => $errorMessage,
+    //             ],
+    //         ];
+
+    //         // Add additional error details if available
+    //         if ($e instanceof \Illuminate\Validation\ValidationException) {
+    //             $response['error']['details'] = $e->errors();
+    //         }
+
+    //         // Return the JSON error response with CORS headers and an appropriate HTTP status code
+    //         return response()->json($response, Response::HTTP_INTERNAL_SERVER_ERROR)->header('Content-Type', 'application/json');
+    //     }
+    // }
+
+    // Update TO PAY ITEM | CLIENT | Kittly 
     public function updateItemOnCart(Request $request, $id)
     {
+
         try {
+            // return response()->json([
+            //     'session' => $request->input('session'),
+            //     'color' => $request->input('color'),
+            //     'design' => $request->input('design'),
+            //     'quantity' => $request->input('quantity'),
+            //     'group_id' => $request->input('group_id'),
+            // ], Response::HTTP_OK);
+
             $user = AuthModel::where('session_login', $request->input('session'))
                 ->where('status', 'VERIFIED')
                 ->first();
@@ -1538,10 +1705,18 @@ class OrderController extends Controller
                     ->first(); // Retrieve the order from the database
 
                 if ($order) {
-                    $product = ProductModel::where('color', $order->color)
-                        ->where('size', $order->size)
-                        ->where('group_id', $order->product_group_id)
-                        ->first();
+                    if ($request->has('size') !== '') {
+                        $product = ProductModel::where('group_id', $request->input('group_id'))
+                            ->when($request->has('size'), function ($query) use ($request) {
+                                return $query->where('size', $request->input('size'));
+                            })
+                            ->first();
+                    } else {
+                        $product = ProductModel::where('group_id', $request->input('group_id'))
+                            ->when($request->has('color'), function ($query) use ($request) {
+                                return $query->where('color', $request->input('color'));
+                            })->first();
+                    }
 
                     if ($product && $product->quantity >= 1) {
                         // Declare
@@ -1560,10 +1735,6 @@ class OrderController extends Controller
                         $order->quantity = $finalTotalQuantity;
 
                         if ($order->save()) {
-
-
-                            // ****************************//
-                            // CALCULATING SHIPPING FEE
                             $fetchAllQuantityAndCalculateShippingFee = OrderModel::where('user_id', $user->id)
                                 ->where('status', 'UNPAID')
                                 ->get();
@@ -1594,49 +1765,63 @@ class OrderController extends Controller
                                 ->first();
                             $updateShippingFeeNow->shipping_fee = calculateShippingFee($totalQuantity);
 
+                            // ****************************//
+                            // CALCULATING THE FINAL TOTAL PRICE UNPAID
+                            $getAllOderUnpaid = OrderModel::where('user_id', $user->id)
+                                ->where('status', 'UNPAID')
+                                ->first(); // Get the first matching order
+
+                            if ($getAllOderUnpaid) { // Check if there is a matching order
+                                $totalPriceSumUnPaid = OrderModel::where('user_id', $user->id)
+                                    ->where('status', 'UNPAID')
+                                    ->sum('total_price');
+
+                                // Update the final_total_price of the first matching order
+                                $getAllOderUnpaid->final_total_price = $totalPriceSumUnPaid;
+                                $getAllOderUnpaid->save();
+                            }
+                            // ****************************//
+
+                            // ****************************//
+                            // 'BUY 1 TAKE 1' promo
+                            // Find the latest inserted order with 'BUY 2 TAKE 1' promo
+                            $latestOrderBuy2Take1 = OrderModel::where('status', 'UNPAID')
+                                ->where('user_id', $user->id)
+                                ->where('promo', 'BUY 1 TAKE 1')
+                                ->where('id', $id)
+                                ->latest()
+                                ->first();
+                            if ($latestOrderBuy2Take1) {
+                                $latestOrderBuy2Take1->promo_buy_and_take_count = $latestOrderBuy2Take1->quantity;
+                                $latestOrderBuy2Take1->save();
+                            }
+                            // ****************************//
+
+                            // ****************************//
+                            // 'BUY 2 TAKE 1' promo
+                            // Find the latest inserted order with 'BUY 2 TAKE 1' promo
+                            $latestOrderBuy2Take1 = OrderModel::where('status', 'UNPAID')
+                                ->where('user_id', $user->id)
+                                ->where('promo', 'BUY 2 TAKE 1')
+                                ->where('id', $id)
+                                ->latest()
+                                ->first();
+
+                            $totalTake = 0;
+
+                            if ($latestOrderBuy2Take1) {
+                                $totalProducts = $latestOrderBuy2Take1->quantity;
+                                $totalTake = intdiv($totalProducts, 2);
+                                $latestOrderBuy2Take1->promo_buy_and_take_count = $totalTake;
+                                $latestOrderBuy2Take1->save();
+                            }
+                            // ****************************//
+
                             if ($updateShippingFeeNow->save()) {
-                                // ****************************//
-                                // CALCULATING THE PRICE WITH 390
-                                // Find the orders that match the specified conditions
-                                $ordersToUpdate = OrderModel::where('user_id', $user->id)
-                                    ->where('status', 'UNPAID')
-                                    ->where('product_price', 390) // Filter by product price 390
-                                    ->get(); // Get all matching orders
-
-                                $totalQuantity = 0; // Initialize the total quantity to 0
-                                foreach ($ordersToUpdate as $order) {
-                                    $totalQuantity += $order->quantity;
-                                }
-
-                                // Calculate the new total price based on the fixed price of 1000 for every 3 products
-                                $countDivisibleBy3 = (int) ($totalQuantity / 3);
-                                $specialPrice = $countDivisibleBy3 * 1000;
-                                $remainder = $totalQuantity % 3;
-                                $totalPriceRemainder = $remainder * 390;
-                                $ordersToUpdateNot390 = OrderModel::where('user_id', $user->id)
-                                    ->where('status', 'UNPAID')
-                                    ->where('product_price', '!=', 390)
-                                    ->get();
-                                $totalPrice = 0; // Initialize the total price to 0
-                                foreach ($ordersToUpdateNot390 as $order) {
-                                    $totalPrice += $order->product_price;
-                                }
-
-                                // SAVE THE CALCULATED FINAL PRICE
-                                // Update the final_total_price for each order
-                                $updateCalcuFinalPrice = OrderModel::where('user_id', $user->id)
-                                    ->where('status', 'UNPAID')
-                                    ->where('role', 'MAIN')
-                                    ->first();
-                                $updateCalcuFinalPrice->final_total_price = $specialPrice + $totalPriceRemainder + $totalPrice;
-                                $updateCalcuFinalPrice->save(); // Save the changes to each order
-                                // ****************************//
-
                                 return response()->json([
                                     'message' => 'Updated'
                                 ], Response::HTTP_OK);
                             }
-                            // ****************************//
                         }
                     } else {
                         return response()->json([
@@ -1676,6 +1861,7 @@ class OrderController extends Controller
             return response()->json($response, Response::HTTP_INTERNAL_SERVER_ERROR)->header('Content-Type', 'application/json');
         }
     }
+
 
     // Destroy Item on TO PAY | CLIENT
     public function destroy(Request $request, $id)
