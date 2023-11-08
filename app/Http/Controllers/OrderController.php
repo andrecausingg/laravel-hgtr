@@ -16,83 +16,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 class OrderController extends Controller
 {
-
-    // public function index()
-    // {
-    //     try {
-    //         // Get the order records with their associated userInfo
-    //         $orders = OrderModel::get();
-
-    //         // Initialize an array to store user information for each order
-    //         $orderData = [];
-
-    //         foreach ($orders as $order) {
-    //             // Fetch the user information using user_id
-    //             $userInfo = UserInfoModel::where('user_id', $order->user_id)->first();
-
-    //             // Define an array of fields to decrypt
-    //             $fieldsToDecrypt = [
-    //                 'first_name',
-    //                 'middle_name',
-    //                 'last_name',
-    //                 'contact_num',
-    //                 'address_1',
-    //                 'address_2',
-    //                 'region_code',
-    //                 'province_code',
-    //                 'city_or_municipality_code',
-    //                 'region_name',
-    //                 'province_name',
-    //                 'city_or_municipality_name',
-    //                 'barangay',
-    //                 'description_location'
-    //             ];
-
-    //             $decryptedData = [];
-
-    //             // Loop through the fields and decrypt each one
-    //             foreach ($fieldsToDecrypt as $field) {
-    //                 $decryptedData[$field] = Crypt::decrypt($userInfo->$field);
-    //             }
-
-    //             // Include 'id' and 'user_id' in the decrypted data
-    //             $decryptedData['id'] = $userInfo->id;
-    //             $decryptedData['user_id'] = $userInfo->user_id;
-
-    //             // Add order and user information to the array
-    //             $orderData[] = [
-    //                 'order' => $order,
-    //                 'userInfo' => $decryptedData
-    //             ];
-    //         }
-
-    //         return response()->json([
-    //             'data' => $orderData
-    //         ], Response::HTTP_OK);
-    //     } catch (\Exception $e) {
-    //         // Handle exceptions and return an error response with CORS headers
-    //         $errorMessage = $e->getMessage();
-    //         $errorCode = $e->getCode();
-
-    //         // Create a JSON error response
-    //         $response = [
-    //             'success' => false,
-    //             'error' => [
-    //                 'code' => $errorCode,
-    //                 'message' => $errorMessage,
-    //             ],
-    //         ];
-
-    //         // Add additional error details if available
-    //         if ($e instanceof \Illuminate\Validation\ValidationException) {
-    //             $response['error']['details'] = $e->errors();
-    //         }
-
-    //         // Return the JSON error response with CORS headers and an appropriate HTTP status code
-    //         return response()->json($response, Response::HTTP_INTERNAL_SERVER_ERROR)->header('Content-Type', 'application/json');
-    //     }
-    // }
-
+    // KITLLY
     public function index()
     {
         try {
@@ -194,109 +118,6 @@ class OrderController extends Controller
             return response()->json([
                 'data' => $data
             ], Response::HTTP_OK);
-        } catch (\Exception $e) {
-            // Handle exceptions and return an error response with CORS headers
-            $errorMessage = $e->getMessage();
-            $errorCode = $e->getCode();
-
-            // Create a JSON error response
-            $response = [
-                'success' => false,
-                'error' => [
-                    'code' => $errorCode,
-                    'message' => $errorMessage,
-                ],
-            ];
-
-            // Add additional error details if available
-            if ($e instanceof \Illuminate\Validation\ValidationException) {
-                $response['error']['details'] = $e->errors();
-            }
-
-            // Return the JSON error response with CORS headers and an appropriate HTTP status code
-            return response()->json($response, Response::HTTP_INTERNAL_SERVER_ERROR)->header('Content-Type', 'application/json');
-        }
-    }
-
-    public function top5Product()
-    {
-        try {
-            // Get the top 5 highest sold orders for the product "Babero"
-            $orders = OrderModel::selectRaw('id, user_id, group_id, order_id, product_group_id, role, category, name, image, size, color, discount, description, product_price, shipping_fee, total_price, payment_method, status, reason_cancel, return_reason, return_image1, return_image2, return_image3, return_image4, return_description, return_solution, return_shipping_at, return_accept_at, return_decline_at, return_completed_at, return_failed_at, check_out_at, cancel_at, order_receive_at, mark_as_done_at, ship_at, completed_at, failed_at, return_at, created_at, updated_at, SUM(quantity) as totalSold')
-                ->whereIn('status', ['COMPLETED', 'RETURN REFUND / COMPLETED'])
-                ->groupBy('id', 'user_id', 'group_id', 'order_id', 'product_group_id', 'role', 'category', 'name', 'image', 'size', 'color', 'discount', 'description', 'product_price', 'shipping_fee', 'total_price', 'payment_method', 'status', 'reason_cancel', 'return_reason', 'return_image1', 'return_image2', 'return_image3', 'return_image4', 'return_description', 'return_solution', 'return_shipping_at', 'return_accept_at', 'return_decline_at', 'return_completed_at', 'return_failed_at', 'check_out_at', 'cancel_at', 'order_receive_at', 'mark_as_done_at', 'ship_at', 'completed_at', 'failed_at', 'return_at', 'created_at', 'updated_at')
-                ->orderByDesc('totalSold')
-                ->take(5)
-                ->get();
-
-            return response()->json([
-                'data' => $orders,
-            ], Response::HTTP_OK);
-        } catch (\Exception $e) {
-            // Handle exceptions and return an error response with CORS headers
-            $errorMessage = $e->getMessage();
-            $errorCode = $e->getCode();
-
-            // Create a JSON error response
-            $response = [
-                'success' => false,
-                'error' => [
-                    'code' => $errorCode,
-                    'message' => $errorMessage,
-                ],
-            ];
-
-            // Add additional error details if available
-            if ($e instanceof \Illuminate\Validation\ValidationException) {
-                $response['error']['details'] = $e->errors();
-            }
-
-            // Return the JSON error response with CORS headers and an appropriate HTTP status code
-            return response()->json($response, Response::HTTP_INTERNAL_SERVER_ERROR)->header('Content-Type', 'application/json');
-        }
-    }
-
-    public function top5ProductBarChart()
-    {
-        try {
-            // Create an array to store the results for each month
-            $monthlyTopProducts = [];
-
-            for ($month = 1; $month <= 12; $month++) {
-                // Get the top 5 highest sold orders for the product "Babero" for the current month
-                $orders = OrderModel::selectRaw('id, user_id, group_id, order_id, product_group_id, role, category, name, image, size, color, discount, description, product_price, shipping_fee, total_price, payment_method, status, reason_cancel, return_reason, return_image1, return_image2, return_image3, return_image4, return_description, return_solution, return_shipping_at, return_accept_at, return_decline_at, return_completed_at, return_failed_at, check_out_at, cancel_at, order_receive_at, mark_as_done_at, ship_at, completed_at, failed_at, return_at, created_at, updated_at, SUM(quantity) as totalSold')
-                    ->whereIn('status', ['COMPLETED', 'RETURN REFUND / COMPLETED'])
-                    ->whereMonth('created_at', $month) // Filter by the current month
-                    ->groupBy('id', 'user_id', 'group_id', 'order_id', 'product_group_id', 'role', 'category', 'name', 'image', 'size', 'color', 'discount', 'description', 'product_price', 'shipping_fee', 'total_price', 'payment_method', 'status', 'reason_cancel', 'return_reason', 'return_image1', 'return_image2', 'return_image3', 'return_image4', 'return_description', 'return_solution', 'return_shipping_at', 'return_accept_at', 'return_decline_at', 'return_completed_at', 'return_failed_at', 'check_out_at', 'cancel_at', 'order_receive_at', 'mark_as_done_at', 'ship_at', 'completed_at', 'failed_at', 'return_at', 'created_at', 'updated_at')
-                    ->orderByDesc('totalSold')
-                    ->take(5)
-                    ->get();
-
-                // Create an array to store the top products for the current month
-                $topProducts = [];
-                foreach ($orders as $order) {
-                    $topProducts[] = [
-                        'category' => $order->category,
-                        'name' => $order->name,
-                        'size' => $order->size,
-                        'color' => $order->color,
-                        'totalSold' => $order->totalSold,
-                    ];
-                }
-
-                // Add the results to the monthlyTopProducts array
-                $monthlyTopProducts[] = [
-                    'name' => date('M', mktime(0, 0, 0, $month, 1)),
-                    // Get the month name
-                    'topProducts' => $topProducts,
-                ];
-            }
-
-            // Return the results as JSON
-            return response()->json([
-                'data' => $monthlyTopProducts,
-            ], Response::HTTP_OK);
-
         } catch (\Exception $e) {
             // Handle exceptions and return an error response with CORS headers
             $errorMessage = $e->getMessage();
@@ -2280,7 +2101,352 @@ class OrderController extends Controller
         }
     }
 
-    // CANCEL ON TO SHIP | CLIENT
+    // CANCEL ON TO SHIP | CLIENT | HGTR
+    // public function cancelItemOnCart(Request $request, $id)
+    // {
+    //     try {
+    //         // Fetch User ID
+    //         $user = AuthModel::where('session_login', $request->input('session'))
+    //             ->where('status', 'VERIFIED')
+    //             ->first();
+    //         if ($user) {
+    //             $request->validate([
+    //                 'reasonCancel' => 'required|string',
+    //             ]);
+
+    //             // Retrieve the order to cancel
+    //             $data = OrderModel::where('user_id', $user->id)
+    //                 ->where('id', $id)
+    //                 ->where('status', 'TO SHIP / TO PROCESS')
+    //                 ->first();
+
+    //             if ($data) { // Check if the order was found
+    //                 if ($data->role == 'MAIN') {
+    //                     // Cancel if the role is MAIN and one only on group_od
+    //                     $count = OrderModel::where('group_id', $data->group_id)->count();
+    //                     if ($count == 1) {
+    //                         // Cancelled imidate if role is not MAIN
+    //                         $data->status = 'CANCELLED';
+    //                         $data->cancel_at = Carbon::now();
+    //                         $data->reason_cancel = $request->input('reasonCancel');
+    //                         if ($data->save()) {
+    //                             $userAction = 'CANCELLED';
+    //                             $details = 'Cancelled Product Information with Group ID: ' . $data->group_id . "\n" .
+    //                                 'Order ID: ' . $data->order_id . "\n" .
+    //                                 'Product Group ID: ' . $data->product_group_id . "\n" .
+    //                                 'Role: ' . $data->role . "\n" .
+    //                                 'Category: ' . $data->category . "\n" .
+    //                                 'Name: ' . $data->name . "\n" .
+    //                                 'Image Name: ' . $data->image . "\n" .
+    //                                 'Size: ' . $data->size . "\n" .
+    //                                 'Color: ' . $data->color . "\n" .
+    //                                 'Quantity: ' . $data->quantity . "\n" .
+    //                                 'Discount: ' . $data->discount . "\n" .
+    //                                 'Description: ' . $data->description . "\n" .
+    //                                 'Product Price: ' . $data->product_price . "\n" .
+    //                                 'Shipping Fee: ' . $data->shipping_fee . "\n" .
+    //                                 'Total Price: ' . $data->total_price . "\n" .
+    //                                 'Reason to Cancel' . $request->input('reasonCancel') . "\n";
+
+    //                             // Create Log
+    //                             $create = LogsModel::create([
+    //                                 'user_id' => $user->id,
+    //                                 'ip_address' => $request->ip(),
+    //                                 'user_action' => $userAction,
+    //                                 'details' => $details,
+    //                                 'created_at' => Carbon::now()
+    //                             ]);
+
+    //                             if ($create) {
+    //                                 return response()->json([
+    //                                     'message' => 'Cancelled'
+    //                                 ], Response::HTTP_OK);
+    //                             }
+    //                         }
+    //                     } else {
+    //                         // Pass the role main to the others
+    //                         $affectedRows = OrderModel::where('group_id', $data->group_id)
+    //                             ->where('id', '!=', $id)
+    //                             ->where('user_id', $user->id)
+    //                             ->update([
+    //                                 'role' => 'MAIN',
+    //                                 'shipping_fee' => $data->shipping_fee,
+    //                             ]);
+
+    //                         if ($affectedRows) {
+    //                             // Remove self Role and shipping Fee then change status to CANCELLED
+    //                             $affectedRowsSelf = OrderModel::where('group_id', $data->group_id)
+    //                                 ->where('id', '=', $id)
+    //                                 ->where('user_id', $user->id)
+    //                                 ->update([
+    //                                     'role' => '',
+    //                                     'shipping_fee' => 0.00,
+    //                                     'final_total_price' => 0.00,
+    //                                     'status' => 'CANCELLED',
+    //                                     'reason_cancel' => $request->input('reasonCancel'),
+    //                                     'cancel_at' => Carbon::now()
+    //                                 ]);
+
+    //                             if ($affectedRowsSelf) {
+    //                                 $userAction = 'CANCELLED';
+    //                                 $details = 'Cancelled Product Information with Group ID: ' . $data->group_id . "\n" .
+    //                                     'Order ID: ' . $data->order_id . "\n" .
+    //                                     'Product Group ID: ' . $data->product_group_id . "\n" .
+    //                                     'Role: ' . $data->role . "\n" .
+    //                                     'Category: ' . $data->category . "\n" .
+    //                                     'Name: ' . $data->name . "\n" .
+    //                                     'Image Name: ' . $data->image . "\n" .
+    //                                     'Size: ' . $data->size . "\n" .
+    //                                     'Color: ' . $data->color . "\n" .
+    //                                     'Quantity: ' . $data->quantity . "\n" .
+    //                                     'Discount: ' . $data->discount . "\n" .
+    //                                     'Description: ' . $data->description . "\n" .
+    //                                     'Product Price: ' . $data->product_price . "\n" .
+    //                                     'Shipping Fee: ' . $data->shipping_fee . "\n" .
+    //                                     'Total Price: ' . $data->total_price . "\n" .
+    //                                     'Reason to Cancel' . $request->input('reasonCancel') . "\n";
+
+    //                                 // Create Log
+    //                                 $create = LogsModel::create([
+    //                                     'user_id' => $user->id,
+    //                                     'ip_address' => $request->ip(),
+    //                                     'user_action' => $userAction,
+    //                                     'details' => $details,
+    //                                     'created_at' => Carbon::now()
+    //                                 ]);
+
+    //                                 if ($create) {
+    //                                     // ****************************//
+    //                                     // CALCULATING THE PRICE WITH 390
+    //                                     // Find the orders that match the specified conditions
+    //                                     $ordersToUpdate = OrderModel::where('user_id', $user->id)
+    //                                         ->where('status', 'TO SHIP / TO PROCESS')
+    //                                         ->where('product_price', 390) // Filter by product price 390
+    //                                         ->get(); // Get all matching orders
+
+    //                                     $totalQuantity = 0; // Initialize the total quantity to 0
+    //                                     foreach ($ordersToUpdate as $order) {
+    //                                         $totalQuantity += $order->quantity;
+    //                                     }
+
+    //                                     // Calculate the new total price based on the fixed price of 1000 for every 3 products
+    //                                     $countDivisibleBy3 = (int) ($totalQuantity / 3);
+    //                                     $specialPrice = $countDivisibleBy3 * 1000;
+    //                                     $remainder = $totalQuantity % 3;
+    //                                     $totalPriceRemainder = $remainder * 390;
+    //                                     $ordersToUpdateNot390 = OrderModel::where('user_id', $user->id)
+    //                                         ->where('status', 'TO SHIP / TO PROCESS')
+    //                                         ->where('product_price', '!=', 390)
+    //                                         ->get();
+    //                                     $totalPrice = 0; // Initialize the total price to 0
+    //                                     foreach ($ordersToUpdateNot390 as $order) {
+    //                                         $totalPrice += $order->product_price;
+    //                                     }
+
+    //                                     // SAVE THE CALCULATED FINAL PRICE
+    //                                     // Update the final_total_price for each order
+    //                                     $updateCalcuFinalPrice = OrderModel::where('user_id', $user->id)
+    //                                         ->where('status', 'TO SHIP / TO PROCESS')
+    //                                         ->where('role', 'MAIN')
+    //                                         ->first();
+    //                                     $updateCalcuFinalPrice->final_total_price = $specialPrice + $totalPriceRemainder + $totalPrice;
+    //                                     $updateCalcuFinalPrice->save(); // Save the changes to each order
+    //                                     // ****************************//
+
+
+    //                                     // Updating the Total Shipping fee now
+    //                                     // Fetch the total Quantity
+    //                                     $fetchAllQuantityAndCalculateShippingFee = OrderModel::where('user_id', $user->id)
+    //                                         ->where('status', 'TO SHIP / TO PROCESS')
+    //                                         ->get();
+
+    //                                     $totalQuantity = 0;
+    //                                     foreach ($fetchAllQuantityAndCalculateShippingFee as $order) {
+    //                                         $totalQuantity += $order->quantity;
+    //                                     }
+
+    //                                     // Calculate the Shipping Fee
+    //                                     function calculateShippingFee($totalQuantity)
+    //                                     {
+    //                                         $shippingFee = 100; // Base shipping fee
+    //                                         $rangeSize = 5; // Size of each range
+    //                                         $feeIncrement = 100; // Fee increment for each range
+
+    //                                         // Calculate the range index based on the quantity
+    //                                         $rangeIndex = ceil($totalQuantity / $rangeSize);
+
+    //                                         // Calculate the shipping fee based on the range index and quantity
+    //                                         $shippingFee += ($rangeIndex - 1) * $feeIncrement;
+
+    //                                         return number_format($shippingFee, 2); // Format the shipping fee with two decimal places
+    //                                     }
+
+    //                                     // Saving Now
+    //                                     $updateShippingFeeNow = OrderModel::where('user_id', $user->id)
+    //                                         ->where('status', 'TO SHIP / TO PROCESS')
+    //                                         ->where('role', 'MAIN')
+    //                                         ->first();
+    //                                     $updateShippingFeeNow->shipping_fee = calculateShippingFee($totalQuantity);
+
+    //                                     if ($updateShippingFeeNow->save()) {
+    //                                         return response()->json([
+    //                                             'message' => 'Cancelled'
+    //                                         ], Response::HTTP_OK);
+    //                                     }
+    //                                 }
+    //                             }
+    //                         }
+    //                     }
+    //                 } else {
+    //                     // Cancelled imidate if role is not MAIN
+    //                     $data->status = 'CANCELLED';
+    //                     $data->cancel_at = Carbon::now();
+    //                     $data->reason_cancel = $request->input('reasonCancel');
+    //                     if ($data->save()) {
+    //                         $userAction = 'CANCELLED';
+    //                         $details = 'Cancelled Product Information with Group ID: ' . $data->group_id . "\n" .
+    //                             'Order ID: ' . $data->order_id . "\n" .
+    //                             'Product Group ID: ' . $data->product_group_id . "\n" .
+    //                             'Role: ' . $data->role . "\n" .
+    //                             'Category: ' . $data->category . "\n" .
+    //                             'Name: ' . $data->name . "\n" .
+    //                             'Image Name: ' . $data->image . "\n" .
+    //                             'Size: ' . $data->size . "\n" .
+    //                             'Color: ' . $data->color . "\n" .
+    //                             'Quantity: ' . $data->quantity . "\n" .
+    //                             'Discount: ' . $data->discount . "\n" .
+    //                             'Description: ' . $data->description . "\n" .
+    //                             'Product Price: ' . $data->product_price . "\n" .
+    //                             'Shipping Fee: ' . $data->shipping_fee . "\n" .
+    //                             'Total Price: ' . $data->total_price . "\n" .
+    //                             'Reason to Cancel' . $request->input('reasonCancel') . "\n";
+
+    //                         // Create Log
+    //                         $create = LogsModel::create([
+    //                             'user_id' => $user->id,
+    //                             'ip_address' => $request->ip(),
+    //                             'user_action' => $userAction,
+    //                             'details' => $details,
+    //                             'created_at' => Carbon::now()
+    //                         ]);
+
+    //                         if ($create) {
+    //                             // ****************************//
+    //                             // CALCULATING THE PRICE WITH 390
+    //                             // Find the orders that match the specified conditions
+    //                             $ordersToUpdate = OrderModel::where('user_id', $user->id)
+    //                                 ->where('status', 'TO SHIP / TO PROCESS')
+    //                                 ->where('product_price', 390) // Filter by product price 390
+    //                                 ->get(); // Get all matching orders
+
+    //                             $totalQuantity = 0; // Initialize the total quantity to 0
+    //                             foreach ($ordersToUpdate as $order) {
+    //                                 $totalQuantity += $order->quantity;
+    //                             }
+
+    //                             // Calculate the new total price based on the fixed price of 1000 for every 3 products
+    //                             $countDivisibleBy3 = (int) ($totalQuantity / 3);
+    //                             $specialPrice = $countDivisibleBy3 * 1000;
+    //                             $remainder = $totalQuantity % 3;
+    //                             $totalPriceRemainder = $remainder * 390;
+    //                             $ordersToUpdateNot390 = OrderModel::where('user_id', $user->id)
+    //                                 ->where('status', 'TO SHIP / TO PROCESS')
+    //                                 ->where('product_price', '!=', 390)
+    //                                 ->get();
+    //                             $totalPrice = 0; // Initialize the total price to 0
+    //                             foreach ($ordersToUpdateNot390 as $order) {
+    //                                 $totalPrice += $order->product_price;
+    //                             }
+
+    //                             // SAVE THE CALCULATED FINAL PRICE
+    //                             // Update the final_total_price for each order
+    //                             $updateCalcuFinalPrice = OrderModel::where('user_id', $user->id)
+    //                                 ->where('status', 'TO SHIP / TO PROCESS')
+    //                                 ->where('role', 'MAIN')
+    //                                 ->first();
+    //                             $updateCalcuFinalPrice->final_total_price = $specialPrice + $totalPriceRemainder + $totalPrice;
+    //                             $updateCalcuFinalPrice->save(); // Save the changes to each order
+    //                             // ****************************//
+
+
+    //                             // Updating the Total Shipping fee now
+    //                             // Fetch the total Quantity
+    //                             $fetchAllQuantityAndCalculateShippingFee = OrderModel::where('user_id', $user->id)
+    //                                 ->where('status', 'TO SHIP / TO PROCESS')
+    //                                 ->get();
+
+    //                             $totalQuantity = 0;
+    //                             foreach ($fetchAllQuantityAndCalculateShippingFee as $order) {
+    //                                 $totalQuantity += $order->quantity;
+    //                             }
+
+    //                             // Calculate the Shipping Fee
+    //                             function calculateShippingFee($totalQuantity)
+    //                             {
+    //                                 $shippingFee = 100; // Base shipping fee
+    //                                 $rangeSize = 5; // Size of each range
+    //                                 $feeIncrement = 100; // Fee increment for each range
+
+    //                                 // Calculate the range index based on the quantity
+    //                                 $rangeIndex = ceil($totalQuantity / $rangeSize);
+
+    //                                 // Calculate the shipping fee based on the range index and quantity
+    //                                 $shippingFee += ($rangeIndex - 1) * $feeIncrement;
+
+    //                                 return number_format($shippingFee, 2); // Format the shipping fee with two decimal places
+    //                             }
+
+    //                             // Saving Now
+    //                             $updateShippingFeeNow = OrderModel::where('user_id', $user->id)
+    //                                 ->where('status', 'TO SHIP / TO PROCESS')
+    //                                 ->where('role', 'MAIN')
+    //                                 ->first();
+    //                             $updateShippingFeeNow->shipping_fee = calculateShippingFee($totalQuantity);
+
+    //                             if ($updateShippingFeeNow->save()) {
+    //                                 return response()->json([
+    //                                     'message' => 'Cancelled'
+    //                                 ], Response::HTTP_OK);
+    //                             }
+    //                         }
+    //                     }
+    //                 }
+    //             } else {
+    //                 return response()->json([
+    //                     'message' => 'Order not found'
+    //                 ], Response::HTTP_OK);
+    //             }
+    //         } else {
+    //             return response()->json([
+    //                 'message' => 'Intruder'
+    //             ], Response::HTTP_OK);
+    //         }
+
+    //     } catch (\Exception $e) {
+    //         // Handle exceptions and return an error response with CORS headers
+    //         $errorMessage = $e->getMessage();
+    //         $errorCode = $e->getCode();
+
+    //         // Create a JSON error response
+    //         $response = [
+    //             'success' => false,
+    //             'error' => [
+    //                 'code' => $errorCode,
+    //                 'message' => $errorMessage,
+    //             ],
+    //         ];
+
+    //         // Add additional error details if available
+    //         if ($e instanceof \Illuminate\Validation\ValidationException) {
+    //             $response['error']['details'] = $e->errors();
+    //         }
+
+    //         // Return the JSON error response with CORS headers and an appropriate HTTP status code
+    //         return response()->json($response, Response::HTTP_INTERNAL_SERVER_ERROR)->header('Content-Type', 'application/json');
+    //     }
+    // }
+
+    // CANCEL ON TO SHIP | CLIENT | KITTLY
     public function cancelItemOnCart(Request $request, $id)
     {
         try {
@@ -2302,7 +2468,7 @@ class OrderController extends Controller
                 if ($data) { // Check if the order was found
                     if ($data->role == 'MAIN') {
                         // Cancel if the role is MAIN and one only on group_od
-                        $count = OrderModel::where('group_id', $data->group_id)->count();
+                        $count = OrderModel::where('group_id', $data->group_id)->where('status', 'TO SHIP / TO PROCESS')->count();
                         if ($count == 1) {
                             // Cancelled imidate if role is not MAIN
                             $data->status = 'CANCELLED';
@@ -2325,6 +2491,7 @@ class OrderController extends Controller
                                     'Product Price: ' . $data->product_price . "\n" .
                                     'Shipping Fee: ' . $data->shipping_fee . "\n" .
                                     'Total Price: ' . $data->total_price . "\n" .
+                                    'Final Total Price: ' . $data->final_total_price . "\n" .
                                     'Reason to Cancel' . $request->input('reasonCancel') . "\n";
 
                                 // Create Log
@@ -2337,37 +2504,175 @@ class OrderController extends Controller
                                 ]);
 
                                 if ($create) {
-                                    return response()->json([
-                                        'message' => 'Cancelled'
-                                    ], Response::HTTP_OK);
+                                    // Calculate Status Cancelled
+                                    $cancelNowThegroupId = OrderModel::where('group_id', $data->group_id)->where('status', 'CANCELLED');
+                                    if ($cancelNowThegroupId) {
+                                        $toProcessDataCancel = OrderModel::where('user_id', $user->id)
+                                            ->where('status', 'CANCELLED')
+                                            ->where('role', 'MAIN')
+                                            ->where('group_id', $data->group_id)
+                                            ->first();
+
+                                        // Shipping Only && Discount Only
+                                        if ($toProcessDataCancel->voucher_name_shipping !== null && $toProcessDataCancel->voucher_name_discount !== null) {
+                                            $fixedDiscount = $toProcessDataCancel->voucher_discount; // Assuming $toProcessDataCancel->voucher_discount is 50
+                                            $percentageDiscount = $fixedDiscount / 100; // Convert to a percentage (50% in this case)
+
+                                            // Sum all To ship / to process
+                                            $totalProductPrice = OrderModel::where('user_id', $user->id)
+                                                ->where('status', 'CANCELLED')
+                                                ->where('group_id', $data->group_id)
+                                                ->sum('product_price');
+
+                                            $discountedTotal = $totalProductPrice - ($percentageDiscount * $totalProductPrice); // Apply the percentage discount
+
+                                            $toProcessDataCancel->shipping_fee = 0.00;
+                                            $toProcessDataCancel->final_total_price = $discountedTotal;
+
+                                            if ($toProcessDataCancel->save()) {
+                                                return response()->json([
+                                                    'message' => 'Cancelled'
+                                                ], Response::HTTP_OK);
+                                            }
+                                        }
+                                        // Shipping Only
+                                        else if ($toProcessDataCancel->voucher_name_shipping !== null) {
+                                            // ****************************************** //
+                                            // Sum all To TO SHIP / TO PROCESS
+                                            $totalProductPrice = OrderModel::where('user_id', $user->id)
+                                                ->where('status', 'CANCELLED')
+                                                ->where('group_id', $data->group_id)
+                                                ->sum('product_price');
+
+                                            $toProcessDataCancel->final_total_price = $totalProductPrice;
+                                            $toProcessDataCancel->save();
+                                            // ****************************************** //
+
+                                            $toProcessDataCancel->shipping_fee = 0.00;
+                                            if ($toProcessDataCancel->save()) {
+                                                return response()->json([
+                                                    'message' => 'Cancelled'
+                                                ], Response::HTTP_OK);
+                                            }
+                                        }
+                                        // Discount Only
+                                        else if ($toProcessDataCancel->voucher_name_discount !== null) {
+                                            $fixedDiscount = $toProcessDataCancel->voucher_discount; // Assuming $toProcessDataCancel->voucher_discount is 50
+                                            $percentageDiscount = $fixedDiscount / 100; // Convert to a percentage (50% in this case)
+
+                                            // Sum all CANCELLED
+                                            $totalProductPrice = OrderModel::where('user_id', $user->id)
+                                                ->where('status', 'CANCELLED')
+                                                ->where('group_id', $data->group_id)
+                                                ->sum('product_price');
+
+                                            $discountedTotal = $totalProductPrice - ($percentageDiscount * $totalProductPrice); // Apply the percentage discount
+
+                                            $toProcessDataCancel->final_total_price = $discountedTotal;
+                                            if ($toProcessDataCancel->save()) {
+                                                return response()->json([
+                                                    'message' => 'Cancelled'
+                                                ], Response::HTTP_OK);
+                                            }
+                                        }
+                                        // Normal cancel
+                                        else {
+                                            // ****************************************** //
+                                            // Sum all To CANCELLED
+                                            $totalProductPrice = OrderModel::where('user_id', $user->id)
+                                                ->where('status', 'CANCELLED')
+                                                ->where('group_id', $data->group_id)
+                                                ->sum('product_price');
+
+                                            $toProcessDataCancel->final_total_price = $totalProductPrice;
+                                            $toProcessDataCancel->save();
+                                            // ****************************************** //
+
+                                            // ****************************************** //
+                                            // Updating the Total Shipping fee now
+                                            // Fetch the total Quantity
+                                            $fetchAllQuantityAndCalculateShippingFee = OrderModel::where('user_id', $user->id)
+                                                ->where('status', 'CANCELLED')
+                                                ->where('group_id', $data->group_id)
+                                                ->get();
+
+                                            $totalQuantity = 0;
+                                            foreach ($fetchAllQuantityAndCalculateShippingFee as $order) {
+                                                $totalQuantity += $order->quantity;
+                                            }
+
+                                            // Calculate the Shipping Fee
+                                            function calculateShippingFee($totalQuantity)
+                                            {
+                                                $shippingFee = 100; // Base shipping fee
+                                                $rangeSize = 5; // Size of each range
+                                                $feeIncrement = 100; // Fee increment for each range
+
+                                                // Calculate the range index based on the quantity
+                                                $rangeIndex = ceil($totalQuantity / $rangeSize);
+
+                                                // Calculate the shipping fee based on the range index and quantity
+                                                $shippingFee += ($rangeIndex - 1) * $feeIncrement;
+
+                                                return number_format($shippingFee, 2); // Format the shipping fee with two decimal places
+                                            }
+
+                                            // Saving Now
+                                            $updateShippingFeeNow = OrderModel::where('user_id', $user->id)
+                                                ->where('status', 'CANCELLED')
+                                                ->where('role', 'MAIN')
+                                                ->where('group_id', $data->group_id)
+                                                ->first();
+                                            $updateShippingFeeNow->shipping_fee = calculateShippingFee($totalQuantity);
+                                            if ($updateShippingFeeNow->save()) {
+                                                return response()->json([
+                                                    'message' => 'Cancelled'
+                                                ], Response::HTTP_OK);
+                                            }
+                                            // ****************************************** //
+                                        }
+                                    }
                                 }
                             }
                         } else {
-                            // Pass the role main to the others
+                            // Pass the role main, voucher_shipping_id, voucher_discount_id, voucher_name_shipping, voucher_name_discount, shipping_fee, final_total_price to the others
                             $affectedRows = OrderModel::where('group_id', $data->group_id)
+                                ->where('status', 'TO SHIP / TO PROCESS')
                                 ->where('id', '!=', $id)
                                 ->where('user_id', $user->id)
                                 ->update([
                                     'role' => 'MAIN',
+                                    'voucher_shipping_id' => $data->voucher_shipping_id,
+                                    'voucher_discount_id' => $data->voucher_discount_id,
+                                    'voucher_name_shipping' => $data->voucher_name_shipping,
+                                    'voucher_name_discount' => $data->voucher_name_discount,
+                                    'voucher_discount' => $data->voucher_discount,
                                     'shipping_fee' => $data->shipping_fee,
+                                    'final_total_price' => $data->final_total_price,
                                 ]);
 
                             if ($affectedRows) {
-                                // Remove self Role and shipping Fee then change status to CANCELLED
+                                // Set null then change status to CANCELLED
                                 $affectedRowsSelf = OrderModel::where('group_id', $data->group_id)
                                     ->where('id', '=', $id)
                                     ->where('user_id', $user->id)
+                                    ->where('status', 'TO SHIP / TO PROCESS')
                                     ->update([
                                         'role' => '',
+                                        'voucher_shipping_id' => null,
+                                        'voucher_discount_id' => null,
+                                        'voucher_name_shipping' => null,
+                                        'voucher_name_discount' => null,
+                                        'voucher_discount' => null,
                                         'shipping_fee' => 0.00,
-                                        'final_total_price' => 0.00,
                                         'status' => 'CANCELLED',
+                                        'final_total_price' => 0.00,
                                         'reason_cancel' => $request->input('reasonCancel'),
                                         'cancel_at' => Carbon::now()
                                     ]);
 
                                 if ($affectedRowsSelf) {
-                                    $userAction = 'CANCELLED';
+                                    $userAction = 'CANCELLED PRODUCT';
                                     $details = 'Cancelled Product Information with Group ID: ' . $data->group_id . "\n" .
                                         'Order ID: ' . $data->order_id . "\n" .
                                         'Product Group ID: ' . $data->product_group_id . "\n" .
@@ -2381,7 +2686,6 @@ class OrderController extends Controller
                                         'Discount: ' . $data->discount . "\n" .
                                         'Description: ' . $data->description . "\n" .
                                         'Product Price: ' . $data->product_price . "\n" .
-                                        'Shipping Fee: ' . $data->shipping_fee . "\n" .
                                         'Total Price: ' . $data->total_price . "\n" .
                                         'Reason to Cancel' . $request->input('reasonCancel') . "\n";
 
@@ -2395,82 +2699,129 @@ class OrderController extends Controller
                                     ]);
 
                                     if ($create) {
-                                        // ****************************//
-                                        // CALCULATING THE PRICE WITH 390
-                                        // Find the orders that match the specified conditions
-                                        $ordersToUpdate = OrderModel::where('user_id', $user->id)
-                                            ->where('status', 'TO SHIP / TO PROCESS')
-                                            ->where('product_price', 390) // Filter by product price 390
-                                            ->get(); // Get all matching orders
-
-                                        $totalQuantity = 0; // Initialize the total quantity to 0
-                                        foreach ($ordersToUpdate as $order) {
-                                            $totalQuantity += $order->quantity;
-                                        }
-
-                                        // Calculate the new total price based on the fixed price of 1000 for every 3 products
-                                        $countDivisibleBy3 = (int) ($totalQuantity / 3);
-                                        $specialPrice = $countDivisibleBy3 * 1000;
-                                        $remainder = $totalQuantity % 3;
-                                        $totalPriceRemainder = $remainder * 390;
-                                        $ordersToUpdateNot390 = OrderModel::where('user_id', $user->id)
-                                            ->where('status', 'TO SHIP / TO PROCESS')
-                                            ->where('product_price', '!=', 390)
-                                            ->get();
-                                        $totalPrice = 0; // Initialize the total price to 0
-                                        foreach ($ordersToUpdateNot390 as $order) {
-                                            $totalPrice += $order->product_price;
-                                        }
-
-                                        // SAVE THE CALCULATED FINAL PRICE
-                                        // Update the final_total_price for each order
-                                        $updateCalcuFinalPrice = OrderModel::where('user_id', $user->id)
+                                        $toProcessDataCancel = OrderModel::where('user_id', $user->id)
                                             ->where('status', 'TO SHIP / TO PROCESS')
                                             ->where('role', 'MAIN')
+                                            ->where('group_id', $data->group_id)
                                             ->first();
-                                        $updateCalcuFinalPrice->final_total_price = $specialPrice + $totalPriceRemainder + $totalPrice;
-                                        $updateCalcuFinalPrice->save(); // Save the changes to each order
-                                        // ****************************//
 
+                                        // Shipping Only && Discount Only
+                                        if ($toProcessDataCancel->voucher_name_shipping !== null && $toProcessDataCancel->voucher_name_discount !== null) {
+                                            $fixedDiscount = $toProcessDataCancel->voucher_discount; // Assuming $toProcessDataCancel->voucher_discount is 50
+                                            $percentageDiscount = $fixedDiscount / 100; // Convert to a percentage (50% in this case)
 
-                                        // Updating the Total Shipping fee now
-                                        // Fetch the total Quantity
-                                        $fetchAllQuantityAndCalculateShippingFee = OrderModel::where('user_id', $user->id)
-                                            ->where('status', 'TO SHIP / TO PROCESS')
-                                            ->get();
+                                            // Sum all To ship / to process
+                                            $totalProductPrice = OrderModel::where('user_id', $user->id)
+                                                ->where('status', 'TO SHIP / TO PROCESS')
+                                                ->where('group_id', $data->group_id)
+                                                ->sum('product_price');
 
-                                        $totalQuantity = 0;
-                                        foreach ($fetchAllQuantityAndCalculateShippingFee as $order) {
-                                            $totalQuantity += $order->quantity;
+                                            $discountedTotal = $totalProductPrice - ($percentageDiscount * $totalProductPrice); // Apply the percentage discount
+
+                                            $toProcessDataCancel->shipping_fee = 0.00;
+                                            $toProcessDataCancel->final_total_price = $discountedTotal;
+
+                                            if ($toProcessDataCancel->save()) {
+                                                return response()->json([
+                                                    'message' => 'Cancelled'
+                                                ], Response::HTTP_OK);
+                                            }
                                         }
+                                        // Shipping Only
+                                        else if ($toProcessDataCancel->voucher_name_shipping !== null) {
+                                            // ****************************************** //
+                                            // Sum all To TO SHIP / TO PROCESS
+                                            $totalProductPrice = OrderModel::where('user_id', $user->id)
+                                                ->where('status', 'TO SHIP / TO PROCESS')
+                                                ->where('group_id', $data->group_id)
+                                                ->sum('product_price');
 
-                                        // Calculate the Shipping Fee
-                                        function calculateShippingFee($totalQuantity)
-                                        {
-                                            $shippingFee = 100; // Base shipping fee
-                                            $rangeSize = 5; // Size of each range
-                                            $feeIncrement = 100; // Fee increment for each range
+                                            $toProcessDataCancel->final_total_price = $totalProductPrice;
+                                            $toProcessDataCancel->save();
+                                            // ****************************************** //
 
-                                            // Calculate the range index based on the quantity
-                                            $rangeIndex = ceil($totalQuantity / $rangeSize);
-
-                                            // Calculate the shipping fee based on the range index and quantity
-                                            $shippingFee += ($rangeIndex - 1) * $feeIncrement;
-
-                                            return number_format($shippingFee, 2); // Format the shipping fee with two decimal places
+                                            $toProcessDataCancel->shipping_fee = 0.00;
+                                            if ($toProcessDataCancel->save()) {
+                                                return response()->json([
+                                                    'message' => 'Cancelled'
+                                                ], Response::HTTP_OK);
+                                            }
                                         }
+                                        // Discount Only
+                                        else if ($toProcessDataCancel->voucher_name_discount !== null) {
+                                            $fixedDiscount = $toProcessDataCancel->voucher_discount; // Assuming $toProcessDataCancel->voucher_discount is 50
+                                            $percentageDiscount = $fixedDiscount / 100; // Convert to a percentage (50% in this case)
 
-                                        // Saving Now
-                                        $updateShippingFeeNow = OrderModel::where('user_id', $user->id)
-                                            ->where('status', 'TO SHIP / TO PROCESS')
-                                            ->where('role', 'MAIN')
-                                            ->first();
-                                        $updateShippingFeeNow->shipping_fee = calculateShippingFee($totalQuantity);
+                                            // Sum all To ship / to process
+                                            $totalProductPrice = OrderModel::where('user_id', $user->id)
+                                                ->where('status', 'TO SHIP / TO PROCESS')
+                                                ->where('group_id', $data->group_id)
+                                                ->sum('product_price');
 
-                                        if ($updateShippingFeeNow->save()) {
-                                            return response()->json([
-                                                'message' => 'Cancelled'
-                                            ], Response::HTTP_OK);
+                                            $discountedTotal = $totalProductPrice - ($percentageDiscount * $totalProductPrice); // Apply the percentage discount
+
+                                            $toProcessDataCancel->final_total_price = $discountedTotal;
+                                            if ($toProcessDataCancel->save()) {
+                                                return response()->json([
+                                                    'message' => 'Cancelled'
+                                                ], Response::HTTP_OK);
+                                            }
+                                        }
+                                        // Normal cancel
+                                        else {
+                                            // ****************************************** //
+                                            // Sum all To TO SHIP / TO PROCESS
+                                            $totalProductPrice = OrderModel::where('user_id', $user->id)
+                                                ->where('status', 'TO SHIP / TO PROCESS')
+                                                ->where('group_id', $data->group_id)
+                                                ->sum('product_price');
+
+                                            $toProcessDataCancel->final_total_price = $totalProductPrice;
+                                            $toProcessDataCancel->save();
+                                            // ****************************************** //
+
+                                            // ****************************************** //
+                                            // Updating the Total Shipping fee now
+                                            // Fetch the total Quantity
+                                            $fetchAllQuantityAndCalculateShippingFee = OrderModel::where('user_id', $user->id)
+                                                ->where('status', 'TO SHIP / TO PROCESS')
+                                                ->where('group_id', $data->group_id)
+                                                ->get();
+
+                                            $totalQuantity = 0;
+                                            foreach ($fetchAllQuantityAndCalculateShippingFee as $order) {
+                                                $totalQuantity += $order->quantity;
+                                            }
+
+                                            // Calculate the Shipping Fee
+                                            function calculateShippingFee($totalQuantity)
+                                            {
+                                                $shippingFee = 100; // Base shipping fee
+                                                $rangeSize = 5; // Size of each range
+                                                $feeIncrement = 100; // Fee increment for each range
+
+                                                // Calculate the range index based on the quantity
+                                                $rangeIndex = ceil($totalQuantity / $rangeSize);
+
+                                                // Calculate the shipping fee based on the range index and quantity
+                                                $shippingFee += ($rangeIndex - 1) * $feeIncrement;
+
+                                                return number_format($shippingFee, 2); // Format the shipping fee with two decimal places
+                                            }
+
+                                            // Saving Now
+                                            $updateShippingFeeNow = OrderModel::where('user_id', $user->id)
+                                                ->where('status', 'TO SHIP / TO PROCESS')
+                                                ->where('role', 'MAIN')
+                                                ->where('group_id', $data->group_id)
+                                                ->first();
+                                            $updateShippingFeeNow->shipping_fee = calculateShippingFee($totalQuantity);
+                                            if ($updateShippingFeeNow->save()) {
+                                                return response()->json([
+                                                    'message' => 'Cancelled'
+                                                ], Response::HTTP_OK);
+                                            }
+                                            // ****************************************** //
                                         }
                                     }
                                 }
@@ -2496,7 +2847,6 @@ class OrderController extends Controller
                                 'Discount: ' . $data->discount . "\n" .
                                 'Description: ' . $data->description . "\n" .
                                 'Product Price: ' . $data->product_price . "\n" .
-                                'Shipping Fee: ' . $data->shipping_fee . "\n" .
                                 'Total Price: ' . $data->total_price . "\n" .
                                 'Reason to Cancel' . $request->input('reasonCancel') . "\n";
 
@@ -2510,82 +2860,127 @@ class OrderController extends Controller
                             ]);
 
                             if ($create) {
-                                // ****************************//
-                                // CALCULATING THE PRICE WITH 390
-                                // Find the orders that match the specified conditions
-                                $ordersToUpdate = OrderModel::where('user_id', $user->id)
-                                    ->where('status', 'TO SHIP / TO PROCESS')
-                                    ->where('product_price', 390) // Filter by product price 390
-                                    ->get(); // Get all matching orders
-
-                                $totalQuantity = 0; // Initialize the total quantity to 0
-                                foreach ($ordersToUpdate as $order) {
-                                    $totalQuantity += $order->quantity;
-                                }
-
-                                // Calculate the new total price based on the fixed price of 1000 for every 3 products
-                                $countDivisibleBy3 = (int) ($totalQuantity / 3);
-                                $specialPrice = $countDivisibleBy3 * 1000;
-                                $remainder = $totalQuantity % 3;
-                                $totalPriceRemainder = $remainder * 390;
-                                $ordersToUpdateNot390 = OrderModel::where('user_id', $user->id)
-                                    ->where('status', 'TO SHIP / TO PROCESS')
-                                    ->where('product_price', '!=', 390)
-                                    ->get();
-                                $totalPrice = 0; // Initialize the total price to 0
-                                foreach ($ordersToUpdateNot390 as $order) {
-                                    $totalPrice += $order->product_price;
-                                }
-
-                                // SAVE THE CALCULATED FINAL PRICE
-                                // Update the final_total_price for each order
-                                $updateCalcuFinalPrice = OrderModel::where('user_id', $user->id)
+                                $toProcessDataCancel = OrderModel::where('user_id', $user->id)
                                     ->where('status', 'TO SHIP / TO PROCESS')
                                     ->where('role', 'MAIN')
+                                    ->where('group_id', $data->group_id)
                                     ->first();
-                                $updateCalcuFinalPrice->final_total_price = $specialPrice + $totalPriceRemainder + $totalPrice;
-                                $updateCalcuFinalPrice->save(); // Save the changes to each order
-                                // ****************************//
 
+                                // Shipping Only && Discount Only
+                                if ($toProcessDataCancel->voucher_name_shipping !== null && $toProcessDataCancel->voucher_name_discount !== null) {
+                                    $fixedDiscount = $toProcessDataCancel->voucher_discount; // Assuming $toProcessDataCancel->voucher_discount is 50
+                                    $percentageDiscount = $fixedDiscount / 100; // Convert to a percentage (50% in this case)
 
-                                // Updating the Total Shipping fee now
-                                // Fetch the total Quantity
-                                $fetchAllQuantityAndCalculateShippingFee = OrderModel::where('user_id', $user->id)
-                                    ->where('status', 'TO SHIP / TO PROCESS')
-                                    ->get();
+                                    // Sum all To ship / to process
+                                    $totalProductPrice = OrderModel::where('user_id', $user->id)
+                                        ->where('status', 'TO SHIP / TO PROCESS')
+                                        ->where('group_id', $data->group_id)
+                                        ->sum('product_price');
 
-                                $totalQuantity = 0;
-                                foreach ($fetchAllQuantityAndCalculateShippingFee as $order) {
-                                    $totalQuantity += $order->quantity;
+                                    $discountedTotal = $totalProductPrice - ($percentageDiscount * $totalProductPrice); // Apply the percentage discount
+
+                                    $toProcessDataCancel->shipping_fee = 0.00;
+                                    $toProcessDataCancel->final_total_price = $discountedTotal;
+
+                                    if ($toProcessDataCancel->save()) {
+                                        return response()->json([
+                                            'message' => 'Cancelled'
+                                        ], Response::HTTP_OK);
+                                    }
                                 }
+                                // Shipping Only
+                                else if ($toProcessDataCancel->voucher_name_shipping !== null) {
+                                    // ****************************************** //
+                                    // Sum all To TO SHIP / TO PROCESS
+                                    $totalProductPrice = OrderModel::where('user_id', $user->id)
+                                        ->where('status', 'TO SHIP / TO PROCESS')
+                                        ->where('group_id', $data->group_id)
+                                        ->sum('product_price');
 
-                                // Calculate the Shipping Fee
-                                function calculateShippingFee($totalQuantity)
-                                {
-                                    $shippingFee = 100; // Base shipping fee
-                                    $rangeSize = 5; // Size of each range
-                                    $feeIncrement = 100; // Fee increment for each range
+                                    $toProcessDataCancel->final_total_price = $totalProductPrice;
+                                    $toProcessDataCancel->save();
+                                    // ****************************************** //
 
-                                    // Calculate the range index based on the quantity
-                                    $rangeIndex = ceil($totalQuantity / $rangeSize);
-
-                                    // Calculate the shipping fee based on the range index and quantity
-                                    $shippingFee += ($rangeIndex - 1) * $feeIncrement;
-
-                                    return number_format($shippingFee, 2); // Format the shipping fee with two decimal places
+                                    $toProcessDataCancel->shipping_fee = 0.00;
+                                    if ($toProcessDataCancel->save()) {
+                                        return response()->json([
+                                            'message' => 'Cancelled'
+                                        ], Response::HTTP_OK);
+                                    }
                                 }
+                                // Discount Only
+                                else if ($toProcessDataCancel->voucher_name_discount !== null) {
+                                    $fixedDiscount = $toProcessDataCancel->voucher_discount; // Assuming $toProcessDataCancel->voucher_discount is 50
+                                    $percentageDiscount = $fixedDiscount / 100; // Convert to a percentage (50% in this case)
 
-                                // Saving Now
-                                $updateShippingFeeNow = OrderModel::where('user_id', $user->id)
-                                    ->where('status', 'TO SHIP / TO PROCESS')
-                                    ->where('role', 'MAIN')
-                                    ->first();
-                                $updateShippingFeeNow->shipping_fee = calculateShippingFee($totalQuantity);
+                                    // Sum all To ship / to process
+                                    $totalProductPrice = OrderModel::where('user_id', $user->id)
+                                        ->where('status', 'TO SHIP / TO PROCESS')
+                                        ->where('group_id', $data->group_id)
+                                        ->sum('product_price');
 
-                                if ($updateShippingFeeNow->save()) {
-                                    return response()->json([
-                                        'message' => 'Cancelled'
-                                    ], Response::HTTP_OK);
+                                    $discountedTotal = $totalProductPrice - ($percentageDiscount * $totalProductPrice); // Apply the percentage discount
+
+                                    $toProcessDataCancel->final_total_price = $discountedTotal;
+                                    if ($toProcessDataCancel->save()) {
+                                        return response()->json([
+                                            'message' => 'Cancelled'
+                                        ], Response::HTTP_OK);
+                                    }
+                                } else {
+                                    // ****************************************** //
+                                    // Sum all To TO SHIP / TO PROCESS
+                                    $totalProductPrice = OrderModel::where('user_id', $user->id)
+                                        ->where('status', 'TO SHIP / TO PROCESS')
+                                        ->where('group_id', $data->group_id)
+                                        ->sum('product_price');
+
+                                    $toProcessDataCancel->final_total_price = $totalProductPrice;
+                                    $toProcessDataCancel->save();
+                                    // ****************************************** //
+
+                                    // ****************************************** //
+                                    // Updating the Total Shipping fee now
+                                    // Fetch the total Quantity
+                                    $fetchAllQuantityAndCalculateShippingFee = OrderModel::where('user_id', $user->id)
+                                        ->where('status', 'TO SHIP / TO PROCESS')
+                                        ->where('group_id', $data->group_id)
+                                        ->get();
+
+                                    $totalQuantity = 0;
+                                    foreach ($fetchAllQuantityAndCalculateShippingFee as $order) {
+                                        $totalQuantity += $order->quantity;
+                                    }
+
+                                    // Calculate the Shipping Fee
+                                    function calculateShippingFee($totalQuantity)
+                                    {
+                                        $shippingFee = 100; // Base shipping fee
+                                        $rangeSize = 5; // Size of each range
+                                        $feeIncrement = 100; // Fee increment for each range
+
+                                        // Calculate the range index based on the quantity
+                                        $rangeIndex = ceil($totalQuantity / $rangeSize);
+
+                                        // Calculate the shipping fee based on the range index and quantity
+                                        $shippingFee += ($rangeIndex - 1) * $feeIncrement;
+
+                                        return number_format($shippingFee, 2); // Format the shipping fee with two decimal places
+                                    }
+
+                                    // Saving Now
+                                    $updateShippingFeeNow = OrderModel::where('user_id', $user->id)
+                                        ->where('status', 'TO SHIP / TO PROCESS')
+                                        ->where('role', 'MAIN')
+                                        ->where('group_id', $data->group_id)
+                                        ->first();
+                                    $updateShippingFeeNow->shipping_fee = calculateShippingFee($totalQuantity);
+                                    if ($updateShippingFeeNow->save()) {
+                                        return response()->json([
+                                            'message' => 'Cancelled'
+                                        ], Response::HTTP_OK);
+                                    }
+                                    // ****************************************** //
                                 }
                             }
                         }
