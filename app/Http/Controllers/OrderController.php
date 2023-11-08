@@ -7,6 +7,7 @@ use App\Models\LogsModel;
 use App\Models\OrderModel;
 use App\Models\ProductModel;
 use App\Models\UserInfoModel;
+use App\Models\VouchersModel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Crypt;
@@ -1988,7 +1989,77 @@ class OrderController extends Controller
         }
     }
 
-    //CHECK OUT ON TO PAY | CLIENT
+    //CHECK OUT ON TO PAY | CLIENT | HGTR
+    // public function checkOut(Request $request)
+    // {
+    //     try {
+    //         // Fetch User ID
+    //         $user = AuthModel::where('session_login', $request->input('session'))
+    //             ->where('status', 'VERIFIED')
+    //             ->first();
+    //         if ($user) {
+    //             $request->validate([
+    //                 'payment' => 'required|string',
+    //             ]);
+
+    //             // Retrieving unpaid products for the user
+    //             $data = OrderModel::where('user_id', $user->id)->where('status', 'UNPAID')->get();
+
+    //             // Updating product status and payment method
+    //             foreach ($data as $order) {
+    //                 $order->status = "TO SHIP / TO PROCESS";
+    //                 $order->payment_method = $request->input('payment');
+    //                 $order->check_out_at = Carbon::now();
+    //                 $order->save();
+    //             }
+
+    //             // Creating a log for the checkout
+    //             $userAction = 'CHECK OUT';
+    //             $details = 'Checked out products with Order ID: ' . $data->pluck('order_id')->implode(', ');
+
+    //             $create = LogsModel::create([
+    //                 'user_id' => $user->id,
+    //                 'ip_address' => $request->ip(),
+    //                 'user_action' => $userAction,
+    //                 'details' => $details,
+    //                 'created_at' => Carbon::now()
+    //             ]);
+
+    //             // Checking if the log was created successfully
+    //             if ($create) {
+    //                 return response()->json([
+    //                     'message' => 'Checkout',
+    //                 ], Response::HTTP_OK);
+    //             }
+    //         }
+    //         return response()->json([
+    //             'message' => 'Intruder',
+    //         ], Response::HTTP_OK);
+    //     } catch (\Exception $e) {
+    //         // Handle exceptions and return an error response with CORS headers
+    //         $errorMessage = $e->getMessage();
+    //         $errorCode = $e->getCode();
+
+    //         // Create a JSON error response
+    //         $response = [
+    //             'success' => false,
+    //             'error' => [
+    //                 'code' => $errorCode,
+    //                 'message' => $errorMessage,
+    //             ],
+    //         ];
+
+    //         // Add additional error details if available
+    //         if ($e instanceof \Illuminate\Validation\ValidationException) {
+    //             $response['error']['details'] = $e->errors();
+    //         }
+
+    //         // Return the JSON error response with CORS headers and an appropriate HTTP status code
+    //         return response()->json($response, Response::HTTP_INTERNAL_SERVER_ERROR)->header('Content-Type', 'application/json');
+    //     }
+    // }
+
+    //CHECK OUT ON TO PAY | CLIENT | KITTLY
     public function checkOut(Request $request)
     {
         try {
@@ -1996,11 +2067,258 @@ class OrderController extends Controller
             $user = AuthModel::where('session_login', $request->input('session'))
                 ->where('status', 'VERIFIED')
                 ->first();
-            if ($user) {
-                $request->validate([
-                    'payment' => 'required|string',
-                ]);
 
+            if (!$user) {
+                return response()->json([
+                    'message' => 'Intruder',
+                ], Response::HTTP_OK);
+            }
+
+            $request->validate([
+                'payment' => 'required|string',
+            ]);
+
+            // Check if a voucher is selected
+            if ($request->input('selectedVoucherDiscount') >= 1 && $request->input('selectedVoucherShipping') >= 1) {
+                // Fetch the DISCOUNT Voucher
+                $voucherDiscount = VouchersModel::where('user_id', $user->id)
+                    ->where('status', 'CLAIMED')
+                    ->where('id', $request->input('selectedVoucherDiscount'))
+                    ->first();
+
+                // Fetch the SHIIPING Voucher
+                $voucherShipping = VouchersModel::where('user_id', $user->id)
+                    ->where('status', 'CLAIMED')
+                    ->where('id', $request->input('selectedVoucherShipping'))
+                    ->first();
+
+                if ($voucherDiscount && $voucherShipping) {
+                    // Get the first matching order
+                    $getTheMain = OrderModel::where('user_id', $user->id)
+                        ->where('status', 'UNPAID')
+                        ->where('role', 'MAIN')
+                        ->first();
+
+                    if ($getTheMain) {
+                        // Update the order with voucher information for DISCOUNT ONLY
+                        $getTheMain->voucher_discount_id = $voucherDiscount->id;
+                        $getTheMain->voucher_name_discount = $voucherDiscount->name;
+                        $getTheMain->voucher_discount = $voucherDiscount->discount;
+
+                        // Update the order with voucher information for FREE SHIPPING ONLY
+                        $getTheMain->voucher_shipping_id = $voucherShipping->id;
+                        $getTheMain->voucher_name_shipping = $voucherShipping->name;
+
+                        if ($getTheMain->save()) {
+                            // ************************************ //
+                            // Discount Calculate using voucher
+                            // Calculate the total price with voucher discount
+                            $totalPriceSum = OrderModel::where('user_id', $user->id)
+                                ->where('status', 'UNPAID')
+                                ->sum('total_price');
+
+                            $discountAmount = ($voucherDiscount->discount / 100) * $totalPriceSum;
+                            $finalTotalPrice = $totalPriceSum - $discountAmount;
+
+                            // Update the final_total_price of the first matching order
+                            $getTheMain->final_total_price = $finalTotalPrice;
+                            // ************************************ //
+
+                            // ************************************ //
+                            // Shipping Calculate using voucher
+                            // Make it 0 the shipping fee
+                            $getTheMain->shipping_fee = 0.00;
+                            // ************************************ //
+
+                            if ($getTheMain->save()) {
+                                // Mark the voucher DISCOUNT as used
+                                $voucherDiscount->used_at = Carbon::now();
+                                $voucherDiscount->status = 'USED';
+
+                                // Mark the voucher SHIPPING as used
+                                $voucherShipping->used_at = Carbon::now();
+                                $voucherShipping->status = 'USED';
+
+                                if ($voucherDiscount->save() && $voucherShipping->save()) {
+                                    // Retrieve unpaid products for the user
+                                    $data = OrderModel::where('user_id', $user->id)
+                                        ->where('status', 'UNPAID')
+                                        ->get();
+
+                                    // Update product status and payment method
+                                    foreach ($data as $order) {
+                                        $order->status = "TO SHIP / TO PROCESS";
+                                        $order->payment_method = $request->input('payment');
+                                        $order->check_out_at = Carbon::now();
+                                        $order->save();
+                                    }
+
+                                    // Create a log for the checkout
+                                    $userAction = 'CHECK OUT';
+                                    $details = 'Checked out products with Order ID: ' . $data->pluck('order_id')->implode(', ');
+
+                                    $create = LogsModel::create([
+                                        'user_id' => $user->id,
+                                        'ip_address' => $request->ip(),
+                                        'user_action' => $userAction,
+                                        'details' => $details,
+                                        'created_at' => Carbon::now()
+                                    ]);
+
+                                    // Check if the log was created successfully
+                                    if ($create) {
+                                        return response()->json([
+                                            'message' => 'Checkout',
+                                        ], Response::HTTP_OK);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            } else if ($request->input('selectedVoucherDiscount') >= 1) {
+                // Fetch the discount Voucher
+                $voucherDiscount = VouchersModel::where('user_id', $user->id)
+                    ->where('status', 'CLAIMED')
+                    ->where('id', $request->input('selectedVoucherDiscount'))
+                    ->first();
+
+                if ($voucherDiscount) {
+                    // Get the first matching order
+                    $getTheMain = OrderModel::where('user_id', $user->id)
+                        ->where('status', 'UNPAID')
+                        ->where('role', 'MAIN')
+                        ->first();
+
+                    if ($getTheMain) {
+                        // Update the order with voucher information for DISCOUNT ONLY
+                        $getTheMain->voucher_discount_id = $voucherDiscount->id;
+                        $getTheMain->voucher_name_discount = $voucherDiscount->name;
+                        $getTheMain->voucher_discount = $voucherDiscount->discount;
+
+                        if ($getTheMain->save()) {
+                            // Calculate the total price with voucher discount
+                            $totalPriceSum = OrderModel::where('user_id', $user->id)
+                                ->where('status', 'UNPAID')
+                                ->sum('total_price');
+
+                            $discountAmount = ($voucherDiscount->discount / 100) * $totalPriceSum;
+                            $finalTotalPrice = $totalPriceSum - $discountAmount;
+
+                            // Update the final_total_price of the first matching order
+                            $getTheMain->final_total_price = $finalTotalPrice;
+
+                            if ($getTheMain->save()) {
+                                // Mark the voucher as used
+                                $voucherDiscount->used_at = Carbon::now();
+                                $voucherDiscount->status = 'USED';
+
+                                if ($voucherDiscount->save()) {
+                                    // Retrieve unpaid products for the user
+                                    $data = OrderModel::where('user_id', $user->id)
+                                        ->where('status', 'UNPAID')
+                                        ->get();
+
+                                    // Update product status and payment method
+                                    foreach ($data as $order) {
+                                        $order->status = "TO SHIP / TO PROCESS";
+                                        $order->payment_method = $request->input('payment');
+                                        $order->check_out_at = Carbon::now();
+                                        $order->save();
+                                    }
+
+                                    // Create a log for the checkout
+                                    $userAction = 'CHECK OUT';
+                                    $details = 'Checked out products with Order ID: ' . $data->pluck('order_id')->implode(', ');
+
+                                    $create = LogsModel::create([
+                                        'user_id' => $user->id,
+                                        'ip_address' => $request->ip(),
+                                        'user_action' => $userAction,
+                                        'details' => $details,
+                                        'created_at' => Carbon::now()
+                                    ]);
+
+                                    // Check if the log was created successfully
+                                    if ($create) {
+                                        return response()->json([
+                                            'message' => 'Checkout',
+                                        ], Response::HTTP_OK);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            } else if ($request->input('selectedVoucherShipping') >= 1) {
+                // Fetch the SHIIPING Voucher
+                $voucherShipping = VouchersModel::where('user_id', $user->id)
+                    ->where('status', 'CLAIMED')
+                    ->where('id', $request->input('selectedVoucherShipping'))
+                    ->first();
+
+                if ($voucherShipping) {
+                    // Get the first matching order
+                    $getTheMain = OrderModel::where('user_id', $user->id)
+                        ->where('status', 'UNPAID')
+                        ->where('role', 'MAIN')
+                        ->first();
+
+                    if ($getTheMain) {
+                        // Update the order with voucher information for FREE SHIPPING ONLY
+                        $getTheMain->voucher_shipping_id = $voucherShipping->id;
+                        $getTheMain->voucher_name_shipping = $voucherShipping->name;
+
+                        if ($getTheMain->save()) {
+                            // ************************************ //
+                            // Shipping Calculate using voucher
+                            // Make it 0 the shipping fee
+                            $getTheMain->shipping_fee = 0.00;
+                            // ************************************ //
+
+                            if ($getTheMain->save()) {
+                                // Mark the voucher SHIPPING as used
+                                $voucherShipping->used_at = Carbon::now();
+                                $voucherShipping->status = 'USED';
+
+                                if ($voucherShipping->save()) {
+                                    // Retrieve unpaid products for the user
+                                    $data = OrderModel::where('user_id', $user->id)
+                                        ->where('status', 'UNPAID')
+                                        ->get();
+
+                                    // Update product status and payment method
+                                    foreach ($data as $order) {
+                                        $order->status = "TO SHIP / TO PROCESS";
+                                        $order->payment_method = $request->input('payment');
+                                        $order->check_out_at = Carbon::now();
+                                        $order->save();
+                                    }
+
+                                    // Create a log for the checkout
+                                    $userAction = 'CHECK OUT';
+                                    $details = 'Checked out products with Order ID: ' . $data->pluck('order_id')->implode(', ');
+
+                                    $create = LogsModel::create([
+                                        'user_id' => $user->id,
+                                        'ip_address' => $request->ip(),
+                                        'user_action' => $userAction,
+                                        'details' => $details,
+                                        'created_at' => Carbon::now()
+                                    ]);
+
+                                    // Check if the log was created successfully
+                                    if ($create) {
+                                        return response()->json([
+                                            'message' => 'Checkout',
+                                        ], Response::HTTP_OK);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            } else {
                 // Retrieving unpaid products for the user
                 $data = OrderModel::where('user_id', $user->id)->where('status', 'UNPAID')->get();
 
@@ -2031,9 +2349,6 @@ class OrderController extends Controller
                     ], Response::HTTP_OK);
                 }
             }
-            return response()->json([
-                'message' => 'Intruder',
-            ], Response::HTTP_OK);
         } catch (\Exception $e) {
             // Handle exceptions and return an error response with CORS headers
             $errorMessage = $e->getMessage();
