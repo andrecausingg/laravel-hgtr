@@ -346,6 +346,9 @@ class ProductController extends Controller
                 if ($data->isDirty('price')) {
                     $changes[] = 'Price changed from "' . $data->getOriginal('price') . '" to "' . $data->price . '".';
                 }
+                if ($data->isDirty('quantity')) {
+                    $changes[] = 'Quantity changed from "' . $data->getOriginal('quantity') . '" to "' . $data->quantity . '".';
+                }
                 if ($data->isDirty('color')) {
                     $changes[] = 'Color changed from "' . $data->getOriginal('color') . '" to "' . $data->color . '".';
                 }
@@ -356,8 +359,19 @@ class ProductController extends Controller
                     $changes[] = 'Discount changed from "' . $data->getOriginal('discount') . '" to "' . $data->discount . '".';
                 }
                 if ($data->isDirty('description')) {
-                    $changes[] = 'Description changed from "' . $data->getOriginal('description') . '" to "' . $data->description . '".';
+                    $originalDescription = $data->getOriginal('description');
+                    $newDescription = $data->description;
+                
+                    // Check if the new description is an empty string
+                    if ($newDescription === 'REMOVE PROMO') {
+                        // Set 'description' to NULL in the database
+                        $data->description = null;
+                        $changes[] = 'Description changed from "' . $originalDescription . '" to NULL.';
+                    } else {
+                        $changes[] = 'Description changed from "' . $originalDescription . '" to "' . $newDescription . '".';
+                    }
                 }
+                
                 if ($data->isDirty('promo')) {
                     $changes[] = 'Promo changed from "' . $data->getOriginal('promo') . '" to "' . $data->promo . '".';
                 }
@@ -474,10 +488,23 @@ class ProductController extends Controller
                     $product->discount = $validatedData['discount'];
                     $changes[] = 'Discount changed from "' . $product->getOriginal('discount') . '" to "' . $validatedData['discount'] . '".';
                 }
-                if (isset($validatedData['promo'])) {
+                if (array_key_exists('promo', $validatedData)) {
+                    // If 'promo' is provided, including an empty string, set it to the provided value
                     $product->promo = $validatedData['promo'];
-                    $changes[] = 'Promo changed from "' . $product->getOriginal('promo') . '" to "' . $validatedData['promo'] . '".';
+                    if ($validatedData['promo'] === '') {
+                        // If 'promo' is an empty string, set it to NULL
+                        $product->promo = null;
+                        $changes[] = 'Promo changed from "' . $product->getOriginal('promo') . '" to NULL.';
+                    } else {
+                        $changes[] = 'Promo changed from "' . $product->getOriginal('promo') . '" to "' . $validatedData['promo'] . '".';
+                    }
+                } else {
+                    // 'promo' was not provided in the request, set it to NULL
+                    $product->promo = null;
+                    $changes[] = 'Promo changed from "' . $product->getOriginal('promo') . '" to NULL.';
                 }
+                
+                
 
                 $product->save();
             }
