@@ -976,7 +976,7 @@ class OrderController extends Controller
                         ->first();
 
                     if ($checkExistUnpaid) {
-                        // Same group id, design and color on Cart just update the total price, quantity and final price
+                        // Same group id, size and color on Cart just update the total price, quantity and final price
                         $query = OrderModel::where('user_id', $user->id)
                             ->where('category', $product->category)
                             ->where('name', $product->name)
@@ -984,8 +984,8 @@ class OrderController extends Controller
                         if ($request->has('color')) {
                             $query->where('color', $request->input('color'));
                         }
-                        if ($request->has('design')) {
-                            $query->where('design', $request->input('design'));
+                        if ($request->has('size')) {
+                            $query->where('size', $request->input('size'));
                         }
                         $checkSameOrder = $query->first();
                         if ($checkSameOrder) {
@@ -1111,7 +1111,7 @@ class OrderController extends Controller
                                 'category' => $product->category,
                                 'name' => $product->name,
                                 'image' => $product->image,
-                                'design' => $product->design,
+                                'size' => $product->size,
                                 'color' => $product->color,
                                 'quantity' => $quantity,
                                 'discount' => $product->discount,
@@ -1171,7 +1171,7 @@ class OrderController extends Controller
                                     'Category: ' . $product->category . "\n" .
                                     'Product Name: ' . $product->name . "\n" .
                                     'Image Name: ' . $product->image . "\n" .
-                                    'Design: ' . $product->design . "\n" .
+                                    'Size: ' . $product->size . "\n" .
                                     'Color: ' . $product->color . "\n" .
                                     'Quantity: ' . $quantity . "\n" .
                                     'Discount: ' . $product->discount . "\n" .
@@ -1245,7 +1245,7 @@ class OrderController extends Controller
                             }
                         }
                     } else {
-                        // Same color or design Add to Cart just update the total price and quantity
+                        // Same color or size Add to Cart just update the total price and quantity
                         $query = OrderModel::where('user_id', $user->id)
                             ->where('category', $product->category)
                             ->where('name', $product->name)
@@ -1435,7 +1435,7 @@ class OrderController extends Controller
                                     'Promo: ' . $product->promo . "\n" .
                                     'Product Price: ' . $product->price . "\n" .
                                     'Status: ' . 'UNPAID' . "\n";
-                                    
+
                                 // Create Log
                                 $create = LogsModel::create([
                                     'user_id' => $user->id,
