@@ -146,31 +146,38 @@ class VouchersController extends Controller
     {
         try {
             $auths = AuthModel::where('role', 'USER')->get();
-
+        
             // Initialize an array to store the final data
             $data = [];
-
+        
             foreach ($auths as $auth) {
                 // Retrieve user information
                 $userInfo = UserInfoModel::where('user_id', $auth->id)->first();
                 $voucherInfo = VouchersModel::where('user_id', $auth->id)->first();
-
-                // Create an array for data in the desired format
-                $authData = [
-                    'id' => $auth->id,
-                    'email' => $auth->email,
-                    'userInfo' => [
-                        'first_name' => Crypt::decrypt($userInfo->first_name),
-                        'last_name' => Crypt::decrypt($userInfo->last_name),
-                    ],
-                ];
-                // Add data to the final data array
-                $data[] = $authData;
+        
+                // Check if user information is found
+                if ($userInfo) {
+                    // Create an array for data in the desired format
+                    $authData = [
+                        'id' => $auth->id,
+                        'email' => $auth->email,
+                        'userInfo' => [
+                            'first_name' => Crypt::decrypt($userInfo->first_name),
+                            'last_name' => Crypt::decrypt($userInfo->last_name),
+                        ],
+                    ];
+        
+                    // Add data to the final data array
+                    $data[] = $authData;
+                } else {
+                    // Handle the case where user information is not found
+                    // You can choose to skip this user or add an empty placeholder as needed
+                }
             }
-
+        
             // Return the user information records in JSON format
-            return response()->json(['data' => $data], 200);
-        } catch (\Exception $e) {
+            return response()->json(['data' => $data, 'success' => true], 200);
+        }catch (\Exception $e) {
             // Handle exceptions and return an error response with CORS headers
             $errorMessage = $e->getMessage();
             $errorCode = $e->getCode();
