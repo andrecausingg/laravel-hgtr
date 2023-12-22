@@ -545,41 +545,52 @@ class VouchersController extends Controller
             $user = AuthModel::where('session_login', $request->input('session'))
                 ->where('status', 'VERIFIED')
                 ->first();
-
+        
             if (!$user) {
                 return response()->json([
                     'message' => 'Intruder'
                 ], Response::HTTP_OK);
             }
-
+        
             $voucher = VouchersModel::where('user_id', $user->id)
                 ->where('id', $id)
                 ->first(); // Fetch the voucher
-
+        
             if (!$voucher) {
                 return response()->json([
                     'message' => 'Voucher not found'
                 ], Response::HTTP_OK);
             }
-
+        
+            // Check if the voucher is expired
+            if ($voucher->expire_at && now() > $voucher->expire_at) {
+                // Update status to EXPIRED
+                $voucher->status = 'EXPIRED';
+                $voucher->save();
+        
+                return response()->json([
+                    'message' => 'Voucher is expired'
+                ], Response::HTTP_OK);
+            }
+        
             $voucher->status = 'CLAIMED';
-            $voucher->activate_at = Carbon::now();
-
+            $voucher->activate_at = now();
+        
             if ($voucher->save()) {
                 $userAction = 'ACTIVATE VOUCHER';
                 $details = 'Activate Voucher with Name: ' . $voucher->name . "\n" .
                     'Status: ' . $voucher->status . "\n" .
                     'Discount: ' . $voucher->discount . "\n";
-
+        
                 // Create Log
                 $create = LogsModel::create([
                     'user_id' => $user->id,
                     'ip_address' => $request->ip(),
                     'user_action' => $userAction,
                     'details' => $details,
-                    'created_at' => Carbon::now()
+                    'created_at' => now()
                 ]);
-
+        
                 if ($create) {
                     return response()->json([
                         'message' => 'Voucher Activated'
@@ -594,7 +605,7 @@ class VouchersController extends Controller
                     'message' => 'Failed to activate voucher'
                 ], Response::HTTP_OK);
             }
-        } catch (\Exception $e) {
+        }catch (\Exception $e) {
             // Handle exceptions and return an error response with CORS headers
             $errorMessage = $e->getMessage();
             $errorCode = $e->getCode();
