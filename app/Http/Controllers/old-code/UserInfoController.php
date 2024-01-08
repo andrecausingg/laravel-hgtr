@@ -104,7 +104,7 @@ class UserInfoController extends Controller
         //
         try {
             // Fetch User ID
-            $user = AuthModel::where('session_login', $request->input('session') ?? 'asd')
+            $user = AuthModel::where('session_login', $request->input('session'))
                 ->where('status', 'VERIFIED')
                 ->first();
 
@@ -204,7 +204,7 @@ class UserInfoController extends Controller
     {
         //
         try {
-            $user = AuthModel::where('session_login', $request->input('session') ?? 'asd')
+            $user = AuthModel::where('session_login', $id)
                 ->where('status', 'VERIFIED')
                 ->first();
 
@@ -280,7 +280,7 @@ class UserInfoController extends Controller
     {
         //
         try {
-            $user = AuthModel::where('session_login', $request->input('session') ?? 'asd')
+            $user = AuthModel::where('session_login', $id)
                 ->where('status', 'VERIFIED')
                 ->first();
 
@@ -364,7 +364,7 @@ class UserInfoController extends Controller
             }
 
             // Fetch User I.D
-            $user = AuthModel::where('session_login', $request->input('session') ?? 'asd')
+            $user = AuthModel::where('session_login', $request->input('session'))
                 ->where('status', 'VERIFIED')
                 ->first();
             if ($user) {

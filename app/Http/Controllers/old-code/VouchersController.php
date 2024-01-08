@@ -221,9 +221,8 @@ class VouchersController extends Controller
     {
         //
         try {
-
             // Fetch User ID
-            $user = AuthModel::where('session_login', $request->input('session') ?? 'asd')
+            $user = AuthModel::where('session_login', $request->input('session'))
                 ->where('status', 'VERIFIED')
                 ->first();
 
@@ -238,13 +237,6 @@ class VouchersController extends Controller
                 'name' => 'required|string|max:255',
             ]);
 
-            // Parse input dates using Carbon
-            $startAt = Carbon::parse($request->input('start_at'));
-            $expireAt = Carbon::parse($request->input('expire_at'));
-
-            // Check if the voucher is expired
-            $status = (Carbon::now() > $startAt && Carbon::now() > $expireAt) ? 'EXPIRED' : 'AVAILABLE';
-
             // Create an array to store the data for each voucher
             $userIds = $request->input('user_ids');
             $voucherData = [];
@@ -253,7 +245,7 @@ class VouchersController extends Controller
             foreach ($userIds as $userId) {
                 $voucherData[] = [
                     'user_id' => $userId,
-                    'status' => $status,
+                    'status' => 'AVAILABLE',
                     'name' => $request->input('name'),
                     'discount' => $request->input('discount'),
                     'start_at' => $request->input('start_at'),
@@ -286,7 +278,7 @@ class VouchersController extends Controller
                     'Name: ' . $request->input('name') . "\n" .
                     'Discount: ' . $request->input('discount') . "\n" .
                     'Start At: ' . $formattedStartAt . "\n" .
-                    'Expired At: ' . $formattedExpiredAt . "\n";
+                    'Expired At: ' . $formattedExpiredAt . "\n" ;
 
                 // Create Log
                 $create = LogsModel::create([
@@ -341,7 +333,7 @@ class VouchersController extends Controller
         //
         try {
             // Fetch User ID
-            $user = AuthModel::where('session_login', $request->input('session') ?? 'asd')
+            $user = AuthModel::where('session_login', $id)
                 ->where('status', 'VERIFIED')
                 ->first();
 
@@ -458,10 +450,9 @@ class VouchersController extends Controller
     {
         try {
             // Fetch User ID
-            $user = AuthModel::where('session_login', $request->input('session') ?? 'asd')
+            $user = AuthModel::where('session_login', $request->input('session'))
                 ->where('status', 'VERIFIED')
                 ->first();
-                
             if (!$user) {
                 return response()->json([
                     'message' => 'Intruder'
@@ -551,7 +542,7 @@ class VouchersController extends Controller
     {
         try {
             // Fetch User ID
-            $user = AuthModel::where('session_login', $request->input('session') ?? 'asd')
+            $user = AuthModel::where('session_login', $request->input('session'))
                 ->where('status', 'VERIFIED')
                 ->first();
         
@@ -642,10 +633,9 @@ class VouchersController extends Controller
     public function getVouchers(Request $request, string $id)
     {
         try {
-            $user = AuthModel::where('session_login', $request->input('session') ?? 'asd')
+            $user = AuthModel::where('session_login', $id)
                 ->where('status', 'VERIFIED')
                 ->first();
-                
             if (!$user) {
                 return response()->json([
                     'message' => 'Intruder'
@@ -699,7 +689,7 @@ class VouchersController extends Controller
             }
 
             // Fetch User ID
-            $user = AuthModel::where('session_login', $request->input('session') ?? 'asd')
+            $user = AuthModel::where('session_login', $request->input('session'))
                 ->where('status', 'VERIFIED')
                 ->first();
 

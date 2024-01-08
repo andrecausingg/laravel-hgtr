@@ -17,203 +17,109 @@ use Symfony\Component\HttpFoundation\Response;
 
 class OrderController extends Controller
 {
-
+    // KITLLY
     public function index()
     {
-          try {
-        // Fetch all orders from the OrderModel
-        $orders = OrderModel::all();
+        try {
+            $orders = OrderModel::get();
 
-        // Initialize an array to store the final data
-        $data = [];
+            // Initialize an array to store the final data
+            $data = [];
 
-        // Loop through each order
-        foreach ($orders as $order) {
-            // Check if user_id is available
-            if (!$order->user_id) {
-                // Handle the case where user_id is not available
-                // You may log a warning or skip the current iteration based on your requirements
-                continue; // Skip the current iteration and move to the next order
-            }
+            foreach ($orders as $order) {
+                // Retrieve user information for the current booking
+                $userInfo = UserInfoModel::where('user_id', $order->user_id)->first();
+                $authInfo = AuthModel::where('id', $order->user_id)->first();
 
-            // Retrieve user information for the current booking
-            $userInfo = UserInfoModel::where('user_id', $order->user_id)->first();
-            $authInfo = AuthModel::where('id', $order->user_id)->first();
-
-            // Check if user information is available
-            if (!$userInfo || !$authInfo) {
-                // Handle the case where user information is not found
-                // You may log a warning, provide default values, or skip the current iteration based on your requirements
-                $defaultUserInfo = [
-                    'first_name' => null,
-                    'last_name' => null,
-                    'contact_num' => null,
-                    'address_1' => null,
-                    'address_2' => null,
-                    'region_code' => null,
-                    'province_code' => null,
-                    'city_or_municipality_code' => null,
-                    'region_name' => null,
-                    'province_name' => null,
-                    'city_or_municipality_name' => null,
-                    'barangay' => null,
-                    'description_location' => null,
-                    // ... (other fields with default values)
-                ];
-
-                $defaultAuthInfo = [
-                    'email' => null,
-                    // ... (other fields with default values)
-                ];
-
-                // Create an array for the current booking data with default values
+                // Create an array for the current booking data in the desired format
                 $bookingData = [
-                    'authInfo' => $defaultAuthInfo,
-                    'userInfo' => $defaultUserInfo,
-                    'id' => null,
-                    'user_id' => null,
-                    'group_id' => null,
-                    'order_id' => null,
-                    'product_group_id' => null,
-                    'voucher_shipping_id' => null,
-                    'voucher_discount_id' => null,
-                    'role' => null,
-                    'category' => null,
-                    'name' => null,
-                    'image' => null,
-                    'size' => null,
-                    'color' => null,
-                    'quantity' => null,
-                    'discount' => null,
-                    'description' => null,
-                    'promo' => null,
-                    'promo_buy_and_take_count' => null,
-                    'voucher_name_shipping' => null,
-                    'voucher_name_discount' => null,
-                    'voucher_discount' => null,
-                    'product_price' => null,
-                    'shipping_fee' => null,
-                    'total_price' => null,
-                    'final_total_price' => null,
-                    'payment_method' => null,
-                    'status' => null,
-                    'reason_cancel' => null,
-                    'return_reason' => null,
-                    'return_image1' => null,
-                    'return_image2' => null,
-                    'return_image3' => null,
-                    'return_image4' => null,
-                    'return_description' => null,
-                    'return_solution' => null,
-                    'return_shipping_at' => null,
-                    'return_accept_at' => null,
-                    'return_decline_at' => null,
-                    'return_completed_at' => null,
-                    'return_failed_at' => null,
-                    'check_out_at' => null,
-                    'cancel_at' => null,
-                    'order_receive_at' => null,
-                    'mark_as_done_at' => null,
-                    'ship_at' => null,
-                    'completed_at' => null,
-                    'failed_at' => null,
-                    'return_at' => null,
-                    'created_at' => null,
-                    'updated_at' => null,
-                    // ... (other fields with default values)
+                    'authInfo' => [
+                        'email' => $authInfo->email,
+                    ],
+                    'userInfo' => [
+                        'first_name' => Crypt::decrypt($userInfo->first_name),
+                        'last_name' => Crypt::decrypt($userInfo->last_name),
+                        'contact_num' => Crypt::decrypt($userInfo->contact_num),
+                        'address_1' => Crypt::decrypt($userInfo->address_1),
+                        'address_2' => Crypt::decrypt($userInfo->address_2),
+                        'region_code' => Crypt::decrypt($userInfo->region_code),
+                        'province_code' => Crypt::decrypt($userInfo->province_code),
+                        'city_or_municipality_code' => Crypt::decrypt($userInfo->city_or_municipality_code),
+                        'region_name' => Crypt::decrypt($userInfo->region_name),
+                        'province_name' => Crypt::decrypt($userInfo->province_name),
+                        'city_or_municipality_name' => Crypt::decrypt($userInfo->city_or_municipality_name),
+                        'barangay' => Crypt::decrypt($userInfo->barangay),
+                        'description_location' => Crypt::decrypt($userInfo->description_location),
+                    ],
+                    'id' => $order->id,
+                    'user_id' => $order->user_id,
+                    'group_id' => $order->group_id,
+                    'order_id' => $order->order_id,
+
+                    'product_group_id' => $order->product_group_id,
+                    'voucher_shipping_id' => $order->voucher_shipping_id,
+                    'voucher_discount_id' => $order->voucher_discount_id,
+
+                    'role' => $order->role,
+                    'category' => $order->category,
+                    'name' => $order->name,
+                    'image' => $order->image,
+
+                    'size' => $order->size,
+
+                    'color' => $order->color,
+                    'quantity' => $order->quantity,
+                    'discount' => $order->discount,
+                    'description' => $order->description,
+
+                    'promo' => $order->promo,
+                    'promo_buy_and_take_count' => $order->promo_buy_and_take_count,
+                    'voucher_name_shipping' => $order->voucher_name_shipping,
+                    'voucher_name_discount' => $order->voucher_name_discount,
+                    'voucher_discount' => $order->voucher_discount,
+
+                    'product_price' => $order->product_price,
+                    'shipping_fee' => $order->shipping_fee,
+                    'total_price' => $order->total_price,
+                    'final_total_price' => $order->final_total_price,
+                    'payment_method' => $order->payment_method,
+                    'status' => $order->status,
+
+                    'reason_cancel' => $order->reason_cancel,
+                    'return_reason' => $order->return_reason,
+                    'return_image1' => $order->return_image1,
+                    'return_image2' => $order->return_image2,
+                    'return_image3' => $order->return_image3,
+                    'return_image4' => $order->return_image4,
+                    'return_description' => $order->return_description,
+                    'return_solution' => $order->return_solution,
+
+                    'return_shipping_at' => $order->return_shipping_at,
+                    'return_accept_at' => $order->return_accept_at,
+                    'return_decline_at' => $order->return_decline_at,
+                    'return_completed_at' => $order->return_completed_at,
+                    'return_failed_at' => $order->return_failed_at,
+                    'check_out_at' => $order->check_out_at,
+                    'cancel_at' => $order->cancel_at,
+                    'order_receive_at' => $order->order_receive_at,
+                    'mark_as_done_at' => $order->mark_as_done_at,
+                    'ship_at' => $order->ship_at,
+                    'completed_at' => $order->completed_at,
+                    'failed_at' => $order->failed_at,
+                    'return_at' => $order->return_at,
+                    'created_at' => $order->created_at,
+                    'updated_at' => $order->updated_at,
                 ];
 
                 // Add the current booking data to the final data array
                 $data[] = $bookingData;
-
-                // Skip the current iteration and move to the next order
-                continue;
             }
 
-            // Create an array for the current booking data in the desired format
-            $bookingData = [
-                'authInfo' => [
-                    'email' => $authInfo->email,
-                    // ... (other fields from authInfo)
-                ],
-                'userInfo' => [
-                    'first_name' => Crypt::decrypt($userInfo->first_name) ?? null,
-                    'last_name' => Crypt::decrypt($userInfo->last_name) ?? null,
-                    'contact_num' => Crypt::decrypt($userInfo->contact_num) ?? null,
-                    'address_1' => Crypt::decrypt($userInfo->address_1) ?? null,
-                    'address_2' => Crypt::decrypt($userInfo->address_2) ?? null,
-                    'region_code' => Crypt::decrypt($userInfo->region_code) ?? null,
-                    'province_code' => Crypt::decrypt($userInfo->province_code) ?? null,
-                    'city_or_municipality_code' => Crypt::decrypt($userInfo->city_or_municipality_code) ?? null,
-                    'region_name' => Crypt::decrypt($userInfo->region_name) ?? null,
-                    'province_name' => Crypt::decrypt($userInfo->province_name) ?? null,
-                    'city_or_municipality_name' => Crypt::decrypt($userInfo->city_or_municipality_name) ?? null,
-                    'barangay' => Crypt::decrypt($userInfo->barangay) ?? null,
-                    'description_location' => Crypt::decrypt($userInfo->description_location) ?? null,
-                    // ... (other fields from userInfo)
-                ],
-                'id' => $order->id,
-                'user_id' => $order->user_id,
-                'group_id' => $order->group_id,
-                'order_id' => $order->order_id,
-                'product_group_id' => $order->product_group_id,
-                'voucher_shipping_id' => $order->voucher_shipping_id,
-                'voucher_discount_id' => $order->voucher_discount_id,
-                'role' => $order->role,
-                'category' => $order->category,
-                'name' => $order->name,
-                'image' => $order->image,
-                'size' => $order->size,
-                'color' => $order->color,
-                'quantity' => $order->quantity,
-                'discount' => $order->discount,
-                'description' => $order->description,
-                'promo' => $order->promo,
-                'promo_buy_and_take_count' => $order->promo_buy_and_take_count,
-                'voucher_name_shipping' => $order->voucher_name_shipping,
-                'voucher_name_discount' => $order->voucher_name_discount,
-                'voucher_discount' => $order->voucher_discount,
-                'product_price' => $order->product_price,
-                'shipping_fee' => $order->shipping_fee,
-                'total_price' => $order->total_price,
-                'final_total_price' => $order->final_total_price,
-                'payment_method' => $order->payment_method,
-                'status' => $order->status,
-                'reason_cancel' => $order->reason_cancel,
-                'return_reason' => $order->return_reason,
-                'return_image1' => $order->return_image1,
-                'return_image2' => $order->return_image2,
-                'return_image3' => $order->return_image3,
-                'return_image4' => $order->return_image4,
-                'return_description' => $order->return_description,
-                'return_solution' => $order->return_solution,
-                'return_shipping_at' => $order->return_shipping_at,
-                'return_accept_at' => $order->return_accept_at,
-                'return_decline_at' => $order->return_decline_at,
-                'return_completed_at' => $order->return_completed_at,
-                'return_failed_at' => $order->return_failed_at,
-                'check_out_at' => $order->check_out_at,
-                'cancel_at' => $order->cancel_at,
-                'order_receive_at' => $order->order_receive_at,
-                'mark_as_done_at' => $order->mark_as_done_at,
-                'ship_at' => $order->ship_at,
-                'completed_at' => $order->completed_at,
-                'failed_at' => $order->failed_at,
-                'return_at' => $order->return_at,
-                'created_at' => $order->created_at,
-                'updated_at' => $order->updated_at,
-                // ... (other fields from $order)
-            ];
-
-            // Add the current booking data to the final data array
-            $data[] = $bookingData;
-        }
-
-        // Return the user information records in JSON format
-        return response()->json([
-            'data' => $data
-        ], Response::HTTP_OK);
-    }catch (\Exception $e) {
+            // Return the user information records in JSON format
+            return response()->json([
+                'data' => $data
+            ], Response::HTTP_OK);
+        } catch (\Exception $e) {
             // Handle exceptions and return an error response with CORS headers
             $errorMessage = $e->getMessage();
             $errorCode = $e->getCode();
@@ -278,11 +184,586 @@ class OrderController extends Controller
         }
     }
 
+    // Add to Cart | CLIENT | HGTR 
+    // public function addToCart(Request $request)
+    // {
+    //     try {
 
+    //         $user = AuthModel::where('session_login', $request->input('session'))
+    //             ->where('status', 'VERIFIED')
+    //             ->first();
+    //         // Fetch the user if Login
+    //         if ($user) {
+    //             $request->validate([
+    //                 'color' => 'required|string|max:255',
+    //                 'size' => 'required|string|max:255',
+    //                 'quantity' => 'required|numeric|min:1',
+    //                 'group_id' => 'required|string',
+    //             ]);
+
+    //             $product = ProductModel::where('color', $request->input('color'))
+    //                 ->where('size', $request->input('size'))
+    //                 ->where('group_id', $request->input('group_id'))
+    //                 ->first();
+
+    //             // Check if The product Exist and the quanity must greater that 1
+    //             if ($product && $product->quantity >= 1) {
+    //                 do {
+    //                     $uuidGroupId = Str::uuid();
+    //                 } while (OrderModel::where('group_id', $uuidGroupId)->exists());
+
+    //                 do {
+    //                     $uuidOrderId = Str::uuid();
+    //                 } while (OrderModel::where('order_id', $uuidOrderId)->exists());
+
+    //                 $checkExistUnpaid = OrderModel::where('user_id', $user->id)
+    //                     ->where('role', 'MAIN')
+    //                     ->where('status', 'UNPAID')
+    //                     ->first();
+
+    //                 // Add new Item on Cart then updating the shipping fee
+    //                 if ($checkExistUnpaid) {
+    //                     // Same product on Cart just update the total price and quantity
+    //                     $checkSameOrder = OrderModel::where('user_id', $user->id)
+    //                         ->where('color', $request->input('color'))
+    //                         ->where('size', $request->input('size'))
+    //                         ->where('category', $product->category)
+    //                         ->where('name', $product->name)
+    //                         ->where('status', 'UNPAID')
+    //                         ->first(); // Use first() instead of exists()
+    //                     if ($checkSameOrder) {
+    //                         // Declare
+    //                         $quantity = (int) $request->input('quantity');
+
+    //                         // Compute the total Price Now by Check on the product table
+    //                         $discountedPrice = $product->price * (1 - ($product->discount / 100));
+    //                         $totalPrice = $discountedPrice * $quantity;
+
+    //                         // Fetch the value same order
+    //                         $totalPriceDb = $checkSameOrder->total_price;
+    //                         $totalQuantityDb = $checkSameOrder->quantity;
+
+    //                         // Finalt total Quantity and Price
+    //                         $finalTotalPrice = $totalPrice += $totalPriceDb;
+    //                         $finalTotalQuantity = $quantity += $totalQuantityDb;
+
+    //                         // Saving
+    //                         $checkSameOrder->total_price = $finalTotalPrice;
+    //                         $checkSameOrder->quantity = $finalTotalQuantity;
+    //                         if ($checkSameOrder->save()) {
+    //                             // ****************************//
+    //                             // CALCULATING THE PRICE WITH 390
+    //                             // Find the orders that match the specified conditions
+    //                             $ordersToUpdate = OrderModel::where('user_id', $user->id)
+    //                                 ->where('status', 'UNPAID')
+    //                                 ->where('product_price', 390) // Filter by product price 390
+    //                                 ->get(); // Get all matching orders
+
+    //                             $totalQuantity = 0; // Initialize the total quantity to 0
+    //                             foreach ($ordersToUpdate as $order) {
+    //                                 $totalQuantity += $order->quantity;
+    //                             }
+
+    //                             // Calculate the new total price based on the fixed price of 1000 for every 3 products
+    //                             $countDivisibleBy3 = (int) ($totalQuantity / 3);
+    //                             $specialPrice = $countDivisibleBy3 * 1000;
+    //                             $remainder = $totalQuantity % 3;
+    //                             $totalPriceRemainder = $remainder * 390;
+    //                             $ordersToUpdateNot390 = OrderModel::where('user_id', $user->id)
+    //                                 ->where('status', 'UNPAID')
+    //                                 ->where('product_price', '!=', 390)
+    //                                 ->get();
+    //                             $totalPrice = 0; // Initialize the total price to 0
+    //                             foreach ($ordersToUpdateNot390 as $order) {
+    //                                 $totalPrice += $order->product_price;
+    //                             }
+
+    //                             // SAVE THE CALCULATED FINAL PRICE
+    //                             // Update the final_total_price for each order
+    //                             $updateCalcuFinalPrice = OrderModel::where('user_id', $user->id)
+    //                                 ->where('status', 'UNPAID')
+    //                                 ->where('role', 'MAIN')
+    //                                 ->first();
+    //                             $updateCalcuFinalPrice->final_total_price = $specialPrice + $totalPriceRemainder + $totalPrice;
+    //                             $updateCalcuFinalPrice->save(); // Save the changes to each order
+    //                             // ****************************//
+
+    //                             // ****************************//
+    //                             // CALCULATING SHIPPING FEE
+    //                             // Fetch the total Quantity
+    //                             $fetchAllQuantityAndCalculateShippingFee = OrderModel::where('user_id', $user->id)
+    //                                 ->where('status', 'UNPAID')
+    //                                 ->get();
+
+    //                             $totalQuantity = $fetchAllQuantityAndCalculateShippingFee->sum('quantity');
+
+    //                             // Calculate the Shipping Fee
+    //                             function calculateShippingFee($totalQuantity)
+    //                             {
+    //                                 $shippingFee = 100; // Base shipping fee
+    //                                 $rangeSize = 5; // Size of each range
+    //                                 $feeIncrement = 100; // Fee increment for each range
+
+    //                                 // Calculate the range index based on the quantity
+    //                                 $rangeIndex = ceil($totalQuantity / $rangeSize);
+
+    //                                 // Calculate the shipping fee based on the range index and quantity
+    //                                 $shippingFee += ($rangeIndex - 1) * $feeIncrement;
+
+    //                                 return number_format($shippingFee, 2); // Format the shipping fee with two decimal places
+    //                             }
+
+    //                             // Saving Now
+    //                             $updateShippingFeeNow = OrderModel::where('user_id', $user->id)
+    //                                 ->where('status', 'UNPAID')
+    //                                 ->where('role', 'MAIN')
+    //                                 ->first();
+    //                             $updateShippingFeeNow->shipping_fee = calculateShippingFee($totalQuantity);
+    //                             if ($updateShippingFeeNow->save()) {
+    //                                 return response()->json([
+    //                                     'message' => 'Created'
+    //                                 ], Response::HTTP_OK);
+    //                             }
+    //                             // ****************************//
+    //                         }
+    //                     } else {
+    //                         // Add new item on cart with the same Group  I.D
+    //                         $quantity = (int) $request->input('quantity');
+    //                         $discountedPrice = $product->price * (1 - ($product->discount / 100));
+    //                         $totalPrice = $discountedPrice * $quantity;
+
+    //                         $created = OrderModel::create([
+    //                             'user_id' => $user->id,
+    //                             'group_id' => $checkExistUnpaid->group_id,
+    //                             'order_id' => $uuidOrderId,
+    //                             'product_group_id' => $product->group_id,
+    //                             'role' => '',
+    //                             'category' => $product->category,
+    //                             'name' => $product->name,
+    //                             'image' => $product->image,
+    //                             'size' => $product->size,
+    //                             'color' => $product->color,
+    //                             'quantity' => $quantity,
+    //                             'discount' => $product->discount,
+    //                             'description' => $product->description,
+    //                             'product_price' => $product->price,
+    //                             'shipping_fee' => 0.00,
+    //                             'total_price' => $totalPrice,
+    //                             'status' => 'UNPAID'
+    //                         ]);
+
+    //                         // Logs
+    //                         if ($created) {
+    //                             $userAction = 'CREATED';
+    //                             $details = 'Created Product Information with Group ID: ' . $product->group_id . "\n" .
+    //                                 'Order ID: ' . $uuidOrderId . "\n" .
+    //                                 'Product Group ID: ' . $product->group_id . "\n" .
+    //                                 'Role: MAIN' . "\n" .
+    //                                 'Category: ' . $product->category . "\n" .
+    //                                 'Product Name: ' . $product->name . "\n" .
+    //                                 'Image Name: ' . $product->image . "\n" .
+    //                                 'Size: ' . $product->size . "\n" .
+    //                                 'Color: ' . $product->color . "\n" .
+    //                                 'Quantity: ' . $quantity . "\n" .
+    //                                 'Discount: ' . $product->discount . "\n" .
+    //                                 'Description: ' . $product->description . "\n" .
+    //                                 'Product Price: ' . $product->price . "\n" .
+    //                                 'Total Price: ' . $totalPrice . "\n" .
+    //                                 'Status: ' . 'UNPAID' . "\n";
+    //                             // Create Log
+    //                             $create = LogsModel::create([
+    //                                 'user_id' => $user->id,
+    //                                 'ip_address' => $request->ip(),
+    //                                 'user_action' => $userAction,
+    //                                 'details' => $details,
+    //                                 'created_at' => Carbon::now()
+    //                             ]);
+
+    //                             // Calculate Shipping Fee Always
+    //                             if ($created) {
+    //                                 // ****************************//
+    //                                 // CALCULATING THE PRICE WITH 390
+    //                                 // Find the orders that match the specified conditions
+    //                                 $ordersToUpdate = OrderModel::where('user_id', $user->id)
+    //                                     ->where('status', 'UNPAID')
+    //                                     ->where('product_price', 390) // Filter by product price 390
+    //                                     ->get(); // Get all matching orders
+
+    //                                 $totalQuantity = 0; // Initialize the total quantity to 0
+    //                                 foreach ($ordersToUpdate as $order) {
+    //                                     $totalQuantity += $order->quantity;
+    //                                 }
+
+    //                                 // Calculate the new total price based on the fixed price of 1000 for every 3 products
+    //                                 $countDivisibleBy3 = (int) ($totalQuantity / 3);
+    //                                 $specialPrice = $countDivisibleBy3 * 1000;
+    //                                 $remainder = $totalQuantity % 3;
+    //                                 $totalPriceRemainder = $remainder * 390;
+    //                                 $ordersToUpdateNot390 = OrderModel::where('user_id', $user->id)
+    //                                     ->where('status', 'UNPAID')
+    //                                     ->where('product_price', '!=', 390)
+    //                                     ->get();
+    //                                 $totalPrice = 0; // Initialize the total price to 0
+    //                                 foreach ($ordersToUpdateNot390 as $order) {
+    //                                     $totalPrice += $order->product_price;
+    //                                 }
+
+    //                                 // SAVE THE CALCULATED FINAL PRICE
+    //                                 // Update the final_total_price for each order
+    //                                 $updateCalcuFinalPrice = OrderModel::where('user_id', $user->id)
+    //                                     ->where('status', 'UNPAID')
+    //                                     ->where('role', 'MAIN')
+    //                                     ->first();
+    //                                 $updateCalcuFinalPrice->final_total_price = $specialPrice + $totalPriceRemainder + $totalPrice;
+    //                                 $updateCalcuFinalPrice->save(); // Save the changes to each order
+    //                                 // ****************************//
+
+
+    //                                 // ****************************//
+    //                                 // CALCULATING SHIPPING FEE
+    //                                 // Fetch the total Quantity
+    //                                 $fetchAllQuantityAndCalculateShippingFee = OrderModel::where('user_id', $user->id)
+    //                                     ->where('status', 'UNPAID')
+    //                                     ->get();
+    //                                 $totalQuantity = $fetchAllQuantityAndCalculateShippingFee->sum('quantity');
+    //                                 function calculateShippingFee($totalQuantity)
+    //                                 {
+    //                                     $shippingFee = 100; // Base shipping fee
+    //                                     $rangeSize = 5; // Size of each range
+    //                                     $feeIncrement = 100; // Fee increment for each range
+
+    //                                     // Calculate the range index based on the quantity
+    //                                     $rangeIndex = ceil($totalQuantity / $rangeSize);
+
+    //                                     // Calculate the shipping fee based on the range index and quantity
+    //                                     $shippingFee += ($rangeIndex - 1) * $feeIncrement;
+
+    //                                     return number_format($shippingFee, 2); // Format the shipping fee with two decimal places
+    //                                 }
+
+    //                                 $updateShippingFeeNow = OrderModel::where('user_id', $user->id)
+    //                                     ->where('status', 'UNPAID')
+    //                                     ->where('role', 'MAIN')
+    //                                     ->first();
+    //                                 $updateShippingFeeNow->shipping_fee = calculateShippingFee($totalQuantity);
+    //                                 if ($updateShippingFeeNow->save()) {
+    //                                     return response()->json([
+    //                                         'message' => 'Created'
+    //                                     ], Response::HTTP_OK);
+    //                                 }
+    //                                 // ****************************//
+    //                             }
+    //                         }
+    //                     }
+
+    //                 } else {
+    //                     // Same Add to Cart just update the total price and quantity
+    //                     $checkSameOrder = OrderModel::where('user_id', $user->id)
+    //                         ->where('color', $request->input('color'))
+    //                         ->where('size', $request->input('size'))
+    //                         ->where('category', $product->category)
+    //                         ->where('name', $product->name)
+    //                         ->where('status', 'UNPAID')
+    //                         ->first(); // Use first() instead of exists()
+
+    //                     if ($checkSameOrder) {
+    //                         // Declare
+    //                         $quantity = (int) $request->input('quantity');
+
+    //                         // Compute the total Price Now by Check on the product table
+    //                         $discountedPrice = $product->price * (1 - ($product->discount / 100));
+    //                         $totalPrice = $discountedPrice * $quantity;
+
+    //                         // Fetch the value same order
+    //                         $totalPriceDb = $checkSameOrder->total_price;
+    //                         $totalQuantityDb = $checkSameOrder->quantity;
+
+    //                         // Finalt total Quantity and Price
+    //                         $finalTotalPrice = $totalPrice += $totalPriceDb;
+    //                         $finalTotalQuantity = $quantity += $totalQuantityDb;
+
+    //                         // Saving
+    //                         $checkSameOrder->total_price = $finalTotalPrice;
+    //                         $checkSameOrder->quantity = $finalTotalQuantity;
+    //                         if ($checkSameOrder->save()) {
+    //                             // // ****************************//
+    //                             // // CALCULATING THE PRICE WITH 390
+    //                             // // Find the orders that match the specified conditions
+    //                             // $ordersToUpdate = OrderModel::where('user_id', $user->id)
+    //                             //     ->where('status', 'UNPAID')
+    //                             //     ->where('product_price', 390) // Filter by product price 390
+    //                             //     ->get(); // Get all matching orders
+
+    //                             // $totalQuantity = 0; // Initialize the total quantity to 0
+    //                             // foreach ($ordersToUpdate as $order) {
+    //                             //     $totalQuantity += $order->quantity;
+    //                             // }
+
+    //                             // // Calculate the new total price based on the fixed price of 1000 for every 3 products
+    //                             // $countDivisibleBy3 = (int) ($totalQuantity / 3);
+    //                             // $specialPrice = $countDivisibleBy3 * 1000;
+    //                             // $remainder = $totalQuantity % 3;
+    //                             // $totalPriceRemainder = $remainder * 390;
+    //                             // $ordersToUpdateNot390 = OrderModel::where('user_id', $user->id)
+    //                             //     ->where('status', 'UNPAID')
+    //                             //     ->where('product_price', '!=', 390)
+    //                             //     ->get();
+    //                             // $totalPrice = 0; // Initialize the total price to 0
+    //                             // foreach ($ordersToUpdateNot390 as $order) {
+    //                             //     $totalPrice += $order->product_price;
+    //                             // }
+
+    //                             // // SAVE THE CALCULATED FINAL PRICE
+    //                             // // Update the final_total_price for each order
+    //                             // $updateCalcuFinalPrice = OrderModel::where('user_id', $user->id)
+    //                             //     ->where('status', 'UNPAID')
+    //                             //     ->where('role', 'MAIN')
+    //                             //     ->first();
+    //                             // $updateCalcuFinalPrice->final_total_price = $specialPrice + $totalPriceRemainder + $totalPrice;
+    //                             // $updateCalcuFinalPrice->save(); // Save the changes to each order
+    //                             // // ****************************//
+
+
+    //                             // ****************************//
+    //                             // CALCULATING SHIPPING FEE
+    //                             // Fetch the total Quantity
+
+    //                             $fetchAllQuantityAndCalculateShippingFee = OrderModel::where('user_id', $user->id)
+    //                                 ->where('status', 'UNPAID')
+    //                                 ->get();
+
+    //                             $totalQuantity = $fetchAllQuantityAndCalculateShippingFee->sum('quantity');
+
+
+    //                             // Calculate the Shipping Fee
+    //                             function calculateShippingFee($totalQuantity)
+    //                             {
+    //                                 $shippingFee = 100; // Base shipping fee
+    //                                 $rangeSize = 5; // Size of each range
+    //                                 $feeIncrement = 100; // Fee increment for each range
+
+    //                                 // Calculate the range index based on the quantity
+    //                                 $rangeIndex = ceil($totalQuantity / $rangeSize);
+
+    //                                 // Calculate the shipping fee based on the range index and quantity
+    //                                 $shippingFee += ($rangeIndex - 1) * $feeIncrement;
+
+    //                                 return number_format($shippingFee, 2); // Format the shipping fee with two decimal places
+    //                             }
+
+    //                             // Saving Now
+    //                             $updateShippingFeeNow = OrderModel::where('user_id', $user->id)
+    //                                 ->where('status', 'UNPAID')
+    //                                 ->where('role', 'MAIN')
+    //                                 ->first();
+    //                             $updateShippingFeeNow->shipping_fee = calculateShippingFee($totalQuantity);
+    //                             if ($updateShippingFeeNow->save()) {
+    //                                 return response()->json([
+    //                                     'message' => 'Created'
+    //                                 ], Response::HTTP_OK);
+    //                             }
+    //                             // ****************************//
+    //                         }
+    //                     } else {
+    //                         // Fresh Create
+    //                         // Calculate Shipping Fee
+    //                         $quantity = (int) $request->input('quantity');
+    //                         $baseShippingFee = 100;
+    //                         $numGroups = floor($quantity / 5);
+    //                         $shippingFees = ($numGroups * $baseShippingFee) + $baseShippingFee;
+
+    //                         // Calculate total Price
+    //                         $discountedPrice = $product->price * (1 - ($product->discount / 100));
+    //                         $totalPrice = $discountedPrice * $quantity;
+
+    //                         // Store database Data
+    //                         $created = OrderModel::create([
+    //                             'user_id' => $user->id,
+    //                             'group_id' => $uuidGroupId,
+    //                             'order_id' => $uuidOrderId,
+    //                             'product_group_id' => $product->group_id,
+    //                             'role' => 'MAIN',
+    //                             'category' => $product->category,
+    //                             'name' => $product->name,
+    //                             'image' => $product->image,
+    //                             'size' => $product->size,
+    //                             'color' => $product->color,
+    //                             'quantity' => $quantity,
+    //                             'discount' => $product->discount,
+    //                             'description' => $product->description,
+    //                             'promo' => $product->promo ?? null,
+    //                             'product_price' => $product->price,
+    //                             'shipping_fee' => $shippingFees,
+    //                             'total_price' => $totalPrice,
+    //                             'status' => 'UNPAID'
+    //                         ]);
+
+    //                         if ($created) {
+    //                             // // ************\*\*\*\*************//
+    //                             // // CALCULATING THE PRICE WITH 390
+    //                             // // Find the orders that match the specified conditions
+    //                             // $ordersToUpdate = OrderModel::where('user_id', $user->id)
+    //                             //     ->where('status', 'UNPAID')
+    //                             //     ->where('product_price', 390) // Filter by product price 390
+    //                             //     ->get(); // Get all matching orders
+
+    //                             // $totalQuantity = 0; // Initialize the total quantity to 0
+    //                             // foreach ($ordersToUpdate as $order) {
+    //                             //     $totalQuantity += $order->quantity;
+    //                             // }
+
+    //                             // // Calculate the new total price based on the fixed price of 1000 for every 3 products
+    //                             // $countDivisibleBy3 = (int) ($totalQuantity / 3);
+    //                             // $specialPrice = $countDivisibleBy3 * 1000;
+    //                             // $remainder = $totalQuantity % 3;
+    //                             // $totalPriceRemainder = $remainder * 390;
+    //                             // $ordersToUpdateNot390 = OrderModel::where('user_id', $user->id)
+    //                             //     ->where('status', 'UNPAID')
+    //                             //     ->where('product_price', '!=', 390)
+    //                             //     ->get();
+    //                             // $totalPrice = 0; // Initialize the total price to 0
+    //                             // foreach ($ordersToUpdateNot390 as $order) {
+    //                             //     $totalPrice += $order->product_price;
+    //                             // }
+
+    //                             // // SAVE THE CALCULATED FINAL PRICE
+    //                             // // Update the final_total_price for each order
+    //                             // $updateCalcuFinalPrice = OrderModel::where('user_id', $user->id)
+    //                             //     ->where('status', 'UNPAID')
+    //                             //     ->where('role', 'MAIN')
+    //                             //     ->first();
+    //                             // $updateCalcuFinalPrice->final_total_price = $specialPrice + $totalPriceRemainder + $totalPrice;
+    //                             // $updateCalcuFinalPrice->save(); // Save the changes to each order
+    //                             // // ****************************//
+
+    //                             // ****************************//
+    //                             // CALCULATING THE FINAL TOTAL PRICE UNPAID
+    //                             $getAllOderUnpaid = OrderModel::where('user_id', $user->id)
+    //                                 ->where('status', 'UNPAID')
+    //                                 ->first(); // Get the first matching order
+
+    //                             if ($getAllOderUnpaid) { // Check if there is a matching order
+    //                                 $totalPriceSumUnPaid = OrderModel::where('user_id', $user->id)
+    //                                     ->where('status', 'UNPAID')
+    //                                     ->sum('total_price');
+
+    //                                 // Update the final_total_price of the first matching order
+    //                                 $getAllOderUnpaid->final_total_price = $totalPriceSumUnPaid;
+    //                                 $getAllOderUnpaid->save();
+    //                             }
+
+    //                             // ****************************//
+    //                             // 'BUY 1 TAKE 1' promo
+    //                             // Find the latest inserted order with 'BUY 1 TAKE 1' promo
+    //                             $latestOrderBuy1Take1 = OrderModel::where('status', 'UNPAID')
+    //                                 ->where('user_id', $user->id)
+    //                                 ->where('promo', 'BUY 1 TAKE 1')
+    //                                 ->latest()
+    //                                 ->first();
+
+    //                             if ($latestOrderBuy1Take1) {
+    //                                 $quantity = $latestOrderBuy1Take1->quantity;
+
+    //                                 // Update promo_buy_and_take_count for the latest order with the quantity
+    //                                 $latestOrderBuy1Take1->promo_buy_and_take_count = $quantity;
+    //                                 $latestOrderBuy1Take1->save();
+    //                             }
+    //                             // ****************************//
+
+    //                             // ****************************//
+    //                             // 'BUY 2 TAKE 1' promo
+    //                             // Find the latest inserted order with 'BUY 2 TAKE 1' promo
+    //                             $latestOrderBuy2Take1 = OrderModel::where('status', 'UNPAID')
+    //                                 ->where('user_id', $user->id)
+    //                                 ->where('promo', 'BUY 2 TAKE 1')
+    //                                 ->latest()
+    //                                 ->first();
+    //                             $totalTake = 0;
+
+    //                             if ($latestOrderBuy2Take1) {
+    //                                 $totalProducts = $latestOrderBuy2Take1->quantity;
+    //                                 $totalTake = intdiv($totalProducts, 2);
+    //                                 $latestOrderBuy2Take1->promo_buy_and_take_count = $totalTake;
+    //                                 $latestOrderBuy2Take1->save();
+    //                             }
+    //                             // ****************************//
+
+    //                             $userAction = 'CREATED';
+    //                             $details = 'Add To Cart Product Information with Group ID: ' . $product->group_id . "\n" .
+    //                                 'Order ID: ' . $uuidOrderId . "\n" .
+    //                                 'Product Group ID: ' . $product->group_id . "\n" .
+    //                                 'Role: MAIN' . "\n" .
+    //                                 'Category: ' . $product->category . "\n" .
+    //                                 'Product Name: ' . $product->name . "\n" .
+    //                                 'Image Name: ' . $product->image . "\n" .
+    //                                 'Size: ' . $product->size . "\n" .
+    //                                 'Color: ' . $product->color . "\n" .
+    //                                 'Quantity: ' . $quantity . "\n" .
+    //                                 'Discount: ' . $product->discount . "\n" .
+    //                                 'Description: ' . $product->description . "\n" .
+    //                                 'Promo: ' . $product->promo . "\n" .
+    //                                 'Product Price: ' . $product->price . "\n" .
+    //                                 'Status: ' . 'UNPAID' . "\n";
+    //                             // Create Log
+    //                             $create = LogsModel::create([
+    //                                 'user_id' => $user->id,
+    //                                 'ip_address' => $request->ip(),
+    //                                 'user_action' => $userAction,
+    //                                 'details' => $details,
+    //                                 'created_at' => Carbon::now()
+    //                             ]);
+
+    //                             if ($create) {
+    //                                 return response()->json([
+    //                                     'message' => 'Created'
+    //                                 ], Response::HTTP_OK);
+    //                             }
+    //                         }
+    //                     }
+    //                 }
+
+    //                 // Return Message Selected product is unavailable or out of stock.
+    //             } else {
+    //                 return response()->json([
+    //                     'message' => 'Selected product is unavailable or out of stock.'
+    //                 ], Response::HTTP_OK);
+    //             }
+
+    //             // Return Intruder and redirect to Login
+    //         } else {
+    //             return response()->json([
+    //                 'message' => 'Intruder'
+    //             ], Response::HTTP_OK);
+    //         }
+    //     } catch (\Exception $e) {
+    //         // Handle exceptions and return an error response with CORS headers
+    //         $errorMessage = $e->getMessage();
+    //         $errorCode = $e->getCode();
+
+    //         // Create a JSON error response
+    //         $response = [
+    //             'success' => false,
+    //             'error' => [
+    //                 'code' => $errorCode,
+    //                 'message' => $errorMessage,
+    //             ],
+    //         ];
+
+    //         // Add additional error details if available
+    //         if ($e instanceof \Illuminate\Validation\ValidationException) {
+    //             $response['error']['details'] = $e->errors();
+    //         }
+
+    //         // Return the JSON error response with CORS headers and an appropriate HTTP status code
+    //         return response()->json($response, Response::HTTP_INTERNAL_SERVER_ERROR)->header('Content-Type', 'application/json');
+    //     }
+    // }
+
+    // Add to Cart | CLIENT | KITTLY 
     public function addToCart(Request $request)
     {
         try {
-            $user = AuthModel::where('session_login', $request->input('session') ?? 'asd')
+            $user = AuthModel::where('session_login', $request->input('session'))
                 ->where('status', 'VERIFIED')
                 ->first();
 
@@ -862,12 +1343,177 @@ class OrderController extends Controller
         }
     }
 
-    // Update TO PAY ITEM | CLIENT 
+    // Update TO PAY ITEM | CLIENT | HGTR 
+    // public function updateItemOnCart(Request $request, $id)
+    // {
+    //     try {
+    //         $user = AuthModel::where('session_login', $request->input('session'))
+    //             ->where('status', 'VERIFIED')
+    //             ->first();
+
+    //         if ($user) {
+    //             $request->validate([
+    //                 'quantity' => 'required|numeric|min:1',
+    //             ]);
+
+    //             $order = OrderModel::where('user_id', $user->id)
+    //                 ->where('id', $id)
+    //                 ->first(); // Retrieve the order from the database
+
+    //             if ($order) {
+    //                 $product = ProductModel::where('color', $order->color)
+    //                     ->where('size', $order->size)
+    //                     ->where('group_id', $order->product_group_id)
+    //                     ->first();
+
+    //                 if ($product && $product->quantity >= 1) {
+    //                     // Declare
+    //                     $quantity = (int) $request->input('quantity');
+
+    //                     // Compute the total Price Now by Check on the product table
+    //                     $discountedPrice = $product->price * (1 - ($product->discount / 100));
+    //                     $totalPrice = $discountedPrice * $quantity;
+
+    //                     // Final total Quantity and Price
+    //                     $finalTotalPrice = $totalPrice;
+    //                     $finalTotalQuantity = $quantity;
+
+    //                     // Saving
+    //                     $order->total_price = $finalTotalPrice;
+    //                     $order->quantity = $finalTotalQuantity;
+
+    //                     if ($order->save()) {
+
+
+    //                         // ****************************//
+    //                         // CALCULATING SHIPPING FEE
+    //                         $fetchAllQuantityAndCalculateShippingFee = OrderModel::where('user_id', $user->id)
+    //                             ->where('status', 'UNPAID')
+    //                             ->get();
+    //                         $totalQuantity = 0;
+
+    //                         foreach ($fetchAllQuantityAndCalculateShippingFee as $order) {
+    //                             $totalQuantity += $order->quantity;
+    //                         }
+
+    //                         function calculateShippingFee($totalQuantity)
+    //                         {
+    //                             $shippingFee = 100; // Base shipping fee
+    //                             $rangeSize = 5; // Size of each range
+    //                             $feeIncrement = 100; // Fee increment for each range
+
+    //                             // Calculate the range index based on the quantity
+    //                             $rangeIndex = ceil($totalQuantity / $rangeSize);
+
+    //                             // Calculate the shipping fee based on the range index and quantity
+    //                             $shippingFee += ($rangeIndex - 1) * $feeIncrement;
+
+    //                             return number_format($shippingFee, 2); // Format the shipping fee with two decimal places
+    //                         }
+
+    //                         $updateShippingFeeNow = OrderModel::where('user_id', $user->id)
+    //                             ->where('status', 'UNPAID')
+    //                             ->where('role', 'MAIN')
+    //                             ->first();
+    //                         $updateShippingFeeNow->shipping_fee = calculateShippingFee($totalQuantity);
+
+    //                         if ($updateShippingFeeNow->save()) {
+    //                             // ****************************//
+    //                             // CALCULATING THE PRICE WITH 390
+    //                             // Find the orders that match the specified conditions
+    //                             $ordersToUpdate = OrderModel::where('user_id', $user->id)
+    //                                 ->where('status', 'UNPAID')
+    //                                 ->where('product_price', 390) // Filter by product price 390
+    //                                 ->get(); // Get all matching orders
+
+    //                             $totalQuantity = 0; // Initialize the total quantity to 0
+    //                             foreach ($ordersToUpdate as $order) {
+    //                                 $totalQuantity += $order->quantity;
+    //                             }
+
+    //                             // Calculate the new total price based on the fixed price of 1000 for every 3 products
+    //                             $countDivisibleBy3 = (int) ($totalQuantity / 3);
+    //                             $specialPrice = $countDivisibleBy3 * 1000;
+    //                             $remainder = $totalQuantity % 3;
+    //                             $totalPriceRemainder = $remainder * 390;
+    //                             $ordersToUpdateNot390 = OrderModel::where('user_id', $user->id)
+    //                                 ->where('status', 'UNPAID')
+    //                                 ->where('product_price', '!=', 390)
+    //                                 ->get();
+    //                             $totalPrice = 0; // Initialize the total price to 0
+    //                             foreach ($ordersToUpdateNot390 as $order) {
+    //                                 $totalPrice += $order->product_price;
+    //                             }
+
+    //                             // SAVE THE CALCULATED FINAL PRICE
+    //                             // Update the final_total_price for each order
+    //                             $updateCalcuFinalPrice = OrderModel::where('user_id', $user->id)
+    //                                 ->where('status', 'UNPAID')
+    //                                 ->where('role', 'MAIN')
+    //                                 ->first();
+    //                             $updateCalcuFinalPrice->final_total_price = $specialPrice + $totalPriceRemainder + $totalPrice;
+    //                             $updateCalcuFinalPrice->save(); // Save the changes to each order
+    //                             // ****************************//
+
+    //                             return response()->json([
+    //                                 'message' => 'Updated'
+    //                             ], Response::HTTP_OK);
+    //                         }
+    //                         // ****************************//
+    //                     }
+    //                 } else {
+    //                     return response()->json([
+    //                         'message' => 'Selected product is unavailable or out of stock.'
+    //                     ], Response::HTTP_OK);
+    //                 }
+    //             } else {
+    //                 return response()->json([
+    //                     'message' => 'Order not found.'
+    //                 ], Response::HTTP_NOT_FOUND);
+    //             }
+    //         } else {
+    //             return response()->json([
+    //                 'message' => 'Intruder'
+    //             ], Response::HTTP_OK);
+    //         }
+    //     } catch (\Exception $e) {
+    //         // Handle exceptions and return an error response with CORS headers
+    //         $errorMessage = $e->getMessage();
+    //         $errorCode = $e->getCode();
+
+    //         // Create a JSON error response
+    //         $response = [
+    //             'success' => false,
+    //             'error' => [
+    //                 'code' => $errorCode,
+    //                 'message' => $errorMessage,
+    //             ],
+    //         ];
+
+    //         // Add additional error details if available
+    //         if ($e instanceof \Illuminate\Validation\ValidationException) {
+    //             $response['error']['details'] = $e->errors();
+    //         }
+
+    //         // Return the JSON error response with CORS headers and an appropriate HTTP status code
+    //         return response()->json($response, Response::HTTP_INTERNAL_SERVER_ERROR)->header('Content-Type', 'application/json');
+    //     }
+    // }
+
+    // Update TO PAY ITEM | CLIENT | Kittly 
     public function updateItemOnCart(Request $request, $id)
     {
 
         try {
-            $user = AuthModel::where('session_login', $request->input('session') ?? 'asd')
+            // return response()->json([
+            //     'session' => $request->input('session'),
+            //     'color' => $request->input('color'),
+            //     'design' => $request->input('design'),
+            //     'quantity' => $request->input('quantity'),
+            //     'group_id' => $request->input('group_id'),
+            // ], Response::HTTP_OK);
+
+            $user = AuthModel::where('session_login', $request->input('session'))
                 ->where('status', 'VERIFIED')
                 ->first();
 
@@ -1343,12 +1989,82 @@ class OrderController extends Controller
         }
     }
 
-    //CHECK OUT ON TO PAY | CLIENT 
+    //CHECK OUT ON TO PAY | CLIENT | HGTR
+    // public function checkOut(Request $request)
+    // {
+    //     try {
+    //         // Fetch User ID
+    //         $user = AuthModel::where('session_login', $request->input('session'))
+    //             ->where('status', 'VERIFIED')
+    //             ->first();
+    //         if ($user) {
+    //             $request->validate([
+    //                 'payment' => 'required|string',
+    //             ]);
+
+    //             // Retrieving unpaid products for the user
+    //             $data = OrderModel::where('user_id', $user->id)->where('status', 'UNPAID')->get();
+
+    //             // Updating product status and payment method
+    //             foreach ($data as $order) {
+    //                 $order->status = "TO SHIP / TO PROCESS";
+    //                 $order->payment_method = $request->input('payment');
+    //                 $order->check_out_at = Carbon::now();
+    //                 $order->save();
+    //             }
+
+    //             // Creating a log for the checkout
+    //             $userAction = 'CHECK OUT';
+    //             $details = 'Checked out products with Order ID: ' . $data->pluck('order_id')->implode(', ');
+
+    //             $create = LogsModel::create([
+    //                 'user_id' => $user->id,
+    //                 'ip_address' => $request->ip(),
+    //                 'user_action' => $userAction,
+    //                 'details' => $details,
+    //                 'created_at' => Carbon::now()
+    //             ]);
+
+    //             // Checking if the log was created successfully
+    //             if ($create) {
+    //                 return response()->json([
+    //                     'message' => 'Checkout',
+    //                 ], Response::HTTP_OK);
+    //             }
+    //         }
+    //         return response()->json([
+    //             'message' => 'Intruder',
+    //         ], Response::HTTP_OK);
+    //     } catch (\Exception $e) {
+    //         // Handle exceptions and return an error response with CORS headers
+    //         $errorMessage = $e->getMessage();
+    //         $errorCode = $e->getCode();
+
+    //         // Create a JSON error response
+    //         $response = [
+    //             'success' => false,
+    //             'error' => [
+    //                 'code' => $errorCode,
+    //                 'message' => $errorMessage,
+    //             ],
+    //         ];
+
+    //         // Add additional error details if available
+    //         if ($e instanceof \Illuminate\Validation\ValidationException) {
+    //             $response['error']['details'] = $e->errors();
+    //         }
+
+    //         // Return the JSON error response with CORS headers and an appropriate HTTP status code
+    //         return response()->json($response, Response::HTTP_INTERNAL_SERVER_ERROR)->header('Content-Type', 'application/json');
+    //     }
+    // }
+
+    //CHECK OUT ON TO PAY | CLIENT | KITTLY
     public function checkOut(Request $request)
     {
         try {
             // Fetch User ID
-            $user = AuthModel::where('session_login', $request->input('session') ?? 'asd')
+            $user = AuthModel::where('session_login', $request->input('session'))
                 ->where('status', 'VERIFIED')
                 ->first();
 
@@ -1662,10 +2378,9 @@ class OrderController extends Controller
     {
         try {
             // Fetch User ID
-            $user = AuthModel::where('session_login', $request->input('session') ?? 'asd')
+            $user = AuthModel::where('session_login', $request->input('session'))
                 ->where('status', 'VERIFIED')
                 ->first();
-                
             if ($user) {
                 $order = OrderModel::find($id);
                 return response()->json([
@@ -1701,16 +2416,359 @@ class OrderController extends Controller
         }
     }
 
+    // CANCEL ON TO SHIP | CLIENT | HGTR
+    // public function cancelItemOnCart(Request $request, $id)
+    // {
+    //     try {
+    //         // Fetch User ID
+    //         $user = AuthModel::where('session_login', $request->input('session'))
+    //             ->where('status', 'VERIFIED')
+    //             ->first();
+    //         if ($user) {
+    //             $request->validate([
+    //                 'reasonCancel' => 'required|string',
+    //             ]);
 
-    // CANCEL ON TO SHIP | CLIENT
+    //             // Retrieve the order to cancel
+    //             $data = OrderModel::where('user_id', $user->id)
+    //                 ->where('id', $id)
+    //                 ->where('status', 'TO SHIP / TO PROCESS')
+    //                 ->first();
+
+    //             if ($data) { // Check if the order was found
+    //                 if ($data->role == 'MAIN') {
+    //                     // Cancel if the role is MAIN and one only on group_od
+    //                     $count = OrderModel::where('group_id', $data->group_id)->count();
+    //                     if ($count == 1) {
+    //                         // Cancelled imidate if role is not MAIN
+    //                         $data->status = 'CANCELLED';
+    //                         $data->cancel_at = Carbon::now();
+    //                         $data->reason_cancel = $request->input('reasonCancel');
+    //                         if ($data->save()) {
+    //                             $userAction = 'CANCELLED';
+    //                             $details = 'Cancelled Product Information with Group ID: ' . $data->group_id . "\n" .
+    //                                 'Order ID: ' . $data->order_id . "\n" .
+    //                                 'Product Group ID: ' . $data->product_group_id . "\n" .
+    //                                 'Role: ' . $data->role . "\n" .
+    //                                 'Category: ' . $data->category . "\n" .
+    //                                 'Name: ' . $data->name . "\n" .
+    //                                 'Image Name: ' . $data->image . "\n" .
+    //                                 'Size: ' . $data->size . "\n" .
+    //                                 'Color: ' . $data->color . "\n" .
+    //                                 'Quantity: ' . $data->quantity . "\n" .
+    //                                 'Discount: ' . $data->discount . "\n" .
+    //                                 'Description: ' . $data->description . "\n" .
+    //                                 'Product Price: ' . $data->product_price . "\n" .
+    //                                 'Shipping Fee: ' . $data->shipping_fee . "\n" .
+    //                                 'Total Price: ' . $data->total_price . "\n" .
+    //                                 'Reason to Cancel' . $request->input('reasonCancel') . "\n";
+
+    //                             // Create Log
+    //                             $create = LogsModel::create([
+    //                                 'user_id' => $user->id,
+    //                                 'ip_address' => $request->ip(),
+    //                                 'user_action' => $userAction,
+    //                                 'details' => $details,
+    //                                 'created_at' => Carbon::now()
+    //                             ]);
+
+    //                             if ($create) {
+    //                                 return response()->json([
+    //                                     'message' => 'Cancelled'
+    //                                 ], Response::HTTP_OK);
+    //                             }
+    //                         }
+    //                     } else {
+    //                         // Pass the role main to the others
+    //                         $affectedRows = OrderModel::where('group_id', $data->group_id)
+    //                             ->where('id', '!=', $id)
+    //                             ->where('user_id', $user->id)
+    //                             ->update([
+    //                                 'role' => 'MAIN',
+    //                                 'shipping_fee' => $data->shipping_fee,
+    //                             ]);
+
+    //                         if ($affectedRows) {
+    //                             // Remove self Role and shipping Fee then change status to CANCELLED
+    //                             $affectedRowsSelf = OrderModel::where('group_id', $data->group_id)
+    //                                 ->where('id', '=', $id)
+    //                                 ->where('user_id', $user->id)
+    //                                 ->update([
+    //                                     'role' => '',
+    //                                     'shipping_fee' => 0.00,
+    //                                     'final_total_price' => 0.00,
+    //                                     'status' => 'CANCELLED',
+    //                                     'reason_cancel' => $request->input('reasonCancel'),
+    //                                     'cancel_at' => Carbon::now()
+    //                                 ]);
+
+    //                             if ($affectedRowsSelf) {
+    //                                 $userAction = 'CANCELLED';
+    //                                 $details = 'Cancelled Product Information with Group ID: ' . $data->group_id . "\n" .
+    //                                     'Order ID: ' . $data->order_id . "\n" .
+    //                                     'Product Group ID: ' . $data->product_group_id . "\n" .
+    //                                     'Role: ' . $data->role . "\n" .
+    //                                     'Category: ' . $data->category . "\n" .
+    //                                     'Name: ' . $data->name . "\n" .
+    //                                     'Image Name: ' . $data->image . "\n" .
+    //                                     'Size: ' . $data->size . "\n" .
+    //                                     'Color: ' . $data->color . "\n" .
+    //                                     'Quantity: ' . $data->quantity . "\n" .
+    //                                     'Discount: ' . $data->discount . "\n" .
+    //                                     'Description: ' . $data->description . "\n" .
+    //                                     'Product Price: ' . $data->product_price . "\n" .
+    //                                     'Shipping Fee: ' . $data->shipping_fee . "\n" .
+    //                                     'Total Price: ' . $data->total_price . "\n" .
+    //                                     'Reason to Cancel' . $request->input('reasonCancel') . "\n";
+
+    //                                 // Create Log
+    //                                 $create = LogsModel::create([
+    //                                     'user_id' => $user->id,
+    //                                     'ip_address' => $request->ip(),
+    //                                     'user_action' => $userAction,
+    //                                     'details' => $details,
+    //                                     'created_at' => Carbon::now()
+    //                                 ]);
+
+    //                                 if ($create) {
+    //                                     // ****************************//
+    //                                     // CALCULATING THE PRICE WITH 390
+    //                                     // Find the orders that match the specified conditions
+    //                                     $ordersToUpdate = OrderModel::where('user_id', $user->id)
+    //                                         ->where('status', 'TO SHIP / TO PROCESS')
+    //                                         ->where('product_price', 390) // Filter by product price 390
+    //                                         ->get(); // Get all matching orders
+
+    //                                     $totalQuantity = 0; // Initialize the total quantity to 0
+    //                                     foreach ($ordersToUpdate as $order) {
+    //                                         $totalQuantity += $order->quantity;
+    //                                     }
+
+    //                                     // Calculate the new total price based on the fixed price of 1000 for every 3 products
+    //                                     $countDivisibleBy3 = (int) ($totalQuantity / 3);
+    //                                     $specialPrice = $countDivisibleBy3 * 1000;
+    //                                     $remainder = $totalQuantity % 3;
+    //                                     $totalPriceRemainder = $remainder * 390;
+    //                                     $ordersToUpdateNot390 = OrderModel::where('user_id', $user->id)
+    //                                         ->where('status', 'TO SHIP / TO PROCESS')
+    //                                         ->where('product_price', '!=', 390)
+    //                                         ->get();
+    //                                     $totalPrice = 0; // Initialize the total price to 0
+    //                                     foreach ($ordersToUpdateNot390 as $order) {
+    //                                         $totalPrice += $order->product_price;
+    //                                     }
+
+    //                                     // SAVE THE CALCULATED FINAL PRICE
+    //                                     // Update the final_total_price for each order
+    //                                     $updateCalcuFinalPrice = OrderModel::where('user_id', $user->id)
+    //                                         ->where('status', 'TO SHIP / TO PROCESS')
+    //                                         ->where('role', 'MAIN')
+    //                                         ->first();
+    //                                     $updateCalcuFinalPrice->final_total_price = $specialPrice + $totalPriceRemainder + $totalPrice;
+    //                                     $updateCalcuFinalPrice->save(); // Save the changes to each order
+    //                                     // ****************************//
+
+
+    //                                     // Updating the Total Shipping fee now
+    //                                     // Fetch the total Quantity
+    //                                     $fetchAllQuantityAndCalculateShippingFee = OrderModel::where('user_id', $user->id)
+    //                                         ->where('status', 'TO SHIP / TO PROCESS')
+    //                                         ->get();
+
+    //                                     $totalQuantity = 0;
+    //                                     foreach ($fetchAllQuantityAndCalculateShippingFee as $order) {
+    //                                         $totalQuantity += $order->quantity;
+    //                                     }
+
+    //                                     // Calculate the Shipping Fee
+    //                                     function calculateShippingFee($totalQuantity)
+    //                                     {
+    //                                         $shippingFee = 100; // Base shipping fee
+    //                                         $rangeSize = 5; // Size of each range
+    //                                         $feeIncrement = 100; // Fee increment for each range
+
+    //                                         // Calculate the range index based on the quantity
+    //                                         $rangeIndex = ceil($totalQuantity / $rangeSize);
+
+    //                                         // Calculate the shipping fee based on the range index and quantity
+    //                                         $shippingFee += ($rangeIndex - 1) * $feeIncrement;
+
+    //                                         return number_format($shippingFee, 2); // Format the shipping fee with two decimal places
+    //                                     }
+
+    //                                     // Saving Now
+    //                                     $updateShippingFeeNow = OrderModel::where('user_id', $user->id)
+    //                                         ->where('status', 'TO SHIP / TO PROCESS')
+    //                                         ->where('role', 'MAIN')
+    //                                         ->first();
+    //                                     $updateShippingFeeNow->shipping_fee = calculateShippingFee($totalQuantity);
+
+    //                                     if ($updateShippingFeeNow->save()) {
+    //                                         return response()->json([
+    //                                             'message' => 'Cancelled'
+    //                                         ], Response::HTTP_OK);
+    //                                     }
+    //                                 }
+    //                             }
+    //                         }
+    //                     }
+    //                 } else {
+    //                     // Cancelled imidate if role is not MAIN
+    //                     $data->status = 'CANCELLED';
+    //                     $data->cancel_at = Carbon::now();
+    //                     $data->reason_cancel = $request->input('reasonCancel');
+    //                     if ($data->save()) {
+    //                         $userAction = 'CANCELLED';
+    //                         $details = 'Cancelled Product Information with Group ID: ' . $data->group_id . "\n" .
+    //                             'Order ID: ' . $data->order_id . "\n" .
+    //                             'Product Group ID: ' . $data->product_group_id . "\n" .
+    //                             'Role: ' . $data->role . "\n" .
+    //                             'Category: ' . $data->category . "\n" .
+    //                             'Name: ' . $data->name . "\n" .
+    //                             'Image Name: ' . $data->image . "\n" .
+    //                             'Size: ' . $data->size . "\n" .
+    //                             'Color: ' . $data->color . "\n" .
+    //                             'Quantity: ' . $data->quantity . "\n" .
+    //                             'Discount: ' . $data->discount . "\n" .
+    //                             'Description: ' . $data->description . "\n" .
+    //                             'Product Price: ' . $data->product_price . "\n" .
+    //                             'Shipping Fee: ' . $data->shipping_fee . "\n" .
+    //                             'Total Price: ' . $data->total_price . "\n" .
+    //                             'Reason to Cancel' . $request->input('reasonCancel') . "\n";
+
+    //                         // Create Log
+    //                         $create = LogsModel::create([
+    //                             'user_id' => $user->id,
+    //                             'ip_address' => $request->ip(),
+    //                             'user_action' => $userAction,
+    //                             'details' => $details,
+    //                             'created_at' => Carbon::now()
+    //                         ]);
+
+    //                         if ($create) {
+    //                             // ****************************//
+    //                             // CALCULATING THE PRICE WITH 390
+    //                             // Find the orders that match the specified conditions
+    //                             $ordersToUpdate = OrderModel::where('user_id', $user->id)
+    //                                 ->where('status', 'TO SHIP / TO PROCESS')
+    //                                 ->where('product_price', 390) // Filter by product price 390
+    //                                 ->get(); // Get all matching orders
+
+    //                             $totalQuantity = 0; // Initialize the total quantity to 0
+    //                             foreach ($ordersToUpdate as $order) {
+    //                                 $totalQuantity += $order->quantity;
+    //                             }
+
+    //                             // Calculate the new total price based on the fixed price of 1000 for every 3 products
+    //                             $countDivisibleBy3 = (int) ($totalQuantity / 3);
+    //                             $specialPrice = $countDivisibleBy3 * 1000;
+    //                             $remainder = $totalQuantity % 3;
+    //                             $totalPriceRemainder = $remainder * 390;
+    //                             $ordersToUpdateNot390 = OrderModel::where('user_id', $user->id)
+    //                                 ->where('status', 'TO SHIP / TO PROCESS')
+    //                                 ->where('product_price', '!=', 390)
+    //                                 ->get();
+    //                             $totalPrice = 0; // Initialize the total price to 0
+    //                             foreach ($ordersToUpdateNot390 as $order) {
+    //                                 $totalPrice += $order->product_price;
+    //                             }
+
+    //                             // SAVE THE CALCULATED FINAL PRICE
+    //                             // Update the final_total_price for each order
+    //                             $updateCalcuFinalPrice = OrderModel::where('user_id', $user->id)
+    //                                 ->where('status', 'TO SHIP / TO PROCESS')
+    //                                 ->where('role', 'MAIN')
+    //                                 ->first();
+    //                             $updateCalcuFinalPrice->final_total_price = $specialPrice + $totalPriceRemainder + $totalPrice;
+    //                             $updateCalcuFinalPrice->save(); // Save the changes to each order
+    //                             // ****************************//
+
+
+    //                             // Updating the Total Shipping fee now
+    //                             // Fetch the total Quantity
+    //                             $fetchAllQuantityAndCalculateShippingFee = OrderModel::where('user_id', $user->id)
+    //                                 ->where('status', 'TO SHIP / TO PROCESS')
+    //                                 ->get();
+
+    //                             $totalQuantity = 0;
+    //                             foreach ($fetchAllQuantityAndCalculateShippingFee as $order) {
+    //                                 $totalQuantity += $order->quantity;
+    //                             }
+
+    //                             // Calculate the Shipping Fee
+    //                             function calculateShippingFee($totalQuantity)
+    //                             {
+    //                                 $shippingFee = 100; // Base shipping fee
+    //                                 $rangeSize = 5; // Size of each range
+    //                                 $feeIncrement = 100; // Fee increment for each range
+
+    //                                 // Calculate the range index based on the quantity
+    //                                 $rangeIndex = ceil($totalQuantity / $rangeSize);
+
+    //                                 // Calculate the shipping fee based on the range index and quantity
+    //                                 $shippingFee += ($rangeIndex - 1) * $feeIncrement;
+
+    //                                 return number_format($shippingFee, 2); // Format the shipping fee with two decimal places
+    //                             }
+
+    //                             // Saving Now
+    //                             $updateShippingFeeNow = OrderModel::where('user_id', $user->id)
+    //                                 ->where('status', 'TO SHIP / TO PROCESS')
+    //                                 ->where('role', 'MAIN')
+    //                                 ->first();
+    //                             $updateShippingFeeNow->shipping_fee = calculateShippingFee($totalQuantity);
+
+    //                             if ($updateShippingFeeNow->save()) {
+    //                                 return response()->json([
+    //                                     'message' => 'Cancelled'
+    //                                 ], Response::HTTP_OK);
+    //                             }
+    //                         }
+    //                     }
+    //                 }
+    //             } else {
+    //                 return response()->json([
+    //                     'message' => 'Order not found'
+    //                 ], Response::HTTP_OK);
+    //             }
+    //         } else {
+    //             return response()->json([
+    //                 'message' => 'Intruder'
+    //             ], Response::HTTP_OK);
+    //         }
+
+    //     } catch (\Exception $e) {
+    //         // Handle exceptions and return an error response with CORS headers
+    //         $errorMessage = $e->getMessage();
+    //         $errorCode = $e->getCode();
+
+    //         // Create a JSON error response
+    //         $response = [
+    //             'success' => false,
+    //             'error' => [
+    //                 'code' => $errorCode,
+    //                 'message' => $errorMessage,
+    //             ],
+    //         ];
+
+    //         // Add additional error details if available
+    //         if ($e instanceof \Illuminate\Validation\ValidationException) {
+    //             $response['error']['details'] = $e->errors();
+    //         }
+
+    //         // Return the JSON error response with CORS headers and an appropriate HTTP status code
+    //         return response()->json($response, Response::HTTP_INTERNAL_SERVER_ERROR)->header('Content-Type', 'application/json');
+    //     }
+    // }
+
+    // CANCEL ON TO SHIP | CLIENT | KITTLY
     public function cancelItemOnCart(Request $request, $id)
     {
         try {
             // Fetch User ID
-            $user = AuthModel::where('session_login', $request->input('session') ?? 'asd')
+            $user = AuthModel::where('session_login', $request->input('session'))
                 ->where('status', 'VERIFIED')
                 ->first();
-                
             if ($user) {
                 $request->validate([
                     'reasonCancel' => 'required|string',
@@ -2282,7 +3340,7 @@ class OrderController extends Controller
     {
         try {
             // Fetch User ID
-            $user = AuthModel::where('session_login', $request->input('session') ?? 'asd')
+            $user = AuthModel::where('session_login', $request->input('session'))
                 ->where('status', 'VERIFIED')
                 ->first();
 
@@ -2415,7 +3473,7 @@ class OrderController extends Controller
     {
         try {
             // Fetch User ID
-            $user = AuthModel::where('session_login', $request->input('session') ?? 'asd')
+            $user = AuthModel::where('session_login', $request->input('session'))
                 ->where('status', 'VERIFIED')
                 ->first();
 
@@ -2501,7 +3559,7 @@ class OrderController extends Controller
     {
         try {
             // Fetch User ID
-            $user = AuthModel::where('session_login', $request->input('session') ?? 'asd')
+            $user = AuthModel::where('session_login', $request->input('session'))
                 ->where('status', 'VERIFIED')
                 ->first();
 
@@ -2632,7 +3690,7 @@ class OrderController extends Controller
     {
         try {
             // Fetch User ID
-            $user = AuthModel::where('session_login', $request->input('session') ?? 'asd')
+            $user = AuthModel::where('session_login', $request->input('session'))
                 ->where('status', 'VERIFIED')
                 ->first();
 
@@ -2718,7 +3776,7 @@ class OrderController extends Controller
     {
         try {
             // Fetch User ID
-            $user = AuthModel::where('session_login', $request->input('session') ?? 'asd')
+            $user = AuthModel::where('session_login', $request->input('session'))
                 ->where('status', 'VERIFIED')
                 ->first();
 
@@ -2811,7 +3869,7 @@ class OrderController extends Controller
             }
 
             // Fetch User ID
-            $user = AuthModel::where('session_login', $request->input('session') ?? 'asd')
+            $user = AuthModel::where('session_login', $request->input('session'))
                 ->where('status', 'VERIFIED')
                 ->first();
 
@@ -2880,7 +3938,7 @@ class OrderController extends Controller
     {
         try {
             // Fetch User ID
-            $user = AuthModel::where('session_login', $request->input('session') ?? 'asd')
+            $user = AuthModel::where('session_login', $request->input('session'))
                 ->where('status', 'VERIFIED')
                 ->first();
 
@@ -2949,7 +4007,7 @@ class OrderController extends Controller
     {
         try {
             // Fetch User ID
-            $user = AuthModel::where('session_login', $request->input('session') ?? 'asd')
+            $user = AuthModel::where('session_login', $request->input('session'))
                 ->where('status', 'VERIFIED')
                 ->first();
 
@@ -3034,7 +4092,7 @@ class OrderController extends Controller
     {
         try {
             // Fetch User ID
-            $user = AuthModel::where('session_login', $request->input('session') ?? 'asd')
+            $user = AuthModel::where('session_login', $request->input('session'))
                 ->where('status', 'VERIFIED')
                 ->first();
 
@@ -3120,7 +4178,7 @@ class OrderController extends Controller
     {
         try {
             // Fetch User ID
-            $user = AuthModel::where('session_login', $request->input('session') ?? 'asd')
+            $user = AuthModel::where('session_login', $request->input('session'))
                 ->where('status', 'VERIFIED')
                 ->first();
 
@@ -3189,7 +4247,7 @@ class OrderController extends Controller
     {
         try {
             // Fetch User ID
-            $user = AuthModel::where('session_login', $request->input('session') ?? 'asd')
+            $user = AuthModel::where('session_login', $request->input('session'))
                 ->where('status', 'VERIFIED')
                 ->first();
 
@@ -3254,7 +4312,7 @@ class OrderController extends Controller
     {
         try {
             // Fetch User ID
-            $user = AuthModel::where('session_login', $request->input('session') ?? 'asd')
+            $user = AuthModel::where('session_login', $request->input('session'))
                 ->where('status', 'VERIFIED')
                 ->first();
 
@@ -3341,7 +4399,7 @@ class OrderController extends Controller
     {
         try {
             // Fetch User ID
-            $user = AuthModel::where('session_login', $request->input('session') ?? 'asd')
+            $user = AuthModel::where('session_login', $request->input('session'))
                 ->where('status', 'VERIFIED')
                 ->first();
 
@@ -3427,7 +4485,7 @@ class OrderController extends Controller
     {
         try {
             // Fetch User ID
-            $user = AuthModel::where('session_login', $request->input('session') ?? 'asd')
+            $user = AuthModel::where('session_login', $request->input('session'))
                 ->where('status', 'VERIFIED')
                 ->first();
 
@@ -3513,7 +4571,7 @@ class OrderController extends Controller
     {
         try {
             // Fetch User ID
-            $user = AuthModel::where('session_login', $request->input('session') ?? 'asd')
+            $user = AuthModel::where('session_login', $request->input('session'))
                 ->where('status', 'VERIFIED')
                 ->first();
 

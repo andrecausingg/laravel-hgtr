@@ -48,7 +48,7 @@ class AuthController extends Controller
                 ]);
 
                 if ($create) {
-                    if ($user->role == "USER" || $user->role == "ADMIN") {
+                    if ($user->role == "USER") {
                         $newUser = UserInfoModel::where('user_id', $user->id)->doesntExist();
                         if ($newUser) {
                             // Return a success response with CORS headers
