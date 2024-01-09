@@ -204,7 +204,7 @@ class UserInfoController extends Controller
     {
         //
         try {
-            $user = AuthModel::where('session_login', $request->input('session') ?? 'asd')
+            $user = AuthModel::where('session_login', $id ?? 'asd')
                 ->where('status', 'VERIFIED')
                 ->first();
 
@@ -280,7 +280,7 @@ class UserInfoController extends Controller
     {
         //
         try {
-            $user = AuthModel::where('session_login', $request->input('session') ?? 'asd')
+            $user = AuthModel::where('session_login', $id ?? 'asd')
                 ->where('status', 'VERIFIED')
                 ->first();
 
