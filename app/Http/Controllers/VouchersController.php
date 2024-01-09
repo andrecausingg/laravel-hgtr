@@ -642,7 +642,7 @@ class VouchersController extends Controller
     public function getVouchers(Request $request, string $id)
     {
         try {
-            $user = AuthModel::where('session_login', $request->input('session') ?? 'asd')
+            $user = AuthModel::where('session_login', $id ?? 'asd')
                 ->where('status', 'VERIFIED')
                 ->first();
                 
