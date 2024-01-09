@@ -20,15 +20,15 @@ return new class extends Migration
             $table->string('middle_name')->nullable();
             $table->string('last_name');
             $table->string('contact_num')->nullable();
-            $table->string('address_1')->nullable();
-            $table->string('address_2')->nullable();
+            $table->text('address_1')->nullable();
+            $table->text('address_2')->nullable();
             $table->string('region_code')->nullable();
             $table->string('province_code')->nullable();
             $table->string('city_or_municipality_code')->nullable();
-            $table->string('region_name')->nullable();
-            $table->string('province_name')->nullable();
-            $table->string('city_or_municipality_name')->nullable(); 
-            $table->string('barangay')->nullable();
+            $table->text('region_name')->nullable();
+            $table->text('province_name')->nullable();
+            $table->text('city_or_municipality_name')->nullable(); 
+            $table->text('barangay')->nullable();
             $table->text('description_location')->nullable();
             $table->timestamps();
 
