@@ -2,14 +2,14 @@
 <html>
 
 <head>
-    <title>Hgtr - Verification Code</title>
+    <title>Hugotero Clothing - Verification Code</title>
 </head>
 
 <body>
     <div
         style="text-align: center; font-family: Segoe UI; width: 500px; margin: auto auto; padding: 56px; box-shadow: 0 4px 4px 0 rgba(233, 240, 243, 0.4); border: 1px solid #ECEFF3; border-radius: 12px;">
         <div style="text-align: center;">
-            <img src="http://127.0.0.1:5173/src/assets/images/img/HGTR%20LOGO%203.png" alt="Logo"
+            <img src="https://hugoteroclothing.com/hgtr-logo.png" alt="Hugotero Clothing Logo"
                 style="width:150px; margin-left:auto; margin-right:auto;">
         </div>
         <p style="font-weight: 400; font-size: 16px;">Thank you for signing up for our service. To complete the

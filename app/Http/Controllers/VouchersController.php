@@ -115,10 +115,7 @@ class VouchersController extends Controller
 
             // Return the user information records in JSON format
             return response()->json(['data' => $data], 200);
-        } catch (Exception $e) {
-            // Handle exceptions if necessary
-            return response()->json(['error' => $e->getMessage()], 500);
-        } catch (\Exception $e) {
+        }  catch (\Exception $e) {
             // Handle exceptions and return an error response with CORS headers
             $errorMessage = $e->getMessage();
             $errorCode = $e->getCode();
@@ -146,31 +143,38 @@ class VouchersController extends Controller
     {
         try {
             $auths = AuthModel::where('role', 'USER')->get();
-
+        
             // Initialize an array to store the final data
             $data = [];
-
+        
             foreach ($auths as $auth) {
                 // Retrieve user information
                 $userInfo = UserInfoModel::where('user_id', $auth->id)->first();
                 $voucherInfo = VouchersModel::where('user_id', $auth->id)->first();
-
-                // Create an array for data in the desired format
-                $authData = [
-                    'id' => $auth->id,
-                    'email' => $auth->email,
-                    'userInfo' => [
-                        'first_name' => Crypt::decrypt($userInfo->first_name),
-                        'last_name' => Crypt::decrypt($userInfo->last_name),
-                    ],
-                ];
-                // Add data to the final data array
-                $data[] = $authData;
+        
+                // Check if user information is found
+                if ($userInfo) {
+                    // Create an array for data in the desired format
+                    $authData = [
+                        'id' => $auth->id,
+                        'email' => $auth->email,
+                        'userInfo' => [
+                            'first_name' => Crypt::decrypt($userInfo->first_name),
+                            'last_name' => Crypt::decrypt($userInfo->last_name),
+                        ],
+                    ];
+        
+                    // Add data to the final data array
+                    $data[] = $authData;
+                } else {
+                    // Handle the case where user information is not found
+                    // You can choose to skip this user or add an empty placeholder as needed
+                }
             }
-
+        
             // Return the user information records in JSON format
-            return response()->json(['data' => $data], 200);
-        } catch (\Exception $e) {
+            return response()->json(['data' => $data, 'success' => true], 200);
+        }catch (\Exception $e) {
             // Handle exceptions and return an error response with CORS headers
             $errorMessage = $e->getMessage();
             $errorCode = $e->getCode();
@@ -214,8 +218,9 @@ class VouchersController extends Controller
     {
         //
         try {
+
             // Fetch User ID
-            $user = AuthModel::where('session_login', $request->input('session'))
+            $user = AuthModel::where('session_login', $request->input('session') ?? 'asd')
                 ->where('status', 'VERIFIED')
                 ->first();
 
@@ -230,6 +235,13 @@ class VouchersController extends Controller
                 'name' => 'required|string|max:255',
             ]);
 
+            // Parse input dates using Carbon
+            $startAt = Carbon::parse($request->input('start_at'));
+            $expireAt = Carbon::parse($request->input('expire_at'));
+
+            // Check if the voucher is expired
+            $status = (Carbon::now() > $startAt && Carbon::now() > $expireAt) ? 'EXPIRED' : 'AVAILABLE';
+
             // Create an array to store the data for each voucher
             $userIds = $request->input('user_ids');
             $voucherData = [];
@@ -238,7 +250,7 @@ class VouchersController extends Controller
             foreach ($userIds as $userId) {
                 $voucherData[] = [
                     'user_id' => $userId,
-                    'status' => 'AVAILABLE',
+                    'status' => $status,
                     'name' => $request->input('name'),
                     'discount' => $request->input('discount'),
                     'start_at' => $request->input('start_at'),
@@ -271,7 +283,7 @@ class VouchersController extends Controller
                     'Name: ' . $request->input('name') . "\n" .
                     'Discount: ' . $request->input('discount') . "\n" .
                     'Start At: ' . $formattedStartAt . "\n" .
-                    'Expired At: ' . $formattedExpiredAt . "\n" ;
+                    'Expired At: ' . $formattedExpiredAt . "\n";
 
                 // Create Log
                 $create = LogsModel::create([
@@ -326,7 +338,7 @@ class VouchersController extends Controller
         //
         try {
             // Fetch User ID
-            $user = AuthModel::where('session_login', $id)
+            $user = AuthModel::where('session_login', $id ?? 'asd')
                 ->where('status', 'VERIFIED')
                 ->first();
 
@@ -443,9 +455,10 @@ class VouchersController extends Controller
     {
         try {
             // Fetch User ID
-            $user = AuthModel::where('session_login', $request->input('session'))
+            $user = AuthModel::where('session_login', $request->input('session') ?? 'asd')
                 ->where('status', 'VERIFIED')
                 ->first();
+                
             if (!$user) {
                 return response()->json([
                     'message' => 'Intruder'
@@ -535,44 +548,55 @@ class VouchersController extends Controller
     {
         try {
             // Fetch User ID
-            $user = AuthModel::where('session_login', $request->input('session'))
+            $user = AuthModel::where('session_login', $request->input('session') ?? 'asd')
                 ->where('status', 'VERIFIED')
                 ->first();
-
+        
             if (!$user) {
                 return response()->json([
                     'message' => 'Intruder'
                 ], Response::HTTP_OK);
             }
-
+        
             $voucher = VouchersModel::where('user_id', $user->id)
                 ->where('id', $id)
                 ->first(); // Fetch the voucher
-
+        
             if (!$voucher) {
                 return response()->json([
                     'message' => 'Voucher not found'
                 ], Response::HTTP_OK);
             }
-
+        
+            // Check if the voucher is expired
+            if ($voucher->expire_at && now() > $voucher->expire_at) {
+                // Update status to EXPIRED
+                $voucher->status = 'EXPIRED';
+                $voucher->save();
+        
+                return response()->json([
+                    'message' => 'Voucher is expired'
+                ], Response::HTTP_OK);
+            }
+        
             $voucher->status = 'CLAIMED';
-            $voucher->activate_at = Carbon::now();
-
+            $voucher->activate_at = now();
+        
             if ($voucher->save()) {
                 $userAction = 'ACTIVATE VOUCHER';
                 $details = 'Activate Voucher with Name: ' . $voucher->name . "\n" .
                     'Status: ' . $voucher->status . "\n" .
                     'Discount: ' . $voucher->discount . "\n";
-
+        
                 // Create Log
                 $create = LogsModel::create([
                     'user_id' => $user->id,
                     'ip_address' => $request->ip(),
                     'user_action' => $userAction,
                     'details' => $details,
-                    'created_at' => Carbon::now()
+                    'created_at' => now()
                 ]);
-
+        
                 if ($create) {
                     return response()->json([
                         'message' => 'Voucher Activated'
@@ -587,7 +611,7 @@ class VouchersController extends Controller
                     'message' => 'Failed to activate voucher'
                 ], Response::HTTP_OK);
             }
-        } catch (\Exception $e) {
+        }catch (\Exception $e) {
             // Handle exceptions and return an error response with CORS headers
             $errorMessage = $e->getMessage();
             $errorCode = $e->getCode();
@@ -615,9 +639,10 @@ class VouchersController extends Controller
     public function getVouchers(Request $request, string $id)
     {
         try {
-            $user = AuthModel::where('session_login', $id)
+            $user = AuthModel::where('session_login', $id ?? 'asd')
                 ->where('status', 'VERIFIED')
                 ->first();
+                
             if (!$user) {
                 return response()->json([
                     'message' => 'Intruder'
@@ -671,7 +696,7 @@ class VouchersController extends Controller
             }
 
             // Fetch User ID
-            $user = AuthModel::where('session_login', $request->input('session'))
+            $user = AuthModel::where('session_login', $request->input('session') ?? 'asd')
                 ->where('status', 'VERIFIED')
                 ->first();
 

@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\LogsModel;
+use App\Models\UserInfoModel;
+use App\Models\AuthModel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Symfony\Component\HttpFoundation\Response;
@@ -15,19 +17,44 @@ class LogsController extends Controller
     public function index()
     {
         try {
-            // Query all logs
-            $allLogs = LogsModel::with('user:id,email,role')->get();
-            $totalLogsCount = $allLogs->count();
+            // Use meaningful variable names
+            $logList = LogsModel::get();
         
-            // Query logs for today's date
-            $todaysLogs = LogsModel::whereDate('created_at', Carbon::now())->get();
-            $todaysLogsCount = $todaysLogs->count();
+            // Initialize an array to store the final data
+            $data = [];
         
+            foreach ($logList as $logData) {
+                $authInfo = AuthModel::where('id', $logData->user_id)->first();
+                // $userInfo = UserInfoModel::where('user_id', $logData->user_id)->first();
+
+        
+                // Check if userInfo exists before attempting to decrypt
+                if ($authInfo) {
+                    // Create an array for the current user data in the desired format
+                    $fetchData = [
+                        'id' => $logData->id,
+                        'details' => $logData->details,
+                        'user_action' => $logData->user_action,
+                        'ip_address' => $logData->ip_address,
+                        'created_at' => $logData->created_at,
+        
+                        'authInfo' => [
+                            'email' => $authInfo->email ?? null,
+                        ],
+                        // 'userInfo' => [
+                        //     'first_name' => $userInfo->first_name ? Crypt::decrypt($userInfo->first_name) : null,
+                        //     'last_name' => $userInfo->last_name ? Crypt::decrypt($userInfo->last_name) : null,
+                        // ],
+                    ];
+        
+                    $data[] = $fetchData;
+                }
+            }
+        
+            // Return the user information records in JSON format
             return response()->json([
-                'total_logs' => $totalLogsCount,
-                'todays_total_logs' => $todaysLogsCount,
-                'logs' => $allLogs
-            ], Response::HTTP_OK); // Change the status code to 200 (OK)
+                'message' => $data
+            ], Response::HTTP_OK);
         }catch (\Exception $e) {
             // Handle exceptions and return an error response with CORS headers
             $errorMessage = $e->getMessage();

@@ -21,6 +21,9 @@ class AuthController extends Controller
     public function logIn(Request $request)
     {
         try {
+            $staff = '7d8df57a-8ec2-4429-8261-76ba925684f6';
+            $admin = '823eab88-8328-46ac-bc1b-432aa216ffcd';
+
             $request->validate([
                 'email' => 'required|string|email|max:255',
                 'password' => 'required',
@@ -48,7 +51,7 @@ class AuthController extends Controller
                 ]);
 
                 if ($create) {
-                    if ($user->role == "USER") {
+                    if ($user->role == "USER" || $user->role == "ADMIN") {
                         $newUser = UserInfoModel::where('user_id', $user->id)->doesntExist();
                         if ($newUser) {
                             // Return a success response with CORS headers
@@ -56,7 +59,7 @@ class AuthController extends Controller
                                 'message' => 'New User.',
                                 'sessionLogin' => $verificationToken,
                                 'status' => true,
-                                'role' => $role
+                                'role' => $user->role == "ADMIN" ? $admin : ($user->role == "STAFF" ? $staff : $role)
                             ], Response::HTTP_OK);
                         } else {
                             // Return a success response with CORS headers
@@ -64,7 +67,7 @@ class AuthController extends Controller
                                 'message' => 'Logged in successfully.',
                                 'sessionLogin' => $verificationToken,
                                 'status' => true,
-                                'role' => $role
+                                'role' => $user->role == "ADMIN" ? $admin : ($user->role == "STAFF" ? $staff : $role)
                             ], Response::HTTP_OK);
                         }
                     }
@@ -75,7 +78,7 @@ class AuthController extends Controller
                     'message' => 'Logged in successfully.',
                     'sessionLogin' => $verificationToken,
                     'status' => true,
-                    'role' => $role
+                    'role' =>  $user->role == "ADMIN" ? $admin : $role
                 ], Response::HTTP_OK);
             } else {
                 return response()->json([
@@ -599,6 +602,48 @@ class AuthController extends Controller
                 ], Response::HTTP_OK);
             }
         } catch (\Exception $e) {
+            // Handle exceptions and return an error response with CORS headers
+            $errorMessage = $e->getMessage();
+            $errorCode = $e->getCode();
+
+            // Create a JSON error response
+            $response = [
+                'success' => false,
+                'error' => [
+                    'code' => $errorCode,
+                    'message' => $errorMessage,
+                ],
+            ];
+
+            // Add additional error details if available
+            if ($e instanceof \Illuminate\Validation\ValidationException) {
+                $response['error']['details'] = $e->errors();
+            }
+
+            // Return the JSON error response with CORS headers and an appropriate HTTP status code
+            return response()->json($response, Response::HTTP_INTERNAL_SERVER_ERROR)->header('Content-Type', 'application/json');
+        }
+    }
+    
+    public function logout(string $id){
+         try {
+            $user = AuthModel::where('session_login', $id)
+                ->where('status', 'VERIFIED')
+                ->first();
+        
+            if ($user) {
+                $verificationToken = Str::uuid(); // Generate a UUID token
+                $user->update(['session_login' => $verificationToken]);
+        
+                // Perform any additional logout actions if needed
+        
+                // Return a success response with the new verification token
+                return response()->json(['success' => true, 'message' => 'Logged out successfully', 'verification_token' => $verificationToken], Response::HTTP_OK);
+            } else {
+                // User not found, return a not found response
+                return response()->json(['success' => false, 'message' => 'User not found'], Response::HTTP_OK);
+            }
+        }catch (\Exception $e) {
             // Handle exceptions and return an error response with CORS headers
             $errorMessage = $e->getMessage();
             $errorCode = $e->getCode();
