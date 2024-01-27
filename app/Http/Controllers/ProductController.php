@@ -271,6 +271,118 @@ class ProductController extends Controller
         }
     }
 
+    public function addProductOnArray(Request $request)
+    {
+        try {
+            // Validate the incoming data
+            $validatedData = $request->validate([
+                'products.*.session' => 'required|string',
+                'products.*.id' => 'required|numeric|min:1',
+                'products.*.color' => 'required|string',
+                'products.*.size' => 'required|string',
+                'products.*.price' => 'required|numeric',
+                'products.*.discount' => 'nullable|numeric',
+                'products.*.promo' => 'nullable|string',
+                'products.*.quantity' => 'required|numeric',
+                'products.*.description' => 'nullable|string',
+                'products.*.image' => 'required|image|mimes:jpeg,png,jpg|max:2048',
+            ]);
+
+            foreach ($validatedData['products'] as $productUserInput) {
+                // Fetch User ID
+                $user = AuthModel::where('session_login', $productUserInput['session'] ?? 'asd')
+                    ->where('status', 'VERIFIED')
+                    ->first();
+                if (!$user) {
+                    return response()->json([
+                        'message' => 'Intruder'
+                    ], Response::HTTP_OK);
+                }
+                // Fetch Group I.D
+                $product = ProductModel::where('id', $productUserInput['id'])->first();
+                if (!$product) {
+                    return response()->json([
+                        'message' => 'Intruder'
+                    ], Response::HTTP_OK);
+                }
+
+                $image = $productUserInput['image'];
+                $imageActualExt = $image->getClientOriginalExtension();
+                do {
+                    $filename = uniqid() . "_" . time() . "_" . mt_rand() . "." . $imageActualExt;
+                } while (ProductModel::where('image', $filename)->exists());
+                // Store the image on the 'public' disk with the generated filename
+                Storage::disk('public')->put($filename, file_get_contents($image));
+
+                do {
+                    $uuid = Str::uuid();
+                } while (ProductModel::where('image', $filename)->exists());
+                $created = ProductModel::create([
+                    'group_id' => $product->group_id,
+                    'image' => $filename,
+                    'name' => $product->name,
+                    'price' => $productUserInput['price'],
+                    'quantity' => $productUserInput['quantity'],
+                    'category' =>  $product->category,
+                    'color' => $productUserInput['color'],
+                    'size' => $productUserInput['size'],
+                    'discount' => $productUserInput['discount'],
+                    'description' => $productUserInput['description'],
+                    'promo' => $productUserInput['promo'],
+                ]);
+                if ($created) {
+                    $userAction = 'CREATE';
+                    $details = 'Add Product Information with Group ID: ' . $uuid . "\n" .
+                        'Role: ' . "\n" .
+                        'Image Name: ' . $filename . "\n" .
+                        'Name: ' . $product->name . "\n" .
+                        'Price: ' . $productUserInput['price'] . "\n" .
+                        'Quantity: ' . $productUserInput['quantity'] . "\n" .
+                        'Category: ' . $product->category . "\n" .
+                        'Color: ' . $productUserInput['color'] . "\n" .
+                        'Size: ' .  $productUserInput['size'] . "\n" .
+                        'Discount: ' . $productUserInput['discount'] . "\n" .
+                        'Description: ' . $productUserInput['description'] . "\n" .
+                        'Promo: ' . $productUserInput['promo'] . "\n";
+
+                    LogsModel::create([
+                        'user_id' => $user->id,
+                        'ip_address' => $request->ip(),
+                        'user_action' => $userAction,
+                        'details' => $details,
+                        'created_at' => Carbon::now()
+                    ]);
+                }
+            }
+
+            // Return a success response with CORS headers
+            return response()->json([
+                'message' => 'Created'
+            ], Response::HTTP_OK);
+        } catch (\Exception $e) {
+            // Handle exceptions and return an error response with CORS headers
+            $errorMessage = $e->getMessage();
+            $errorCode = $e->getCode();
+
+            // Create a JSON error response
+            $response = [
+                'success' => false,
+                'error' => [
+                    'code' => $errorCode,
+                    'message' => $errorMessage,
+                ],
+            ];
+
+            // Add additional error details if available
+            if ($e instanceof \Illuminate\Validation\ValidationException) {
+                $response['error']['details'] = $e->errors();
+            }
+
+            // Return the JSON error response with CORS headers and an appropriate HTTP status code
+            return response()->json($response, Response::HTTP_INTERNAL_SERVER_ERROR)->header('Content-Type', 'application/json');
+        }
+    }
+
     /**
      * Show the form for editing the specified resource.
      */
@@ -361,7 +473,7 @@ class ProductController extends Controller
                 if ($data->isDirty('description')) {
                     $originalDescription = $data->getOriginal('description');
                     $newDescription = $data->description;
-                
+
                     // Check if the new description is an empty string
                     if ($newDescription === '') {
                         // Set 'description' to NULL in the database
@@ -610,7 +722,6 @@ class ProductController extends Controller
                                 ], Response::HTTP_OK);
                             }
                         }
-
                     } else {
                         // Update a single product with the same group_id to have role 'MAIN'
                         $affectedRows = ProductModel::where('group_id', $data->group_id)

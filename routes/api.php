@@ -90,6 +90,8 @@ Route::get('product/index', [ProductController::class, 'index']);
 Route::post('product/store', [ProductController::class, 'store']);
 // Add Product with same group Id
 Route::post('product/add', [ProductController::class, 'addProduct']);
+// Add Product with same group Id then its an array
+Route::post('product/add/array', [ProductController::class, 'addProductOnArray']);
 // Update Product
 Route::post('product/update/{id}', [ProductController::class, 'update']);
 // Update All Product
