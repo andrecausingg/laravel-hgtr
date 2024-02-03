@@ -5,14 +5,15 @@ namespace App\Http\Controllers;
 use App\Models\AuthModel;
 use App\Models\LogsModel;
 use App\Models\OrderModel;
+use Illuminate\Support\Str;
 use App\Models\ProductModel;
+use Illuminate\Http\Request;
 use App\Models\UserInfoModel;
 use App\Models\VouchersModel;
-use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
 
 class OrderController extends Controller
@@ -20,200 +21,200 @@ class OrderController extends Controller
 
     public function index()
     {
-          try {
-        // Fetch all orders from the OrderModel
-        $orders = OrderModel::all();
+        try {
+            // Fetch all orders from the OrderModel
+            $orders = OrderModel::all();
 
-        // Initialize an array to store the final data
-        $data = [];
+            // Initialize an array to store the final data
+            $data = [];
 
-        // Loop through each order
-        foreach ($orders as $order) {
-            // Check if user_id is available
-            if (!$order->user_id) {
-                // Handle the case where user_id is not available
-                // You may log a warning or skip the current iteration based on your requirements
-                continue; // Skip the current iteration and move to the next order
-            }
+            // Loop through each order
+            foreach ($orders as $order) {
+                // Check if user_id is available
+                if (!$order->user_id) {
+                    // Handle the case where user_id is not available
+                    // You may log a warning or skip the current iteration based on your requirements
+                    continue; // Skip the current iteration and move to the next order
+                }
 
-            // Retrieve user information for the current booking
-            $userInfo = UserInfoModel::where('user_id', $order->user_id)->first();
-            $authInfo = AuthModel::where('id', $order->user_id)->first();
+                // Retrieve user information for the current booking
+                $userInfo = UserInfoModel::where('user_id', $order->user_id)->first();
+                $authInfo = AuthModel::where('id', $order->user_id)->first();
 
-            // Check if user information is available
-            if (!$userInfo || !$authInfo) {
-                // Handle the case where user information is not found
-                // You may log a warning, provide default values, or skip the current iteration based on your requirements
-                $defaultUserInfo = [
-                    'first_name' => null,
-                    'last_name' => null,
-                    'contact_num' => null,
-                    'address_1' => null,
-                    'address_2' => null,
-                    'region_code' => null,
-                    'province_code' => null,
-                    'city_or_municipality_code' => null,
-                    'region_name' => null,
-                    'province_name' => null,
-                    'city_or_municipality_name' => null,
-                    'barangay' => null,
-                    'description_location' => null,
-                    // ... (other fields with default values)
-                ];
+                // Check if user information is available
+                if (!$userInfo || !$authInfo) {
+                    // Handle the case where user information is not found
+                    // You may log a warning, provide default values, or skip the current iteration based on your requirements
+                    $defaultUserInfo = [
+                        'first_name' => null,
+                        'last_name' => null,
+                        'contact_num' => null,
+                        'address_1' => null,
+                        'address_2' => null,
+                        'region_code' => null,
+                        'province_code' => null,
+                        'city_or_municipality_code' => null,
+                        'region_name' => null,
+                        'province_name' => null,
+                        'city_or_municipality_name' => null,
+                        'barangay' => null,
+                        'description_location' => null,
+                        // ... (other fields with default values)
+                    ];
 
-                $defaultAuthInfo = [
-                    'email' => null,
-                    // ... (other fields with default values)
-                ];
+                    $defaultAuthInfo = [
+                        'email' => null,
+                        // ... (other fields with default values)
+                    ];
 
-                // Create an array for the current booking data with default values
+                    // Create an array for the current booking data with default values
+                    $bookingData = [
+                        'authInfo' => $defaultAuthInfo,
+                        'userInfo' => $defaultUserInfo,
+                        'id' => null,
+                        'user_id' => null,
+                        'group_id' => null,
+                        'order_id' => null,
+                        'product_group_id' => null,
+                        'voucher_shipping_id' => null,
+                        'voucher_discount_id' => null,
+                        'role' => null,
+                        'category' => null,
+                        'name' => null,
+                        'image' => null,
+                        'size' => null,
+                        'color' => null,
+                        'quantity' => null,
+                        'discount' => null,
+                        'description' => null,
+                        'promo' => null,
+                        'promo_buy_and_take_count' => null,
+                        'voucher_name_shipping' => null,
+                        'voucher_name_discount' => null,
+                        'voucher_discount' => null,
+                        'product_price' => null,
+                        'shipping_fee' => null,
+                        'total_price' => null,
+                        'final_total_price' => null,
+                        'payment_method' => null,
+                        'status' => null,
+                        'reason_cancel' => null,
+                        'return_reason' => null,
+                        'return_image1' => null,
+                        'return_image2' => null,
+                        'return_image3' => null,
+                        'return_image4' => null,
+                        'return_description' => null,
+                        'return_solution' => null,
+                        'return_shipping_at' => null,
+                        'return_accept_at' => null,
+                        'return_decline_at' => null,
+                        'return_completed_at' => null,
+                        'return_failed_at' => null,
+                        'check_out_at' => null,
+                        'cancel_at' => null,
+                        'order_receive_at' => null,
+                        'mark_as_done_at' => null,
+                        'ship_at' => null,
+                        'completed_at' => null,
+                        'failed_at' => null,
+                        'return_at' => null,
+                        'created_at' => null,
+                        'updated_at' => null,
+                        // ... (other fields with default values)
+                    ];
+
+                    // Add the current booking data to the final data array
+                    $data[] = $bookingData;
+
+                    // Skip the current iteration and move to the next order
+                    continue;
+                }
+
+                // Create an array for the current booking data in the desired format
                 $bookingData = [
-                    'authInfo' => $defaultAuthInfo,
-                    'userInfo' => $defaultUserInfo,
-                    'id' => null,
-                    'user_id' => null,
-                    'group_id' => null,
-                    'order_id' => null,
-                    'product_group_id' => null,
-                    'voucher_shipping_id' => null,
-                    'voucher_discount_id' => null,
-                    'role' => null,
-                    'category' => null,
-                    'name' => null,
-                    'image' => null,
-                    'size' => null,
-                    'color' => null,
-                    'quantity' => null,
-                    'discount' => null,
-                    'description' => null,
-                    'promo' => null,
-                    'promo_buy_and_take_count' => null,
-                    'voucher_name_shipping' => null,
-                    'voucher_name_discount' => null,
-                    'voucher_discount' => null,
-                    'product_price' => null,
-                    'shipping_fee' => null,
-                    'total_price' => null,
-                    'final_total_price' => null,
-                    'payment_method' => null,
-                    'status' => null,
-                    'reason_cancel' => null,
-                    'return_reason' => null,
-                    'return_image1' => null,
-                    'return_image2' => null,
-                    'return_image3' => null,
-                    'return_image4' => null,
-                    'return_description' => null,
-                    'return_solution' => null,
-                    'return_shipping_at' => null,
-                    'return_accept_at' => null,
-                    'return_decline_at' => null,
-                    'return_completed_at' => null,
-                    'return_failed_at' => null,
-                    'check_out_at' => null,
-                    'cancel_at' => null,
-                    'order_receive_at' => null,
-                    'mark_as_done_at' => null,
-                    'ship_at' => null,
-                    'completed_at' => null,
-                    'failed_at' => null,
-                    'return_at' => null,
-                    'created_at' => null,
-                    'updated_at' => null,
-                    // ... (other fields with default values)
+                    'authInfo' => [
+                        'email' => $authInfo->email,
+                        // ... (other fields from authInfo)
+                    ],
+                    'userInfo' => [
+                        'first_name' => Crypt::decrypt($userInfo->first_name) ?? null,
+                        'last_name' => Crypt::decrypt($userInfo->last_name) ?? null,
+                        'contact_num' => Crypt::decrypt($userInfo->contact_num) ?? null,
+                        'address_1' => Crypt::decrypt($userInfo->address_1) ?? null,
+                        'address_2' => Crypt::decrypt($userInfo->address_2) ?? null,
+                        'region_code' => Crypt::decrypt($userInfo->region_code) ?? null,
+                        'province_code' => Crypt::decrypt($userInfo->province_code) ?? null,
+                        'city_or_municipality_code' => Crypt::decrypt($userInfo->city_or_municipality_code) ?? null,
+                        'region_name' => Crypt::decrypt($userInfo->region_name) ?? null,
+                        'province_name' => Crypt::decrypt($userInfo->province_name) ?? null,
+                        'city_or_municipality_name' => Crypt::decrypt($userInfo->city_or_municipality_name) ?? null,
+                        'barangay' => Crypt::decrypt($userInfo->barangay) ?? null,
+                        'description_location' => Crypt::decrypt($userInfo->description_location) ?? null,
+                        // ... (other fields from userInfo)
+                    ],
+                    'id' => $order->id,
+                    'user_id' => $order->user_id,
+                    'group_id' => $order->group_id,
+                    'order_id' => $order->order_id,
+                    'product_group_id' => $order->product_group_id,
+                    'voucher_shipping_id' => $order->voucher_shipping_id,
+                    'voucher_discount_id' => $order->voucher_discount_id,
+                    'role' => $order->role,
+                    'category' => $order->category,
+                    'name' => $order->name,
+                    'image' => $order->image,
+                    'size' => $order->size,
+                    'color' => $order->color,
+                    'quantity' => $order->quantity,
+                    'discount' => $order->discount,
+                    'description' => $order->description,
+                    'promo' => $order->promo,
+                    'promo_buy_and_take_count' => $order->promo_buy_and_take_count,
+                    'voucher_name_shipping' => $order->voucher_name_shipping,
+                    'voucher_name_discount' => $order->voucher_name_discount,
+                    'voucher_discount' => $order->voucher_discount,
+                    'product_price' => $order->product_price,
+                    'shipping_fee' => $order->shipping_fee,
+                    'total_price' => $order->total_price,
+                    'final_total_price' => $order->final_total_price,
+                    'payment_method' => $order->payment_method,
+                    'status' => $order->status,
+                    'reason_cancel' => $order->reason_cancel,
+                    'return_reason' => $order->return_reason,
+                    'return_image1' => $order->return_image1,
+                    'return_image2' => $order->return_image2,
+                    'return_image3' => $order->return_image3,
+                    'return_image4' => $order->return_image4,
+                    'return_description' => $order->return_description,
+                    'return_solution' => $order->return_solution,
+                    'return_shipping_at' => $order->return_shipping_at,
+                    'return_accept_at' => $order->return_accept_at,
+                    'return_decline_at' => $order->return_decline_at,
+                    'return_completed_at' => $order->return_completed_at,
+                    'return_failed_at' => $order->return_failed_at,
+                    'check_out_at' => $order->check_out_at,
+                    'cancel_at' => $order->cancel_at,
+                    'order_receive_at' => $order->order_receive_at,
+                    'mark_as_done_at' => $order->mark_as_done_at,
+                    'ship_at' => $order->ship_at,
+                    'completed_at' => $order->completed_at,
+                    'failed_at' => $order->failed_at,
+                    'return_at' => $order->return_at,
+                    'created_at' => $order->created_at,
+                    'updated_at' => $order->updated_at,
+                    // ... (other fields from $order)
                 ];
 
                 // Add the current booking data to the final data array
                 $data[] = $bookingData;
-
-                // Skip the current iteration and move to the next order
-                continue;
             }
 
-            // Create an array for the current booking data in the desired format
-            $bookingData = [
-                'authInfo' => [
-                    'email' => $authInfo->email,
-                    // ... (other fields from authInfo)
-                ],
-                'userInfo' => [
-                    'first_name' => Crypt::decrypt($userInfo->first_name) ?? null,
-                    'last_name' => Crypt::decrypt($userInfo->last_name) ?? null,
-                    'contact_num' => Crypt::decrypt($userInfo->contact_num) ?? null,
-                    'address_1' => Crypt::decrypt($userInfo->address_1) ?? null,
-                    'address_2' => Crypt::decrypt($userInfo->address_2) ?? null,
-                    'region_code' => Crypt::decrypt($userInfo->region_code) ?? null,
-                    'province_code' => Crypt::decrypt($userInfo->province_code) ?? null,
-                    'city_or_municipality_code' => Crypt::decrypt($userInfo->city_or_municipality_code) ?? null,
-                    'region_name' => Crypt::decrypt($userInfo->region_name) ?? null,
-                    'province_name' => Crypt::decrypt($userInfo->province_name) ?? null,
-                    'city_or_municipality_name' => Crypt::decrypt($userInfo->city_or_municipality_name) ?? null,
-                    'barangay' => Crypt::decrypt($userInfo->barangay) ?? null,
-                    'description_location' => Crypt::decrypt($userInfo->description_location) ?? null,
-                    // ... (other fields from userInfo)
-                ],
-                'id' => $order->id,
-                'user_id' => $order->user_id,
-                'group_id' => $order->group_id,
-                'order_id' => $order->order_id,
-                'product_group_id' => $order->product_group_id,
-                'voucher_shipping_id' => $order->voucher_shipping_id,
-                'voucher_discount_id' => $order->voucher_discount_id,
-                'role' => $order->role,
-                'category' => $order->category,
-                'name' => $order->name,
-                'image' => $order->image,
-                'size' => $order->size,
-                'color' => $order->color,
-                'quantity' => $order->quantity,
-                'discount' => $order->discount,
-                'description' => $order->description,
-                'promo' => $order->promo,
-                'promo_buy_and_take_count' => $order->promo_buy_and_take_count,
-                'voucher_name_shipping' => $order->voucher_name_shipping,
-                'voucher_name_discount' => $order->voucher_name_discount,
-                'voucher_discount' => $order->voucher_discount,
-                'product_price' => $order->product_price,
-                'shipping_fee' => $order->shipping_fee,
-                'total_price' => $order->total_price,
-                'final_total_price' => $order->final_total_price,
-                'payment_method' => $order->payment_method,
-                'status' => $order->status,
-                'reason_cancel' => $order->reason_cancel,
-                'return_reason' => $order->return_reason,
-                'return_image1' => $order->return_image1,
-                'return_image2' => $order->return_image2,
-                'return_image3' => $order->return_image3,
-                'return_image4' => $order->return_image4,
-                'return_description' => $order->return_description,
-                'return_solution' => $order->return_solution,
-                'return_shipping_at' => $order->return_shipping_at,
-                'return_accept_at' => $order->return_accept_at,
-                'return_decline_at' => $order->return_decline_at,
-                'return_completed_at' => $order->return_completed_at,
-                'return_failed_at' => $order->return_failed_at,
-                'check_out_at' => $order->check_out_at,
-                'cancel_at' => $order->cancel_at,
-                'order_receive_at' => $order->order_receive_at,
-                'mark_as_done_at' => $order->mark_as_done_at,
-                'ship_at' => $order->ship_at,
-                'completed_at' => $order->completed_at,
-                'failed_at' => $order->failed_at,
-                'return_at' => $order->return_at,
-                'created_at' => $order->created_at,
-                'updated_at' => $order->updated_at,
-                // ... (other fields from $order)
-            ];
-
-            // Add the current booking data to the final data array
-            $data[] = $bookingData;
-        }
-
-        // Return the user information records in JSON format
-        return response()->json([
-            'data' => $data
-        ], Response::HTTP_OK);
-    }catch (\Exception $e) {
+            // Return the user information records in JSON format
+            return response()->json([
+                'data' => $data
+            ], Response::HTTP_OK);
+        } catch (\Exception $e) {
             // Handle exceptions and return an error response with CORS headers
             $errorMessage = $e->getMessage();
             $errorCode = $e->getCode();
@@ -349,6 +350,36 @@ class OrderController extends Controller
                             $checkSameOrder->total_price = $finalTotalPrice;
                             $checkSameOrder->quantity = $finalTotalQuantity;
                             if ($checkSameOrder->save()) {
+                                // ************************************ //
+                                // Buy 3 for 990 promo
+                                // Fetch orders based on the provided criteria
+                                $buy3For990 = OrderModel::where('status', 'UNPAID')
+                                    ->where('user_id', $user->id)
+                                    ->where('category', $product->category)
+                                    ->where('name', $product->name)
+                                    ->where('promo', 'BUY 3 FOR 990')
+                                    ->where('color', $request->input('color'))
+                                    ->where('size', $request->input('size'))
+                                    ->first(); // Use first() to get a single order
+
+                                if ($buy3For990) {
+                                    $quantity = $buy3For990->quantity;
+
+                                    // Calculate the total price based on the promo logic
+                                    $divisibleBy3 = intdiv($quantity, 3);
+                                    $basePrice = $divisibleBy3 * 990;
+                                    $additionalItems = $quantity % 3;
+                                    $additionalPrice = $additionalItems * $buy3For990->product_price;
+
+                                    // Update the order's total price
+                                    $buy3For990->total_price = $basePrice + $additionalPrice;
+
+                                    // Save the updated order
+                                    $buy3For990->save();
+                                }
+                                // ************************************ //
+
+
                                 // Fetch the total Quantity
                                 $fetchAllQuantityAndCalculateShippingFee = OrderModel::where('user_id', $user->id)
                                     ->where('status', 'UNPAID')
@@ -466,6 +497,31 @@ class OrderController extends Controller
 
                             // Logs
                             if ($created) {
+                                // ************************************ //
+                                // Buy 3 for 990 promo
+                                // Fetch orders based on the provided criteria
+                                $buy3For990 = OrderModel::where('status', 'UNPAID')
+                                    ->where('user_id', $user->id)
+                                    ->where('promo', 'BUY 3 FOR 990')
+                                    ->get();
+
+                                foreach ($buy3For990 as $order) {
+                                    $quantity = $order->quantity;
+
+                                    // Calculate the total price based on the promo logic
+                                    $divisibleBy3 = intdiv($quantity, 3);
+                                    $basePrice = $divisibleBy3 * 990;
+                                    $additionalItems = $quantity % 3;
+                                    $additionalPrice = $additionalItems * $order->product_price;
+
+                                    // Update the order's total price
+                                    $order->total_price = $basePrice + $additionalPrice;
+
+                                    // Save the updated order
+                                    $order->save();
+                                }
+                                // ************************************ //
+
 
                                 // ****************************//
                                 // 'BUY 1 TAKE 1' promo
@@ -502,7 +558,6 @@ class OrderController extends Controller
                                     $latestOrderBuy2Take1->save();
                                 }
                                 // ****************************//
-
 
                                 $userAction = 'CREATED';
                                 $details = 'Created Product Information with Group ID: ' . $product->group_id . "\n" .
@@ -619,6 +674,9 @@ class OrderController extends Controller
                             $checkSameOrder->total_price = $finalTotalPrice;
                             $checkSameOrder->quantity = $finalTotalQuantity;
                             if ($checkSameOrder->save()) {
+
+
+
                                 // Fetch the total Quantity
                                 $fetchAllQuantityAndCalculateShippingFee = OrderModel::where('user_id', $user->id)
                                     ->where('status', 'UNPAID')
@@ -649,6 +707,8 @@ class OrderController extends Controller
                                     ->where('role', 'MAIN')
                                     ->first();
                                 $updateShippingFeeNow->shipping_fee = calculateShippingFee($totalQuantity);
+
+
 
                                 // ****************************//
                                 // CALCULATING THE FINAL TOTAL PRICE UNPAID
@@ -707,6 +767,31 @@ class OrderController extends Controller
                             ]);
 
                             if ($created) {
+                                // ************************************ //
+                                // Buy 3 for 990 promo
+                                // Fetch orders based on the provided criteria
+                                $buy3For990 = OrderModel::where('status', 'UNPAID')
+                                    ->where('user_id', $user->id)
+                                    ->where('promo', 'BUY 3 FOR 990')
+                                    ->get();
+
+                                foreach ($buy3For990 as $order) {
+                                    $quantity = $order->quantity;
+
+                                    // Calculate the total price based on the promo logic
+                                    $divisibleBy3 = intdiv($quantity, 3);
+                                    $basePrice = $divisibleBy3 * 990;
+                                    $additionalItems = $quantity % 3;
+                                    $additionalPrice = $additionalItems * $order->product_price;
+
+                                    // Update the order's total price
+                                    $order->total_price = $basePrice + $additionalPrice;
+
+                                    // Save the updated order
+                                    $order->save();
+                                }
+                                // ************************************ //
+
                                 // ****************************//
                                 // CALCULATING THE FINAL TOTAL PRICE UNPAID
                                 $getAllOderUnpaid = OrderModel::where('user_id', $user->id)
@@ -722,6 +807,8 @@ class OrderController extends Controller
                                     $getAllOderUnpaid->final_total_price = $totalPriceSumUnPaid;
                                     $getAllOderUnpaid->save();
                                 }
+                                // ****************************//
+
 
                                 // ****************************//
                                 // 'BUY 1 TAKE 1' promo
@@ -941,6 +1028,31 @@ class OrderController extends Controller
                                 ->first();
                             $updateShippingFeeNow->shipping_fee = calculateShippingFee($totalQuantity);
 
+
+                            // ************************************ //
+                            // Buy 3 for 990 promo
+                            // Fetch orders based on the provided criteria
+                            $buy3For990 = OrderModel::where('id', $id)
+                                ->where('user_id', $user->id)
+                                ->first(); // Use first() to get a single order
+
+                            if ($buy3For990) {
+                                $quantity = $buy3For990->quantity;
+
+                                // Calculate the total price based on the promo logic
+                                $divisibleBy3 = intdiv($quantity, 3);
+                                $basePrice = $divisibleBy3 * 990;
+                                $additionalItems = $quantity % 3;
+                                $additionalPrice = $additionalItems * $buy3For990->product_price;
+
+                                // Update the order's total price
+                                $buy3For990->total_price = $basePrice + $additionalPrice;
+
+                                // Save the updated order
+                                $buy3For990->save();
+                            }
+                            // ************************************ //
+
                             // ****************************//
                             // CALCULATING THE FINAL TOTAL PRICE UNPAID
                             $getAllOderUnpaid = OrderModel::where('user_id', $user->id)
@@ -1138,41 +1250,45 @@ class OrderController extends Controller
 
                         if ($create) {
                             if ($data->delete()) {
+                                // ************************************ //
+                                // Buy 3 for 990 promo
+                                // Fetch orders based on the provided criteria
+                                $buy3For990 = OrderModel::where('id', $id)
+                                    ->where('user_id', $user->id)
+                                    ->first(); // Use first() to get a single order
+
+                                if ($buy3For990) {
+                                    $quantity = $buy3For990->quantity;
+
+                                    // Calculate the total price based on the promo logic
+                                    $divisibleBy3 = intdiv($quantity, 3);
+                                    $basePrice = $divisibleBy3 * 990;
+                                    $additionalItems = $quantity % 3;
+                                    $additionalPrice = $additionalItems * $buy3For990->product_price;
+
+                                    // Update the order's total price
+                                    $buy3For990->total_price = $basePrice + $additionalPrice;
+
+                                    // Save the updated order
+                                    $buy3For990->save();
+                                }
+                                // ************************************ //
+
                                 // ****************************//
-                                // CALCULATING THE PRICE WITH 390
-                                // Find the orders that match the specified conditions
-                                $ordersToUpdate = OrderModel::where('user_id', $user->id)
+                                // CALCULATING THE FINAL TOTAL PRICE UNPAID
+                                $getAllOderUnpaid = OrderModel::where('user_id', $user->id)
                                     ->where('status', 'UNPAID')
-                                    ->where('product_price', 390) // Filter by product price 390
-                                    ->get(); // Get all matching orders
+                                    ->first(); // Get the first matching order
 
-                                $totalQuantity = 0; // Initialize the total quantity to 0
-                                foreach ($ordersToUpdate as $order) {
-                                    $totalQuantity += $order->quantity;
+                                if ($getAllOderUnpaid) { // Check if there is a matching order
+                                    $totalPriceSumUnPaid = OrderModel::where('user_id', $user->id)
+                                        ->where('status', 'UNPAID')
+                                        ->sum('total_price');
+
+                                    // Update the final_total_price of the first matching order
+                                    $getAllOderUnpaid->final_total_price = $totalPriceSumUnPaid;
+                                    $getAllOderUnpaid->save();
                                 }
-
-                                // Calculate the new total price based on the fixed price of 1000 for every 3 products
-                                $countDivisibleBy3 = (int) ($totalQuantity / 3);
-                                $specialPrice = $countDivisibleBy3 * 1000;
-                                $remainder = $totalQuantity % 3;
-                                $totalPriceRemainder = $remainder * 390;
-                                $ordersToUpdateNot390 = OrderModel::where('user_id', $user->id)
-                                    ->where('status', 'UNPAID')
-                                    ->where('product_price', '!=', 390)
-                                    ->get();
-                                $totalPrice = 0; // Initialize the total price to 0
-                                foreach ($ordersToUpdateNot390 as $order) {
-                                    $totalPrice += $order->product_price;
-                                }
-
-                                // SAVE THE CALCULATED FINAL PRICE
-                                // Update the final_total_price for each order
-                                $updateCalcuFinalPrice = OrderModel::where('user_id', $user->id)
-                                    ->where('status', 'UNPAID')
-                                    ->where('role', 'MAIN')
-                                    ->first();
-                                $updateCalcuFinalPrice->final_total_price = $specialPrice + $totalPriceRemainder + $totalPrice;
-                                $updateCalcuFinalPrice->save(); // Save the changes to each order
                                 // ****************************//
 
 
@@ -1244,43 +1360,46 @@ class OrderController extends Controller
                 // Calculate Shipping Fee Always
                 if ($create) {
                     if ($data->delete()) {
-                        // ****************************//
-                        // CALCULATING THE PRICE WITH 390
-                        // Find the orders that match the specified conditions
-                        $ordersToUpdate = OrderModel::where('user_id', $user->id)
-                            ->where('status', 'UNPAID')
-                            ->where('product_price', 390) // Filter by product price 390
-                            ->get(); // Get all matching orders
+                        // ************************************ //
+                        // Buy 3 for 990 promo
+                        // Fetch orders based on the provided criteria
+                        $buy3For990 = OrderModel::where('id', $id)
+                            ->where('user_id', $user->id)
+                            ->first(); // Use first() to get a single order
 
-                        $totalQuantity = 0; // Initialize the total quantity to 0
-                        foreach ($ordersToUpdate as $order) {
-                            $totalQuantity += $order->quantity;
+                        if ($buy3For990) {
+                            $quantity = $buy3For990->quantity;
+
+                            // Calculate the total price based on the promo logic
+                            $divisibleBy3 = intdiv($quantity, 3);
+                            $basePrice = $divisibleBy3 * 990;
+                            $additionalItems = $quantity % 3;
+                            $additionalPrice = $additionalItems * $buy3For990->product_price;
+
+                            // Update the order's total price
+                            $buy3For990->total_price = $basePrice + $additionalPrice;
+
+                            // Save the updated order
+                            $buy3For990->save();
                         }
+                        // ************************************ //
 
-                        // Calculate the new total price based on the fixed price of 1000 for every 3 products
-                        $countDivisibleBy3 = (int) ($totalQuantity / 3);
-                        $specialPrice = $countDivisibleBy3 * 1000;
-                        $remainder = $totalQuantity % 3;
-                        $totalPriceRemainder = $remainder * 390;
-                        $ordersToUpdateNot390 = OrderModel::where('user_id', $user->id)
-                            ->where('status', 'UNPAID')
-                            ->where('product_price', '!=', 390)
-                            ->get();
-                        $totalPrice = 0; // Initialize the total price to 0
-                        foreach ($ordersToUpdateNot390 as $order) {
-                            $totalPrice += $order->product_price;
-                        }
-
-                        // SAVE THE CALCULATED FINAL PRICE
-                        // Update the final_total_price for each order
-                        $updateCalcuFinalPrice = OrderModel::where('user_id', $user->id)
-                            ->where('status', 'UNPAID')
-                            ->where('role', 'MAIN')
-                            ->first();
-                        $updateCalcuFinalPrice->final_total_price = $specialPrice + $totalPriceRemainder + $totalPrice;
-                        $updateCalcuFinalPrice->save(); // Save the changes to each order
                         // ****************************//
+                        // CALCULATING THE FINAL TOTAL PRICE UNPAID
+                        $getAllOderUnpaid = OrderModel::where('user_id', $user->id)
+                            ->where('status', 'UNPAID')
+                            ->first(); // Get the first matching order
 
+                        if ($getAllOderUnpaid) { // Check if there is a matching order
+                            $totalPriceSumUnPaid = OrderModel::where('user_id', $user->id)
+                                ->where('status', 'UNPAID')
+                                ->sum('total_price');
+
+                            // Update the final_total_price of the first matching order
+                            $getAllOderUnpaid->final_total_price = $totalPriceSumUnPaid;
+                            $getAllOderUnpaid->save();
+                        }
+                        // ****************************//
 
                         $fetchAllQuantityAndCalculateShippingFee = OrderModel::where('user_id', $user->id)
                             ->where('status', 'UNPAID')
@@ -1665,7 +1784,7 @@ class OrderController extends Controller
             $user = AuthModel::where('session_login', $request->input('session') ?? 'asd')
                 ->where('status', 'VERIFIED')
                 ->first();
-                
+
             if ($user) {
                 $order = OrderModel::find($id);
                 return response()->json([
@@ -1676,7 +1795,6 @@ class OrderController extends Controller
                     'message' => 'Intruder'
                 ], Response::HTTP_OK);
             }
-
         } catch (\Exception $e) {
             // Handle exceptions and return an error response with CORS headers
             $errorMessage = $e->getMessage();
@@ -1710,7 +1828,7 @@ class OrderController extends Controller
             $user = AuthModel::where('session_login', $request->input('session') ?? 'asd')
                 ->where('status', 'VERIFIED')
                 ->first();
-                
+
             if ($user) {
                 $request->validate([
                     'reasonCancel' => 'required|string',
@@ -2252,7 +2370,6 @@ class OrderController extends Controller
                     'message' => 'Intruder'
                 ], Response::HTTP_OK);
             }
-
         } catch (\Exception $e) {
             // Handle exceptions and return an error response with CORS headers
             $errorMessage = $e->getMessage();
@@ -2278,7 +2395,7 @@ class OrderController extends Controller
     }
 
     // RETURN ON TO RECEIVED | CLIENT
-    public function return (Request $request, $id)
+    public function return(Request $request, $id)
     {
         try {
             // Fetch User ID
@@ -2379,7 +2496,6 @@ class OrderController extends Controller
                         }
                     }
                 } else {
-
                 }
             } else {
                 return response()->json([
@@ -2424,7 +2540,7 @@ class OrderController extends Controller
                 $orderNow = OrderModel::where('id', $id)
                     ->where('status', 'SHIPPING')
                     ->first();
-                
+
                 // Check if an order was found
                 if ($orderNow) {
                     // Extract necessary information from the order
@@ -2435,7 +2551,7 @@ class OrderController extends Controller
                     $color = $orderNow->color;
                     $quantity = $orderNow->quantity;
                     $promoBuyAndTakeCount = $orderNow->promo_buy_and_take_count;
-                
+
                     // Find the corresponding product using the extracted information
                     $product = ProductModel::where('group_id', $productGroupId)
                         ->where('name', $name)
@@ -2443,7 +2559,7 @@ class OrderController extends Controller
                         ->where('color', $color)
                         ->where('size', $size)
                         ->first();
-                
+
                     // Check if the product exists
                     if ($product) {
                         // Check if there is enough quantity to update
@@ -2465,8 +2581,8 @@ class OrderController extends Controller
                     // Handle the case where no order is found with the specified conditions
                     // For example: Log::info("No order found for ID: {$id}");
                 }
-                
-                
+
+
                 $order = OrderModel::where('id', $id)
                     ->where('status', 'SHIPPING')
                     ->where('user_id', $user->id)
@@ -2863,11 +2979,11 @@ class OrderController extends Controller
                 ->first();
 
             if ($user) {
-                 // Fetch orders with 'TO SHIP / TO PROCESS' status for a given group ID
+                // Fetch orders with 'TO SHIP / TO PROCESS' status for a given group ID
                 $orderNow = OrderModel::where('group_id', $id)
                     ->where('status', 'TO SHIP / TO PROCESS')
                     ->get();
-                
+
                 // Process each order
                 foreach ($orderNow as $order) {
                     // Extract necessary information from the order
@@ -2878,7 +2994,7 @@ class OrderController extends Controller
                     $color = $order->color;
                     $quantity = $order->quantity;
                     $promoBuyAndTakeCount = $order->promo_buy_and_take_count;
-                
+
                     // Find the corresponding product using the extracted information
                     $product = ProductModel::where('group_id', $productGroupId)
                         ->where('name', $name)
@@ -2886,7 +3002,7 @@ class OrderController extends Controller
                         ->where('color', $color)
                         ->where('size', $size)
                         ->first();
-                
+
                     // Check if the product exists
                     if ($product) {
                         // Check if there is enough quantity to update
@@ -2905,8 +3021,8 @@ class OrderController extends Controller
                         // For example: Log::error("Product not found for order: {$order->id}");
                     }
                 }
-                
-                
+
+
                 $affectedRows = OrderModel::where('group_id', $id)
                     ->where('status', 'TO SHIP / TO PROCESS')
                     ->update([
@@ -3686,5 +3802,4 @@ class OrderController extends Controller
             return response()->json($response, Response::HTTP_INTERNAL_SERVER_ERROR)->header('Content-Type', 'application/json');
         }
     }
-
 }
