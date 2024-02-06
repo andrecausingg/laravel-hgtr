@@ -736,10 +736,20 @@ class OrderController extends Controller
                         } else {
                             // Fresh Create
                             // Calculate Shipping Fee
-                            $quantity = (int) $request->input('quantity');
+                            $quantity = (int)  $request->input('quantity');
                             $baseShippingFee = 100;
-                            $numGroups = floor($quantity / 5);
-                            $shippingFees = ($numGroups * $baseShippingFee) + ($product->promo !== 'BUY 3 FOR 990 WITH FREE SHIPPING' ? $baseShippingFee : 0);
+
+                            $additionalItemss = $quantity % 3;
+                            if ($product->promo === 'BUY 3 FOR 990 WITH FREE SHIPPING') {
+                                if ($additionalItemss !== 0) {
+                                    $numGroups = floor($additionalItemss / 5);
+                                } else {
+                                    $numGroups = $additionalItemss;
+                                }
+                            } else {
+                                $numGroups = floor($quantity / 5);
+                            }
+                            $shippingFees = ($numGroups * $baseShippingFee) + $numGroups !== 0 ? $baseShippingFee : 0;
 
                             // Calculate total Price
                             $discountedPrice = $product->price * (1 - ($product->discount / 100));
