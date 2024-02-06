@@ -739,7 +739,7 @@ class OrderController extends Controller
                             $quantity = (int) $request->input('quantity');
                             $baseShippingFee = 100;
                             $numGroups = floor($quantity / 5);
-                            $shippingFees = ($numGroups * $baseShippingFee) + $baseShippingFee;
+                            $shippingFees = ($numGroups * $baseShippingFee) + ($product->promo !== 'BUY 3 FOR 990 WITH FREE SHIPPING' ? $baseShippingFee : 0);
 
                             // Calculate total Price
                             $discountedPrice = $product->price * (1 - ($product->discount / 100));
@@ -789,6 +789,31 @@ class OrderController extends Controller
 
                                     // Save the updated order
                                     $order->save();
+                                }
+                                // ************************************ //
+
+                                // ************************************ //
+                                // Buy 3 for 990 promo with free shipping
+                                // Fetch orders based on the provided criteria
+                                $buy3For990WithFreeShipping = OrderModel::where('status', 'UNPAID')
+                                    ->where('user_id', $user->id)
+                                    ->where('promo', 'BUY 3 FOR 990 WITH FREE SHIPPING')
+                                    ->get();
+
+                                foreach ($buy3For990WithFreeShipping as $orderWithFreeShipping) {
+                                    $quantity = $orderWithFreeShipping->quantity;
+
+                                    // Calculate the total price based on the promo logic
+                                    $divisibleBy3 = intdiv($quantity, 3);
+                                    $basePrice = $divisibleBy3 * 990;
+                                    $additionalItems = $quantity % 3;
+                                    $additionalPrice = $additionalItems * $orderWithFreeShipping->product_price;
+
+                                    // Update the orderWithFreeShipping's total price
+                                    $orderWithFreeShipping->total_price = $basePrice + $additionalPrice;
+
+                                    // Save the updated orderWithFreeShipping
+                                    $orderWithFreeShipping->save();
                                 }
                                 // ************************************ //
 
