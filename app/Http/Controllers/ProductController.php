@@ -285,7 +285,7 @@ class ProductController extends Controller
                 'products.*.promo' => 'nullable|string',
                 'products.*.quantity' => 'required|numeric',
                 'products.*.description' => 'nullable|string',
-                'products.*.image' => 'required|image|mimes:jpeg,png,jpg|max:2048',
+                'products.*.image' => 'required|image|mimes:jpeg,png,jpg|max:8192',
             ]);
 
             foreach ($validatedData['products'] as $productUserInput) {
