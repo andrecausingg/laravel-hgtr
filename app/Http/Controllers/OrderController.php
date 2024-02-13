@@ -1172,6 +1172,33 @@ class OrderController extends Controller
                         $order->quantity = $finalTotalQuantity;
 
                         if ($order->save()) {
+                            $orderUnpaid = OrderModel::where('user_id', $user->id)
+                                ->where('id', $id)
+                                ->where('status', 'UNPAID')
+                                ->where('promo', 'BUY 3 FOR 990 WITH FREE SHIPPING')
+                                ->first(); // Retrieve the order from the database
+
+                            if ($orderUnpaid) {
+                                // Calculate the total price based on the promo logic
+                                $setsOf3 = intdiv($orderUnpaid->quantity, 3);
+                                $basePrice = $setsOf3 * 990;
+
+                                $remainingItems = $orderUnpaid->quantity % 3;
+                                $additionalPrice = 0;
+
+                                if ($remainingItems > 0) {
+                                    // If there are additional items, add the original product price for those items
+                                    $additionalPrice = $remainingItems * $orderUnpaid->product_price;
+                                }
+
+                                // Calculate the total price
+                                $finalTotalPrice = $basePrice + $additionalPrice;
+
+                                // Update the order with the calculated total price
+                                $orderUnpaid->total_price = $finalTotalPrice;
+                                $orderUnpaid->save();
+                            }
+
                             // **************************** //
                             // START GROUP CALCULATION FOR SHIPPING FEE FOR PROMO BUY 3 990 WITH FREE SHIPPING AND WITHOUT PROMO 
                             // AND CALCULATION OF FINAL TOTAL PRICE
