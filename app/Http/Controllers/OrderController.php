@@ -1082,19 +1082,53 @@ class OrderController extends Controller
                         $order->quantity = $finalTotalQuantity;
 
                         if ($order->save()) {
-                            // Fetch the total Quantity
+                            $totalQuantity = 0;
+
                             $fetchAllQuantityAndCalculateShippingFee = OrderModel::where('user_id', $user->id)
                                 ->where('status', 'UNPAID')
                                 ->where(function ($query) {
                                     $query->where('promo', '!=', 'BUY 3 FOR 990 WITH FREE SHIPPING')
                                         ->orWhereNull('promo');
                                 })
+                                ->where('quantity', '>=', 3)
                                 ->get();
-                            $totalQuantity = 0;
 
-                            foreach ($fetchAllQuantityAndCalculateShippingFee as $order) {
-                                $totalQuantity += $order->quantity;
+                            $fetchAllQuantityAndCalculateShippingFeeEqualwithlessthan3 = OrderModel::where('user_id', $user->id)
+                                ->where('status', 'UNPAID')
+                                ->where(function ($query) {
+                                    $query->where('promo', '=', 'BUY 3 FOR 990 WITH FREE SHIPPING')
+                                        ->orWhereNull('promo');
+                                })
+                                ->where('quantity', '<=', 2)
+                                ->get();
+
+                            if ($fetchAllQuantityAndCalculateShippingFee) {
+                                foreach ($fetchAllQuantityAndCalculateShippingFee as $order) {
+                                    $totalQuantity += $order->quantity;
+                                }
                             }
+
+                            if ($fetchAllQuantityAndCalculateShippingFeeEqualwithlessthan3) {
+                                foreach ($fetchAllQuantityAndCalculateShippingFeeEqualwithlessthan3 as $order) {
+                                    $totalQuantity += $order->quantity;
+                                }
+                            }
+
+                            // Fetch the total Quantity
+                            // $fetchAllQuantityAndCalculateShippingFee = OrderModel::where('user_id', $user->id)
+                            //     ->where('status', 'UNPAID')
+                            //     ->where(function ($query) {
+                            //         $query->where('promo', '!=', 'BUY 3 FOR 990 WITH FREE SHIPPING')
+                            //             ->orWhereNull('promo');
+                            //     })
+                            //     ->get();
+
+                            // if ($fetchAllQuantityAndCalculateShippingFee) {
+                            //     foreach ($fetchAllQuantityAndCalculateShippingFee as $order) {
+                            //         $totalQuantity += $order->quantity;
+                            //     }
+                            // }
+
 
                             function calculateShippingFee($totalQuantity)
                             {
@@ -1238,7 +1272,6 @@ class OrderController extends Controller
             return response()->json($response, Response::HTTP_INTERNAL_SERVER_ERROR)->header('Content-Type', 'application/json');
         }
     }
-
 
     // Destroy Item on TO PAY | CLIENT
     public function destroy(Request $request, $id)
