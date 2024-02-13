@@ -349,60 +349,10 @@ class OrderController extends Controller
                             $checkSameOrder->total_price = $finalTotalPrice;
                             $checkSameOrder->quantity = $finalTotalQuantity;
                             if ($checkSameOrder->save()) {
-                                // ************************************ //
-                                // Buy 3 for 990 promo
-                                // Fetch orders based on the provided criteria
-                                $buy3For990 = OrderModel::where('status', 'UNPAID')
-                                    ->where('user_id', $user->id)
-                                    ->where('category', $product->category)
-                                    ->where('name', $product->name)
-                                    ->where('promo', 'BUY 3 FOR 990')
-                                    ->where('color', $request->input('color'))
-                                    ->where('size', $request->input('size'))
-                                    ->first(); // Use first() to get a single order
-
-                                if ($buy3For990) {
-                                    $quantity = $buy3For990->quantity;
-
-                                    // Calculate the total price based on the promo logic
-                                    $divisibleBy3 = intdiv($quantity, 3);
-                                    $basePrice = $divisibleBy3 * 990;
-                                    $additionalItems = $quantity % 3;
-                                    $additionalPrice = $additionalItems * $buy3For990->product_price;
-
-                                    // Update the order's total price
-                                    $buy3For990->total_price = $basePrice + $additionalPrice;
-
-                                    // Save the updated order
-                                    $buy3For990->save();
-                                }
-                                // ************************************ //
-
-                                // ************************************ //
-                                // Buy 3 for 990 promo with free shipping
-                                // Fetch orders based on the provided criteria
-                                $buy3For990WithFreeShipping = OrderModel::where('status', 'UNPAID')
-                                    ->where('user_id', $user->id)
-                                    ->where('promo', 'BUY 3 FOR 990 WITH FREE SHIPPING')
-                                    ->get();
-
-                                foreach ($buy3For990WithFreeShipping as $orderWithFreeShipping) {
-                                    $quantity = $orderWithFreeShipping->quantity;
-
-                                    // Calculate the total price based on the promo logic
-                                    $divisibleBy3 = intdiv($quantity, 3);
-                                    $basePrice = $divisibleBy3 * 990;
-                                    $additionalItems = $quantity % 3;
-                                    $additionalPrice = $additionalItems * $orderWithFreeShipping->product_price;
-
-                                    // Update the orderWithFreeShipping's total price
-                                    $orderWithFreeShipping->total_price = $basePrice + $additionalPrice;
-
-                                    // Save the updated orderWithFreeShipping
-                                    $orderWithFreeShipping->save();
-                                }
-                                // ************************************ //
-
+                                // **************************** //
+                                // START GROUP CALCULATION FOR SHIPPING FEE FOR PROMO BUY 3 990 WITH FREE SHIPPING AND WITHOUT PROMO 
+                                // AND CALCULATION OF FINAL TOTAL PRICE
+                                // **************************** //
                                 // Fetch the total Quantity
                                 $fetchAllQuantityAndCalculateShippingFee = OrderModel::where('user_id', $user->id)
                                     ->where('status', 'UNPAID')
@@ -411,18 +361,34 @@ class OrderController extends Controller
                                             ->orWhereNull('promo');
                                     })
                                     ->get();
-
                                 $totalQuantity = $fetchAllQuantityAndCalculateShippingFee->sum('quantity');
+                                // **************************** //
+
+                                // **************************** //
+                                // Total Quantity of Promo Buy 3 990 with free shipping
+                                $totalQtyWithPromoFreeShipping = OrderModel::where('user_id', $user->id)
+                                    ->where('status', 'UNPAID')
+                                    ->where('promo', 'BUY 3 FOR 990 WITH FREE SHIPPING')
+                                    ->get();
+                                $totalQtyWithPromo = 0;
+                                $finalTotalQtyWithPromo = 0;
+                                $totalQtyWithPromo = $totalQtyWithPromoFreeShipping->sum('quantity');
+                                if ($totalQtyWithPromo <= 2) {
+                                    $finalTotalQtyWithPromo = $totalQtyWithPromo;
+                                }
+                                // **************************** //
+
+                                $finalTotalQtyPromoAndWithoutPromo = $finalTotalQtyWithPromo + $totalQuantity;
 
                                 // Calculate the Shipping Fee
-                                function calculateShippingFee($totalQuantity)
+                                function calculateShippingFee($finalTotalQtyPromoAndWithoutPromo)
                                 {
                                     $shippingFee = 100; // Base shipping fee
                                     $rangeSize = 5; // Size of each range
                                     $feeIncrement = 100; // Fee increment for each range
 
                                     // Calculate the range index based on the quantity
-                                    $rangeIndex = ceil($totalQuantity / $rangeSize);
+                                    $rangeIndex = ceil($finalTotalQtyPromoAndWithoutPromo / $rangeSize);
 
                                     // Calculate the shipping fee based on the range index and quantity
                                     $shippingFee += ($rangeIndex - 1) * $feeIncrement;
@@ -430,29 +396,64 @@ class OrderController extends Controller
                                     return number_format($shippingFee, 2); // Format the shipping fee with two decimal places
                                 }
 
-                                // Saving Now
-                                $updateShippingFeeNow = OrderModel::where('user_id', $user->id)
+                                // Saving Now Shipping Fee
+                                $savingQuery = OrderModel::where('user_id', $user->id)
                                     ->where('status', 'UNPAID')
                                     ->where('role', 'MAIN')
                                     ->first();
-                                $updateShippingFeeNow->shipping_fee = calculateShippingFee($totalQuantity);
+                                $savingQuery->shipping_fee = calculateShippingFee($finalTotalQtyPromoAndWithoutPromo);
+                                $savingQuery->save();
+                                // **************************** //
 
-                                // ****************************//
+                                // ********************************************* //
                                 // CALCULATING THE FINAL TOTAL PRICE UNPAID
-                                $getAllOderUnpaid = OrderModel::where('user_id', $user->id)
+                                // USE THIS QUERY FOR GETTING THE VALUE OF BUY 3 FOR 990 WITH FREE SHIPPING
+                                $priceOfPromoBuy3For990 = OrderModel::where('user_id', $user->id)
                                     ->where('status', 'UNPAID')
-                                    ->first(); // Get the first matching order
+                                    ->where('promo', 'BUY 3 FOR 990 WITH FREE SHIPPING')
+                                    ->first();
 
-                                if ($getAllOderUnpaid) { // Check if there is a matching order
-                                    $totalPriceSumUnPaid = OrderModel::where('user_id', $user->id)
-                                        ->where('status', 'UNPAID')
-                                        ->sum('total_price');
-
-                                    // Update the final_total_price of the first matching order
-                                    $getAllOderUnpaid->final_total_price = $totalPriceSumUnPaid;
-                                    $getAllOderUnpaid->save();
+                                // Query Get all quantity promo of BUY 3 FOR 990 WITH FREE SHIPPING then calculate the final total price
+                                $getAllOrderUnpaidWithPromoBuy3For990withFreeShip = OrderModel::where('user_id', $user->id)
+                                    ->where('status', 'UNPAID')
+                                    ->where('promo', 'BUY 3 FOR 990 WITH FREE SHIPPING')
+                                    ->get();
+                                $totalQtyPromoBuy3For990 = 0;
+                                foreach ($getAllOrderUnpaidWithPromoBuy3For990withFreeShip as $dataAllOrderUnpaidWithPromoBuy3For990withFreeShip) {
+                                    $totalQtyPromoBuy3For990 += $dataAllOrderUnpaidWithPromoBuy3For990withFreeShip->quantity;
                                 }
-                                // ****************************//
+
+                                // Calculate the total price based on the promo logic
+                                $divisibleBy3 = intdiv($totalQtyPromoBuy3For990, 3);
+                                $basePrice = $divisibleBy3 * 990;
+                                $additionalItems = $totalQtyPromoBuy3For990 % 3;
+                                $additionalPrice = 0;
+                                if ($additionalItems > 0) {
+                                    // If there are additional items, add the original product price for those items
+                                    $additionalPrice = $additionalItems * $priceOfPromoBuy3For990->product_price;
+                                }
+                                // Calculate the total price
+                                $finalTotalPricePromoBuy3for990FreeShip = $basePrice + $additionalPrice;
+
+                                // Query Get all sum total without promo
+                                $getAllOrderUnpaidNoPromos = OrderModel::where('user_id', $user->id)
+                                    ->where('status', 'UNPAID')
+                                    ->where('promo', '!=', 'BUY 3 FOR 990 WITH FREE SHIPPING')
+                                    ->get();
+                                $totalSumNoPromo = $getAllOrderUnpaidNoPromos->sum('total_price');
+
+                                // Saving Now For final total price
+                                $savingQueryCalculationFinalPrice = OrderModel::where('user_id', $user->id)
+                                    ->where('status', 'UNPAID')
+                                    ->where('role', 'MAIN')
+                                    ->first();
+
+                                $finalTotalPricePromoBuy3for990FreeShip = $basePrice + $additionalPrice;
+                                $savingQueryCalculationFinalPrice->final_total_price =  $finalTotalPricePromoBuy3for990FreeShip + $totalSumNoPromo;
+                                $savingQueryCalculationFinalPrice->save();
+                                // END GROUP CALCULATION FOR SHIPPING FEE FOR PROMO BUY 3 990 WITH FREE SHIPPING AND WITHOUT PROMO
+                                // AND CALCULATION OF FINAL TOTAL PRICE
+                                // ********************************************* //
 
                                 // ****************************//
                                 // 'BUY 1 TAKE 1' promo
@@ -488,12 +489,9 @@ class OrderController extends Controller
                                     $latestOrderBuy2Take1->save();
                                 }
                                 // ****************************//
-
-                                if ($updateShippingFeeNow->save()) {
-                                    return response()->json([
-                                        'message' => 'Created'
-                                    ], Response::HTTP_OK);
-                                }
+                                return response()->json([
+                                    'message' => 'Created'
+                                ], Response::HTTP_OK);
                             }
                         } else {
                             // Add new item on cart with the same Group  I.D
@@ -524,56 +522,6 @@ class OrderController extends Controller
 
                             // Logs
                             if ($created) {
-                                // ************************************ //
-                                // Buy 3 for 990 promo
-                                // Fetch orders based on the provided criteria
-                                $buy3For990 = OrderModel::where('status', 'UNPAID')
-                                    ->where('user_id', $user->id)
-                                    ->where('promo', 'BUY 3 FOR 990')
-                                    ->get();
-
-                                foreach ($buy3For990 as $order) {
-                                    $quantity = $order->quantity;
-
-                                    // Calculate the total price based on the promo logic
-                                    $divisibleBy3 = intdiv($quantity, 3);
-                                    $basePrice = $divisibleBy3 * 990;
-                                    $additionalItems = $quantity % 3;
-                                    $additionalPrice = $additionalItems * $order->product_price;
-
-                                    // Update the order's total price
-                                    $order->total_price = $basePrice + $additionalPrice;
-
-                                    // Save the updated order
-                                    $order->save();
-                                }
-                                // ************************************ //
-
-                                // ************************************ //
-                                // Buy 3 for 990 promo with free shipping
-                                // Fetch orders based on the provided criteria
-                                $buy3For990WithFreeShipping = OrderModel::where('status', 'UNPAID')
-                                    ->where('user_id', $user->id)
-                                    ->where('promo', 'BUY 3 FOR 990 WITH FREE SHIPPING')
-                                    ->get();
-
-                                foreach ($buy3For990WithFreeShipping as $orderWithFreeShipping) {
-                                    $quantity = $orderWithFreeShipping->quantity;
-
-                                    // Calculate the total price based on the promo logic
-                                    $divisibleBy3 = intdiv($quantity, 3);
-                                    $basePrice = $divisibleBy3 * 990;
-                                    $additionalItems = $quantity % 3;
-                                    $additionalPrice = $additionalItems * $orderWithFreeShipping->product_price;
-
-                                    // Update the orderWithFreeShipping's total price
-                                    $orderWithFreeShipping->total_price = $basePrice + $additionalPrice;
-
-                                    // Save the updated orderWithFreeShipping
-                                    $orderWithFreeShipping->save();
-                                }
-                                // ************************************ //
-
 
                                 // ****************************//
                                 // 'BUY 1 TAKE 1' promo
@@ -639,6 +587,9 @@ class OrderController extends Controller
 
                                 // Calculate Shipping Fee Always
                                 if ($created) {
+                                    // **************************** //
+                                    // START GROUP CALCULATION FOR SHIPPING FEE FOR PROMO BUY 3 990 WITH FREE SHIPPING AND WITHOUT PROMO
+                                    // **************************** //
                                     // Fetch the total Quantity
                                     $fetchAllQuantityAndCalculateShippingFee = OrderModel::where('user_id', $user->id)
                                         ->where('status', 'UNPAID')
@@ -647,17 +598,34 @@ class OrderController extends Controller
                                                 ->orWhereNull('promo');
                                         })
                                         ->get();
-
                                     $totalQuantity = $fetchAllQuantityAndCalculateShippingFee->sum('quantity');
+                                    // **************************** //
 
-                                    function calculateShippingFee($totalQuantity)
+                                    // **************************** //
+                                    // Total Quantity of Promo Buy 3 990 with free shipping
+                                    $totalQtyWithPromoFreeShipping = OrderModel::where('user_id', $user->id)
+                                        ->where('status', 'UNPAID')
+                                        ->where('promo', 'BUY 3 FOR 990 WITH FREE SHIPPING')
+                                        ->get();
+                                    $totalQtyWithPromo = 0;
+                                    $finalTotalQtyWithPromo = 0;
+                                    $totalQtyWithPromo = $totalQtyWithPromoFreeShipping->sum('quantity');
+                                    if ($totalQtyWithPromo <= 2) {
+                                        $finalTotalQtyWithPromo = $totalQtyWithPromo;
+                                    }
+                                    // **************************** //
+
+                                    $finalTotalQtyPromoAndWithoutPromo = $finalTotalQtyWithPromo + $totalQuantity;
+
+                                    // Calculate the Shipping Fee
+                                    function calculateShippingFee($finalTotalQtyPromoAndWithoutPromo)
                                     {
                                         $shippingFee = 100; // Base shipping fee
                                         $rangeSize = 5; // Size of each range
                                         $feeIncrement = 100; // Fee increment for each range
 
                                         // Calculate the range index based on the quantity
-                                        $rangeIndex = ceil($totalQuantity / $rangeSize);
+                                        $rangeIndex = ceil($finalTotalQtyPromoAndWithoutPromo / $rangeSize);
 
                                         // Calculate the shipping fee based on the range index and quantity
                                         $shippingFee += ($rangeIndex - 1) * $feeIncrement;
@@ -665,34 +633,68 @@ class OrderController extends Controller
                                         return number_format($shippingFee, 2); // Format the shipping fee with two decimal places
                                     }
 
-                                    $updateShippingFeeNow = OrderModel::where('user_id', $user->id)
+                                    // Saving Now
+                                    $savingQuery = OrderModel::where('user_id', $user->id)
+                                        ->where('status', 'UNPAID')
+                                        ->where('role', 'MAIN')
+                                        ->first();
+                                    $savingQuery->shipping_fee = calculateShippingFee($finalTotalQtyPromoAndWithoutPromo);
+                                    $savingQuery->save();
+                                    // END GROUP CALCULATION FOR SHIPPING FEE FOR PROMO BUY 3 990 WITH FREE SHIPPING AND WITHOUT PROMO
+                                    // **************************** //
+
+
+                                    // ********************************************* //
+                                    // CALCULATING THE FINAL TOTAL PRICE UNPAID
+                                    // USE THIS QUERY FOR GETTING THE VALUE OF BUY 3 FOR 990 WITH FREE SHIPPING
+                                    $priceOfPromoBuy3For990 = OrderModel::where('user_id', $user->id)
+                                        ->where('status', 'UNPAID')
+                                        ->where('promo', 'BUY 3 FOR 990 WITH FREE SHIPPING')
+                                        ->first();
+
+                                    // Saving Now
+                                    $savingQueryCalculationFinalPrice = OrderModel::where('user_id', $user->id)
                                         ->where('status', 'UNPAID')
                                         ->where('role', 'MAIN')
                                         ->first();
 
-                                    // ****************************//
-                                    // CALCULATING THE FINAL TOTAL PRICE UNPAID
-                                    $getAllOderUnpaid = OrderModel::where('user_id', $user->id)
+                                    // Query Get all quantity promo of BUY 3 FOR 990 WITH FREE SHIPPING then calculate the final total price
+                                    $getAllOrderUnpaidWithPromoBuy3For990withFreeShip = OrderModel::where('user_id', $user->id)
                                         ->where('status', 'UNPAID')
-                                        ->first(); // Get the first matching order
-
-                                    if ($getAllOderUnpaid) { // Check if there is a matching order
-                                        $totalPriceSumUnPaid = OrderModel::where('user_id', $user->id)
-                                            ->where('status', 'UNPAID')
-                                            ->sum('total_price');
-
-                                        // Update the final_total_price of the first matching order
-                                        $getAllOderUnpaid->final_total_price = $totalPriceSumUnPaid;
-                                        $getAllOderUnpaid->save();
+                                        ->where('promo', 'BUY 3 FOR 990 WITH FREE SHIPPING')
+                                        ->get();
+                                    $totalQtyPromoBuy3For990 = 0;
+                                    foreach ($getAllOrderUnpaidWithPromoBuy3For990withFreeShip as $dataAllOrderUnpaidWithPromoBuy3For990withFreeShip) {
+                                        $totalQtyPromoBuy3For990 += $dataAllOrderUnpaidWithPromoBuy3For990withFreeShip->quantity;
                                     }
-                                    // ****************************//
 
-                                    $updateShippingFeeNow->shipping_fee = calculateShippingFee($totalQuantity);
-                                    if ($updateShippingFeeNow->save()) {
-                                        return response()->json([
-                                            'message' => 'Created'
-                                        ], Response::HTTP_OK);
+                                    // Calculate the total price based on the promo logic
+                                    $divisibleBy3 = intdiv($totalQtyPromoBuy3For990, 3);
+                                    $basePrice = $divisibleBy3 * 990;
+                                    $additionalItems = $totalQtyPromoBuy3For990 % 3;
+                                    $additionalPrice = 0;
+                                    if ($additionalItems > 0) {
+                                        // If there are additional items, add the original product price for those items
+                                        $additionalPrice = $additionalItems * $priceOfPromoBuy3For990->product_price;
                                     }
+                                    // Calculate the total price
+                                    $finalTotalPricePromoBuy3for990FreeShip = $basePrice + $additionalPrice;
+
+                                    // Query Get all sum total without promo
+                                    $getAllOrderUnpaidNoPromos = OrderModel::where('user_id', $user->id)
+                                        ->where('status', 'UNPAID')
+                                        ->where('promo', '!=', 'BUY 3 FOR 990 WITH FREE SHIPPING')
+                                        ->get();
+                                    $totalSumNoPromo = $getAllOrderUnpaidNoPromos->sum('total_price');
+
+                                    $finalTotalPricePromoBuy3for990FreeShip = $basePrice + $additionalPrice;
+                                    $savingQueryCalculationFinalPrice->final_total_price =  $finalTotalPricePromoBuy3for990FreeShip + $totalSumNoPromo;
+                                    $savingQueryCalculationFinalPrice->save();
+                                    // ********************************************* //
+
+                                    return response()->json([
+                                        'message' => 'Created'
+                                    ], Response::HTTP_OK);
                                 }
                             }
                         }
@@ -730,6 +732,10 @@ class OrderController extends Controller
                             $checkSameOrder->total_price = $finalTotalPrice;
                             $checkSameOrder->quantity = $finalTotalQuantity;
                             if ($checkSameOrder->save()) {
+                                // **************************** //
+                                // START GROUP CALCULATION FOR SHIPPING FEE FOR PROMO BUY 3 990 WITH FREE SHIPPING AND WITHOUT PROMO 
+                                // AND CALCULATION OF FINAL TOTAL PRICE
+                                // **************************** //
                                 // Fetch the total Quantity
                                 $fetchAllQuantityAndCalculateShippingFee = OrderModel::where('user_id', $user->id)
                                     ->where('status', 'UNPAID')
@@ -738,19 +744,34 @@ class OrderController extends Controller
                                             ->orWhereNull('promo');
                                     })
                                     ->get();
-
                                 $totalQuantity = $fetchAllQuantityAndCalculateShippingFee->sum('quantity');
+                                // **************************** //
 
+                                // **************************** //
+                                // Total Quantity of Promo Buy 3 990 with free shipping
+                                $totalQtyWithPromoFreeShipping = OrderModel::where('user_id', $user->id)
+                                    ->where('status', 'UNPAID')
+                                    ->where('promo', 'BUY 3 FOR 990 WITH FREE SHIPPING')
+                                    ->get();
+                                $totalQtyWithPromo = 0;
+                                $finalTotalQtyWithPromo = 0;
+                                $totalQtyWithPromo = $totalQtyWithPromoFreeShipping->sum('quantity');
+                                if ($totalQtyWithPromo <= 2) {
+                                    $finalTotalQtyWithPromo = $totalQtyWithPromo;
+                                }
+                                // **************************** //
+
+                                $finalTotalQtyPromoAndWithoutPromo = $finalTotalQtyWithPromo + $totalQuantity;
 
                                 // Calculate the Shipping Fee
-                                function calculateShippingFee($totalQuantity)
+                                function calculateShippingFee($finalTotalQtyPromoAndWithoutPromo)
                                 {
                                     $shippingFee = 100; // Base shipping fee
                                     $rangeSize = 5; // Size of each range
                                     $feeIncrement = 100; // Fee increment for each range
 
                                     // Calculate the range index based on the quantity
-                                    $rangeIndex = ceil($totalQuantity / $rangeSize);
+                                    $rangeIndex = ceil($finalTotalQtyPromoAndWithoutPromo / $rangeSize);
 
                                     // Calculate the shipping fee based on the range index and quantity
                                     $shippingFee += ($rangeIndex - 1) * $feeIncrement;
@@ -758,36 +779,68 @@ class OrderController extends Controller
                                     return number_format($shippingFee, 2); // Format the shipping fee with two decimal places
                                 }
 
-                                // Saving Now
-                                $updateShippingFeeNow = OrderModel::where('user_id', $user->id)
+                                // Saving Now Shipping Fee
+                                $savingQuery = OrderModel::where('user_id', $user->id)
                                     ->where('status', 'UNPAID')
                                     ->where('role', 'MAIN')
                                     ->first();
-                                $updateShippingFeeNow->shipping_fee = calculateShippingFee($totalQuantity);
+                                $savingQuery->shipping_fee = calculateShippingFee($finalTotalQtyPromoAndWithoutPromo);
+                                $savingQuery->save();
+                                // **************************** //
 
-
-                                // ****************************//
+                                // ********************************************* //
                                 // CALCULATING THE FINAL TOTAL PRICE UNPAID
-                                $getAllOderUnpaid = OrderModel::where('user_id', $user->id)
+                                // USE THIS QUERY FOR GETTING THE VALUE OF BUY 3 FOR 990 WITH FREE SHIPPING
+                                $priceOfPromoBuy3For990 = OrderModel::where('user_id', $user->id)
                                     ->where('status', 'UNPAID')
-                                    ->first(); // Get the first matching order
+                                    ->where('promo', 'BUY 3 FOR 990 WITH FREE SHIPPING')
+                                    ->first();
 
-                                if ($getAllOderUnpaid) { // Check if there is a matching order
-                                    $totalPriceSumUnPaid = OrderModel::where('user_id', $user->id)
-                                        ->where('status', 'UNPAID')
-                                        ->sum('total_price');
-
-                                    // Update the final_total_price of the first matching order
-                                    $getAllOderUnpaid->final_total_price = $totalPriceSumUnPaid;
-                                    $getAllOderUnpaid->save();
+                                // Query Get all quantity promo of BUY 3 FOR 990 WITH FREE SHIPPING then calculate the final total price
+                                $getAllOrderUnpaidWithPromoBuy3For990withFreeShip = OrderModel::where('user_id', $user->id)
+                                    ->where('status', 'UNPAID')
+                                    ->where('promo', 'BUY 3 FOR 990 WITH FREE SHIPPING')
+                                    ->get();
+                                $totalQtyPromoBuy3For990 = 0;
+                                foreach ($getAllOrderUnpaidWithPromoBuy3For990withFreeShip as $dataAllOrderUnpaidWithPromoBuy3For990withFreeShip) {
+                                    $totalQtyPromoBuy3For990 += $dataAllOrderUnpaidWithPromoBuy3For990withFreeShip->quantity;
                                 }
-                                // ****************************//
 
-                                if ($updateShippingFeeNow->save()) {
-                                    return response()->json([
-                                        'message' => 'Created'
-                                    ], Response::HTTP_OK);
+                                // Calculate the total price based on the promo logic
+                                $divisibleBy3 = intdiv($totalQtyPromoBuy3For990, 3);
+                                $basePrice = $divisibleBy3 * 990;
+                                $additionalItems = $totalQtyPromoBuy3For990 % 3;
+                                $additionalPrice = 0;
+                                if ($additionalItems > 0) {
+                                    // If there are additional items, add the original product price for those items
+                                    $additionalPrice = $additionalItems * $priceOfPromoBuy3For990->product_price;
                                 }
+                                // Calculate the total price
+                                $finalTotalPricePromoBuy3for990FreeShip = $basePrice + $additionalPrice;
+
+                                // Query Get all sum total without promo
+                                $getAllOrderUnpaidNoPromos = OrderModel::where('user_id', $user->id)
+                                    ->where('status', 'UNPAID')
+                                    ->where('promo', '!=', 'BUY 3 FOR 990 WITH FREE SHIPPING')
+                                    ->get();
+                                $totalSumNoPromo = $getAllOrderUnpaidNoPromos->sum('total_price');
+
+                                // Saving Now For final total price
+                                $savingQueryCalculationFinalPrice = OrderModel::where('user_id', $user->id)
+                                    ->where('status', 'UNPAID')
+                                    ->where('role', 'MAIN')
+                                    ->first();
+
+                                $finalTotalPricePromoBuy3for990FreeShip = $basePrice + $additionalPrice;
+                                $savingQueryCalculationFinalPrice->final_total_price =  $finalTotalPricePromoBuy3for990FreeShip + $totalSumNoPromo;
+                                $savingQueryCalculationFinalPrice->save();
+                                // END GROUP CALCULATION FOR SHIPPING FEE FOR PROMO BUY 3 990 WITH FREE SHIPPING AND WITHOUT PROMO
+                                // AND CALCULATION OF FINAL TOTAL PRICE
+                                // ********************************************* //
+
+                                return response()->json([
+                                    'message' => 'Created'
+                                ], Response::HTTP_OK);
                             }
                         } else {
                             // Fresh Create
@@ -826,73 +879,111 @@ class OrderController extends Controller
                             ]);
 
                             if ($created) {
-                                // ************************************ //
-                                // Buy 3 for 990 promo
-                                // Fetch orders based on the provided criteria
-                                $buy3For990 = OrderModel::where('status', 'UNPAID')
-                                    ->where('user_id', $user->id)
-                                    ->where('promo', 'BUY 3 FOR 990')
+                                // **************************** //
+                                // START GROUP CALCULATION FOR SHIPPING FEE FOR PROMO BUY 3 990 WITH FREE SHIPPING AND WITHOUT PROMO 
+                                // AND CALCULATION OF FINAL TOTAL PRICE
+                                // **************************** //
+                                // Fetch the total Quantity
+                                $fetchAllQuantityAndCalculateShippingFee = OrderModel::where('user_id', $user->id)
+                                    ->where('status', 'UNPAID')
+                                    ->where(function ($query) {
+                                        $query->where('promo', '!=', 'BUY 3 FOR 990 WITH FREE SHIPPING')
+                                            ->orWhereNull('promo');
+                                    })
                                     ->get();
+                                $totalQuantity = $fetchAllQuantityAndCalculateShippingFee->sum('quantity');
+                                // **************************** //
 
-                                foreach ($buy3For990 as $order) {
-                                    $quantity = $order->quantity;
-
-                                    // Calculate the total price based on the promo logic
-                                    $divisibleBy3 = intdiv($quantity, 3);
-                                    $basePrice = $divisibleBy3 * 990;
-                                    $additionalItems = $quantity % 3;
-                                    $additionalPrice = $additionalItems * $order->product_price;
-
-                                    // Update the order's total price
-                                    $order->total_price = $basePrice + $additionalPrice;
-
-                                    // Save the updated order
-                                    $order->save();
-                                }
-                                // ************************************ //
-
-                                // ************************************ //
-                                // Buy 3 for 990 promo with free shipping
-                                // Fetch orders based on the provided criteria
-                                $buy3For990WithFreeShipping = OrderModel::where('status', 'UNPAID')
-                                    ->where('user_id', $user->id)
+                                // **************************** //
+                                // Total Quantity of Promo Buy 3 990 with free shipping
+                                $totalQtyWithPromoFreeShipping = OrderModel::where('user_id', $user->id)
+                                    ->where('status', 'UNPAID')
                                     ->where('promo', 'BUY 3 FOR 990 WITH FREE SHIPPING')
                                     ->get();
-
-                                foreach ($buy3For990WithFreeShipping as $orderWithFreeShipping) {
-                                    $quantity = $orderWithFreeShipping->quantity;
-
-                                    // Calculate the total price based on the promo logic
-                                    $divisibleBy3 = intdiv($quantity, 3);
-                                    $basePrice = $divisibleBy3 * 990;
-                                    $additionalItems = $quantity % 3;
-                                    $additionalPrice = $additionalItems * $orderWithFreeShipping->product_price;
-
-                                    // Update the orderWithFreeShipping's total price
-                                    $orderWithFreeShipping->total_price = $basePrice + $additionalPrice;
-
-                                    // Save the updated orderWithFreeShipping
-                                    $orderWithFreeShipping->save();
+                                $totalQtyWithPromo = 0;
+                                $finalTotalQtyWithPromo = 0;
+                                $totalQtyWithPromo = $totalQtyWithPromoFreeShipping->sum('quantity');
+                                if ($totalQtyWithPromo <= 2) {
+                                    $finalTotalQtyWithPromo = $totalQtyWithPromo;
                                 }
-                                // ************************************ //
+                                // **************************** //
 
-                                // ****************************//
-                                // CALCULATING THE FINAL TOTAL PRICE UNPAID
-                                $getAllOderUnpaid = OrderModel::where('user_id', $user->id)
+                                $finalTotalQtyPromoAndWithoutPromo = $finalTotalQtyWithPromo + $totalQuantity;
+
+                                // Calculate the Shipping Fee
+                                function calculateShippingFee($finalTotalQtyPromoAndWithoutPromo)
+                                {
+                                    $shippingFee = 100; // Base shipping fee
+                                    $rangeSize = 5; // Size of each range
+                                    $feeIncrement = 100; // Fee increment for each range
+
+                                    // Calculate the range index based on the quantity
+                                    $rangeIndex = ceil($finalTotalQtyPromoAndWithoutPromo / $rangeSize);
+
+                                    // Calculate the shipping fee based on the range index and quantity
+                                    $shippingFee += ($rangeIndex - 1) * $feeIncrement;
+
+                                    return number_format($shippingFee, 2); // Format the shipping fee with two decimal places
+                                }
+
+                                // Saving Now Shipping Fee
+                                $savingQuery = OrderModel::where('user_id', $user->id)
                                     ->where('status', 'UNPAID')
-                                    ->first(); // Get the first matching order
+                                    ->where('role', 'MAIN')
+                                    ->first();
+                                $savingQuery->shipping_fee = calculateShippingFee($finalTotalQtyPromoAndWithoutPromo);
+                                $savingQuery->save();
+                                // **************************** //
 
-                                if ($getAllOderUnpaid) { // Check if there is a matching order
-                                    $totalPriceSumUnPaid = OrderModel::where('user_id', $user->id)
-                                        ->where('status', 'UNPAID')
-                                        ->sum('total_price');
+                                // ********************************************* //
+                                // CALCULATING THE FINAL TOTAL PRICE UNPAID
+                                // USE THIS QUERY FOR GETTING THE VALUE OF BUY 3 FOR 990 WITH FREE SHIPPING
+                                $priceOfPromoBuy3For990 = OrderModel::where('user_id', $user->id)
+                                    ->where('status', 'UNPAID')
+                                    ->where('promo', 'BUY 3 FOR 990 WITH FREE SHIPPING')
+                                    ->first();
 
-                                    // Update the final_total_price of the first matching order
-                                    $getAllOderUnpaid->final_total_price = $totalPriceSumUnPaid;
-                                    $getAllOderUnpaid->save();
+                                // Query Get all quantity promo of BUY 3 FOR 990 WITH FREE SHIPPING then calculate the final total price
+                                $getAllOrderUnpaidWithPromoBuy3For990withFreeShip = OrderModel::where('user_id', $user->id)
+                                    ->where('status', 'UNPAID')
+                                    ->where('promo', 'BUY 3 FOR 990 WITH FREE SHIPPING')
+                                    ->get();
+                                $totalQtyPromoBuy3For990 = 0;
+                                foreach ($getAllOrderUnpaidWithPromoBuy3For990withFreeShip as $dataAllOrderUnpaidWithPromoBuy3For990withFreeShip) {
+                                    $totalQtyPromoBuy3For990 += $dataAllOrderUnpaidWithPromoBuy3For990withFreeShip->quantity;
                                 }
-                                // ****************************//
 
+                                // Calculate the total price based on the promo logic
+                                $divisibleBy3 = intdiv($totalQtyPromoBuy3For990, 3);
+                                $basePrice = $divisibleBy3 * 990;
+                                $additionalItems = $totalQtyPromoBuy3For990 % 3;
+                                $additionalPrice = 0;
+                                if ($additionalItems > 0) {
+                                    // If there are additional items, add the original product price for those items
+                                    $additionalPrice = $additionalItems * $priceOfPromoBuy3For990->product_price;
+                                }
+                                // Calculate the total price
+                                $finalTotalPricePromoBuy3for990FreeShip = $basePrice + $additionalPrice;
+
+                                // Query Get all sum total without promo
+                                $getAllOrderUnpaidNoPromos = OrderModel::where('user_id', $user->id)
+                                    ->where('status', 'UNPAID')
+                                    ->where('promo', '!=', 'BUY 3 FOR 990 WITH FREE SHIPPING')
+                                    ->get();
+                                $totalSumNoPromo = $getAllOrderUnpaidNoPromos->sum('total_price');
+
+                                // Saving Now For final total price
+                                $savingQueryCalculationFinalPrice = OrderModel::where('user_id', $user->id)
+                                    ->where('status', 'UNPAID')
+                                    ->where('role', 'MAIN')
+                                    ->first();
+
+                                $finalTotalPricePromoBuy3for990FreeShip = $basePrice + $additionalPrice;
+                                $savingQueryCalculationFinalPrice->final_total_price =  $finalTotalPricePromoBuy3for990FreeShip + $totalSumNoPromo;
+                                $savingQueryCalculationFinalPrice->save();
+                                // END GROUP CALCULATION FOR SHIPPING FEE FOR PROMO BUY 3 990 WITH FREE SHIPPING AND WITHOUT PROMO
+                                // AND CALCULATION OF FINAL TOTAL PRICE
+                                // ********************************************* //
 
                                 // ****************************//
                                 // 'BUY 1 TAKE 1' promo
@@ -929,7 +1020,6 @@ class OrderController extends Controller
                                     $latestOrderBuy2Take1->save();
                                 }
                                 // ****************************//
-
 
                                 $userAction = 'CREATED';
                                 $details = 'Add To Cart Product Information with Group ID: ' . $product->group_id . "\n" .
@@ -1082,62 +1172,46 @@ class OrderController extends Controller
                         $order->quantity = $finalTotalQuantity;
 
                         if ($order->save()) {
-                            $totalQuantity = 0;
-
+                            // **************************** //
+                            // START GROUP CALCULATION FOR SHIPPING FEE FOR PROMO BUY 3 990 WITH FREE SHIPPING AND WITHOUT PROMO 
+                            // AND CALCULATION OF FINAL TOTAL PRICE
+                            // **************************** //
+                            // Fetch the total Quantity
                             $fetchAllQuantityAndCalculateShippingFee = OrderModel::where('user_id', $user->id)
                                 ->where('status', 'UNPAID')
                                 ->where(function ($query) {
                                     $query->where('promo', '!=', 'BUY 3 FOR 990 WITH FREE SHIPPING')
                                         ->orWhereNull('promo');
                                 })
-                                ->where('quantity', '>=', 3)
                                 ->get();
+                            $totalQuantity = $fetchAllQuantityAndCalculateShippingFee->sum('quantity');
+                            // **************************** //
 
-                            $fetchAllQuantityAndCalculateShippingFeeEqualwithlessthan3 = OrderModel::where('user_id', $user->id)
+                            // **************************** //
+                            // Total Quantity of Promo Buy 3 990 with free shipping
+                            $totalQtyWithPromoFreeShipping = OrderModel::where('user_id', $user->id)
                                 ->where('status', 'UNPAID')
-                                ->where(function ($query) {
-                                    $query->where('promo', '=', 'BUY 3 FOR 990 WITH FREE SHIPPING')
-                                        ->orWhereNull('promo');
-                                })
-                                ->where('quantity', '<=', 2)
+                                ->where('promo', 'BUY 3 FOR 990 WITH FREE SHIPPING')
                                 ->get();
-
-                            if ($fetchAllQuantityAndCalculateShippingFee) {
-                                foreach ($fetchAllQuantityAndCalculateShippingFee as $order) {
-                                    $totalQuantity += $order->quantity;
-                                }
+                            $totalQtyWithPromo = 0;
+                            $finalTotalQtyWithPromo = 0;
+                            $totalQtyWithPromo = $totalQtyWithPromoFreeShipping->sum('quantity');
+                            if ($totalQtyWithPromo <= 2) {
+                                $finalTotalQtyWithPromo = $totalQtyWithPromo;
                             }
+                            // **************************** //
 
-                            if ($fetchAllQuantityAndCalculateShippingFeeEqualwithlessthan3) {
-                                foreach ($fetchAllQuantityAndCalculateShippingFeeEqualwithlessthan3 as $order) {
-                                    $totalQuantity += $order->quantity;
-                                }
-                            }
+                            $finalTotalQtyPromoAndWithoutPromo = $finalTotalQtyWithPromo + $totalQuantity;
 
-                            // Fetch the total Quantity
-                            // $fetchAllQuantityAndCalculateShippingFee = OrderModel::where('user_id', $user->id)
-                            //     ->where('status', 'UNPAID')
-                            //     ->where(function ($query) {
-                            //         $query->where('promo', '!=', 'BUY 3 FOR 990 WITH FREE SHIPPING')
-                            //             ->orWhereNull('promo');
-                            //     })
-                            //     ->get();
-
-                            // if ($fetchAllQuantityAndCalculateShippingFee) {
-                            //     foreach ($fetchAllQuantityAndCalculateShippingFee as $order) {
-                            //         $totalQuantity += $order->quantity;
-                            //     }
-                            // }
-
-
-                            function calculateShippingFee($totalQuantity)
+                            // Calculate the Shipping Fee
+                            function calculateShippingFee($finalTotalQtyPromoAndWithoutPromo)
                             {
                                 $shippingFee = 100; // Base shipping fee
                                 $rangeSize = 5; // Size of each range
                                 $feeIncrement = 100; // Fee increment for each range
 
                                 // Calculate the range index based on the quantity
-                                $rangeIndex = ceil($totalQuantity / $rangeSize);
+                                $rangeIndex = ceil($finalTotalQtyPromoAndWithoutPromo / $rangeSize);
 
                                 // Calculate the shipping fee based on the range index and quantity
                                 $shippingFee += ($rangeIndex - 1) * $feeIncrement;
@@ -1145,94 +1219,68 @@ class OrderController extends Controller
                                 return number_format($shippingFee, 2); // Format the shipping fee with two decimal places
                             }
 
-                            $updateShippingFeeNow = OrderModel::where('user_id', $user->id)
+                            // Saving Now Shipping Fee
+                            $savingQuery = OrderModel::where('user_id', $user->id)
                                 ->where('status', 'UNPAID')
                                 ->where('role', 'MAIN')
                                 ->first();
-                            $updateShippingFeeNow->shipping_fee = calculateShippingFee($totalQuantity);
+                            $savingQuery->shipping_fee = calculateShippingFee($finalTotalQtyPromoAndWithoutPromo);
+                            $savingQuery->save();
+                            // **************************** //
 
-
-                            // ************************************ //
-                            // Buy 3 for 990 promo
-                            // Fetch orders based on the provided criteria
-                            $buy3For990 = OrderModel::where('id', $id)
-                                ->where('user_id', $user->id)
-                                ->first(); // Use first() to get a single order
-
-                            if ($buy3For990) {
-                                $quantity = $buy3For990->quantity;
-
-                                // Calculate the total price based on the promo logic
-                                $divisibleBy3 = intdiv($quantity, 3);
-                                $basePrice = $divisibleBy3 * 990;
-                                $additionalItems = $quantity % 3;
-                                $additionalPrice = $additionalItems * $buy3For990->product_price;
-
-                                // Update the order's total price
-                                $buy3For990->total_price = $basePrice + $additionalPrice;
-
-                                // Save the updated order
-                                $buy3For990->save();
-                            }
-                            // ************************************ //
-
-                            // ****************************//
+                            // ********************************************* //
                             // CALCULATING THE FINAL TOTAL PRICE UNPAID
-                            $getAllOderUnpaid = OrderModel::where('user_id', $user->id)
+                            // USE THIS QUERY FOR GETTING THE VALUE OF BUY 3 FOR 990 WITH FREE SHIPPING
+                            $priceOfPromoBuy3For990 = OrderModel::where('user_id', $user->id)
                                 ->where('status', 'UNPAID')
-                                ->first(); // Get the first matching order
-
-                            if ($getAllOderUnpaid) { // Check if there is a matching order
-                                $totalPriceSumUnPaid = OrderModel::where('user_id', $user->id)
-                                    ->where('status', 'UNPAID')
-                                    ->sum('total_price');
-
-                                // Update the final_total_price of the first matching order
-                                $getAllOderUnpaid->final_total_price = $totalPriceSumUnPaid;
-                                $getAllOderUnpaid->save();
-                            }
-                            // ****************************//
-
-                            // ****************************//
-                            // 'BUY 1 TAKE 1' promo
-                            // Find the latest inserted order with 'BUY 2 TAKE 1' promo
-                            $latestOrderBuy2Take1 = OrderModel::where('status', 'UNPAID')
-                                ->where('user_id', $user->id)
-                                ->where('promo', 'BUY 1 TAKE 1')
-                                ->where('id', $id)
-                                ->latest()
-                                ->first();
-                            if ($latestOrderBuy2Take1) {
-                                $latestOrderBuy2Take1->promo_buy_and_take_count = $latestOrderBuy2Take1->quantity;
-                                $latestOrderBuy2Take1->save();
-                            }
-                            // ****************************//
-
-                            // ****************************//
-                            // 'BUY 2 TAKE 1' promo
-                            // Find the latest inserted order with 'BUY 2 TAKE 1' promo
-                            $latestOrderBuy2Take1 = OrderModel::where('status', 'UNPAID')
-                                ->where('user_id', $user->id)
-                                ->where('promo', 'BUY 2 TAKE 1')
-                                ->where('id', $id)
-                                ->latest()
+                                ->where('promo', 'BUY 3 FOR 990 WITH FREE SHIPPING')
                                 ->first();
 
-                            $totalTake = 0;
-
-                            if ($latestOrderBuy2Take1) {
-                                $totalProducts = $latestOrderBuy2Take1->quantity;
-                                $totalTake = intdiv($totalProducts, 2);
-                                $latestOrderBuy2Take1->promo_buy_and_take_count = $totalTake;
-                                $latestOrderBuy2Take1->save();
+                            // Query Get all quantity promo of BUY 3 FOR 990 WITH FREE SHIPPING then calculate the final total price
+                            $getAllOrderUnpaidWithPromoBuy3For990withFreeShip = OrderModel::where('user_id', $user->id)
+                                ->where('status', 'UNPAID')
+                                ->where('promo', 'BUY 3 FOR 990 WITH FREE SHIPPING')
+                                ->get();
+                            $totalQtyPromoBuy3For990 = 0;
+                            foreach ($getAllOrderUnpaidWithPromoBuy3For990withFreeShip as $dataAllOrderUnpaidWithPromoBuy3For990withFreeShip) {
+                                $totalQtyPromoBuy3For990 += $dataAllOrderUnpaidWithPromoBuy3For990withFreeShip->quantity;
                             }
-                            // ****************************//
 
-                            if ($updateShippingFeeNow->save()) {
-                                return response()->json([
-                                    'message' => 'Updated'
-                                ], Response::HTTP_OK);
+                            // Calculate the total price based on the promo logic
+                            $divisibleBy3 = intdiv($totalQtyPromoBuy3For990, 3);
+                            $basePrice = $divisibleBy3 * 990;
+                            $additionalItems = $totalQtyPromoBuy3For990 % 3;
+                            $additionalPrice = 0;
+                            if ($additionalItems > 0) {
+                                // If there are additional items, add the original product price for those items
+                                $additionalPrice = $additionalItems * $priceOfPromoBuy3For990->product_price;
                             }
+                            // Calculate the total price
+                            $finalTotalPricePromoBuy3for990FreeShip = $basePrice + $additionalPrice;
+
+                            // Query Get all sum total without promo
+                            $getAllOrderUnpaidNoPromos = OrderModel::where('user_id', $user->id)
+                                ->where('status', 'UNPAID')
+                                ->where('promo', '!=', 'BUY 3 FOR 990 WITH FREE SHIPPING')
+                                ->get();
+                            $totalSumNoPromo = $getAllOrderUnpaidNoPromos->sum('total_price');
+
+                            // Saving Now For final total price
+                            $savingQueryCalculationFinalPrice = OrderModel::where('user_id', $user->id)
+                                ->where('status', 'UNPAID')
+                                ->where('role', 'MAIN')
+                                ->first();
+
+                            $finalTotalPricePromoBuy3for990FreeShip = $basePrice + $additionalPrice;
+                            $savingQueryCalculationFinalPrice->final_total_price =  $finalTotalPricePromoBuy3for990FreeShip + $totalSumNoPromo;
+                            $savingQueryCalculationFinalPrice->save();
+                            // END GROUP CALCULATION FOR SHIPPING FEE FOR PROMO BUY 3 990 WITH FREE SHIPPING AND WITHOUT PROMO
+                            // AND CALCULATION OF FINAL TOTAL PRICE
+                            // ********************************************* //
+
+                            return response()->json([
+                                'message' => 'Updated'
+                            ], Response::HTTP_OK);
                         }
                     } else {
                         return response()->json([
@@ -1372,48 +1420,10 @@ class OrderController extends Controller
 
                         if ($create) {
                             if ($data->delete()) {
-                                // ************************************ //
-                                // Buy 3 for 990 promo
-                                // Fetch orders based on the provided criteria
-                                $buy3For990 = OrderModel::where('id', $id)
-                                    ->where('user_id', $user->id)
-                                    ->first(); // Use first() to get a single order
-
-                                if ($buy3For990) {
-                                    $quantity = $buy3For990->quantity;
-
-                                    // Calculate the total price based on the promo logic
-                                    $divisibleBy3 = intdiv($quantity, 3);
-                                    $basePrice = $divisibleBy3 * 990;
-                                    $additionalItems = $quantity % 3;
-                                    $additionalPrice = $additionalItems * $buy3For990->product_price;
-
-                                    // Update the order's total price
-                                    $buy3For990->total_price = $basePrice + $additionalPrice;
-
-                                    // Save the updated order
-                                    $buy3For990->save();
-                                }
-                                // ************************************ //
-
-                                // ****************************//
-                                // CALCULATING THE FINAL TOTAL PRICE UNPAID
-                                $getAllOderUnpaid = OrderModel::where('user_id', $user->id)
-                                    ->where('status', 'UNPAID')
-                                    ->first(); // Get the first matching order
-
-                                if ($getAllOderUnpaid) { // Check if there is a matching order
-                                    $totalPriceSumUnPaid = OrderModel::where('user_id', $user->id)
-                                        ->where('status', 'UNPAID')
-                                        ->sum('total_price');
-
-                                    // Update the final_total_price of the first matching order
-                                    $getAllOderUnpaid->final_total_price = $totalPriceSumUnPaid;
-                                    $getAllOderUnpaid->save();
-                                }
-                                // ****************************//
-
-
+                                // **************************** //
+                                // START GROUP CALCULATION FOR SHIPPING FEE FOR PROMO BUY 3 990 WITH FREE SHIPPING AND WITHOUT PROMO 
+                                // AND CALCULATION OF FINAL TOTAL PRICE
+                                // **************************** //
                                 // Fetch the total Quantity
                                 $fetchAllQuantityAndCalculateShippingFee = OrderModel::where('user_id', $user->id)
                                     ->where('status', 'UNPAID')
@@ -1422,20 +1432,34 @@ class OrderController extends Controller
                                             ->orWhereNull('promo');
                                     })
                                     ->get();
-                                $totalQuantity = 0;
+                                $totalQuantity = $fetchAllQuantityAndCalculateShippingFee->sum('quantity');
+                                // **************************** //
 
-                                foreach ($fetchAllQuantityAndCalculateShippingFee as $order) {
-                                    $totalQuantity += $order->quantity;
+                                // **************************** //
+                                // Total Quantity of Promo Buy 3 990 with free shipping
+                                $totalQtyWithPromoFreeShipping = OrderModel::where('user_id', $user->id)
+                                    ->where('status', 'UNPAID')
+                                    ->where('promo', 'BUY 3 FOR 990 WITH FREE SHIPPING')
+                                    ->get();
+                                $totalQtyWithPromo = 0;
+                                $finalTotalQtyWithPromo = 0;
+                                $totalQtyWithPromo = $totalQtyWithPromoFreeShipping->sum('quantity');
+                                if ($totalQtyWithPromo <= 2) {
+                                    $finalTotalQtyWithPromo = $totalQtyWithPromo;
                                 }
+                                // **************************** //
 
-                                function calculateShippingFee($totalQuantity)
+                                $finalTotalQtyPromoAndWithoutPromo = $finalTotalQtyWithPromo + $totalQuantity;
+
+                                // Calculate the Shipping Fee
+                                function calculateShippingFee($finalTotalQtyPromoAndWithoutPromo)
                                 {
                                     $shippingFee = 100; // Base shipping fee
                                     $rangeSize = 5; // Size of each range
                                     $feeIncrement = 100; // Fee increment for each range
 
                                     // Calculate the range index based on the quantity
-                                    $rangeIndex = ceil($totalQuantity / $rangeSize);
+                                    $rangeIndex = ceil($finalTotalQtyPromoAndWithoutPromo / $rangeSize);
 
                                     // Calculate the shipping fee based on the range index and quantity
                                     $shippingFee += ($rangeIndex - 1) * $feeIncrement;
@@ -1443,16 +1467,68 @@ class OrderController extends Controller
                                     return number_format($shippingFee, 2); // Format the shipping fee with two decimal places
                                 }
 
-                                $updateShippingFeeNow = OrderModel::where('user_id', $user->id)
+                                // Saving Now Shipping Fee
+                                $savingQuery = OrderModel::where('user_id', $user->id)
                                     ->where('status', 'UNPAID')
                                     ->where('role', 'MAIN')
                                     ->first();
-                                $updateShippingFeeNow->shipping_fee = calculateShippingFee($totalQuantity);
-                                if ($updateShippingFeeNow->save()) {
-                                    return response()->json([
-                                        'message' => 'Deleted'
-                                    ], Response::HTTP_OK);
+                                $savingQuery->shipping_fee = calculateShippingFee($finalTotalQtyPromoAndWithoutPromo);
+                                $savingQuery->save();
+                                // **************************** //
+
+                                // ********************************************* //
+                                // CALCULATING THE FINAL TOTAL PRICE UNPAID
+                                // USE THIS QUERY FOR GETTING THE VALUE OF BUY 3 FOR 990 WITH FREE SHIPPING
+                                $priceOfPromoBuy3For990 = OrderModel::where('user_id', $user->id)
+                                    ->where('status', 'UNPAID')
+                                    ->where('promo', 'BUY 3 FOR 990 WITH FREE SHIPPING')
+                                    ->first();
+
+                                // Query Get all quantity promo of BUY 3 FOR 990 WITH FREE SHIPPING then calculate the final total price
+                                $getAllOrderUnpaidWithPromoBuy3For990withFreeShip = OrderModel::where('user_id', $user->id)
+                                    ->where('status', 'UNPAID')
+                                    ->where('promo', 'BUY 3 FOR 990 WITH FREE SHIPPING')
+                                    ->get();
+                                $totalQtyPromoBuy3For990 = 0;
+                                foreach ($getAllOrderUnpaidWithPromoBuy3For990withFreeShip as $dataAllOrderUnpaidWithPromoBuy3For990withFreeShip) {
+                                    $totalQtyPromoBuy3For990 += $dataAllOrderUnpaidWithPromoBuy3For990withFreeShip->quantity;
                                 }
+
+                                // Calculate the total price based on the promo logic
+                                $divisibleBy3 = intdiv($totalQtyPromoBuy3For990, 3);
+                                $basePrice = $divisibleBy3 * 990;
+                                $additionalItems = $totalQtyPromoBuy3For990 % 3;
+                                $additionalPrice = 0;
+                                if ($additionalItems > 0) {
+                                    // If there are additional items, add the original product price for those items
+                                    $additionalPrice = $additionalItems * $priceOfPromoBuy3For990->product_price;
+                                }
+                                // Calculate the total price
+                                $finalTotalPricePromoBuy3for990FreeShip = $basePrice + $additionalPrice;
+
+                                // Query Get all sum total without promo
+                                $getAllOrderUnpaidNoPromos = OrderModel::where('user_id', $user->id)
+                                    ->where('status', 'UNPAID')
+                                    ->where('promo', '!=', 'BUY 3 FOR 990 WITH FREE SHIPPING')
+                                    ->get();
+                                $totalSumNoPromo = $getAllOrderUnpaidNoPromos->sum('total_price');
+
+                                // Saving Now For final total price
+                                $savingQueryCalculationFinalPrice = OrderModel::where('user_id', $user->id)
+                                    ->where('status', 'UNPAID')
+                                    ->where('role', 'MAIN')
+                                    ->first();
+
+                                $finalTotalPricePromoBuy3for990FreeShip = $basePrice + $additionalPrice;
+                                $savingQueryCalculationFinalPrice->final_total_price =  $finalTotalPricePromoBuy3for990FreeShip + $totalSumNoPromo;
+                                $savingQueryCalculationFinalPrice->save();
+                                // END GROUP CALCULATION FOR SHIPPING FEE FOR PROMO BUY 3 990 WITH FREE SHIPPING AND WITHOUT PROMO
+                                // AND CALCULATION OF FINAL TOTAL PRICE
+                                // ********************************************* //
+
+                                return response()->json([
+                                    'message' => 'Deleted'
+                                ], Response::HTTP_OK);
                             }
                         }
                     }
@@ -1487,47 +1563,10 @@ class OrderController extends Controller
                 // Calculate Shipping Fee Always
                 if ($create) {
                     if ($data->delete()) {
-                        // ************************************ //
-                        // Buy 3 for 990 promo
-                        // Fetch orders based on the provided criteria
-                        $buy3For990 = OrderModel::where('id', $id)
-                            ->where('user_id', $user->id)
-                            ->first(); // Use first() to get a single order
-
-                        if ($buy3For990) {
-                            $quantity = $buy3For990->quantity;
-
-                            // Calculate the total price based on the promo logic
-                            $divisibleBy3 = intdiv($quantity, 3);
-                            $basePrice = $divisibleBy3 * 990;
-                            $additionalItems = $quantity % 3;
-                            $additionalPrice = $additionalItems * $buy3For990->product_price;
-
-                            // Update the order's total price
-                            $buy3For990->total_price = $basePrice + $additionalPrice;
-
-                            // Save the updated order
-                            $buy3For990->save();
-                        }
-                        // ************************************ //
-
-                        // ****************************//
-                        // CALCULATING THE FINAL TOTAL PRICE UNPAID
-                        $getAllOderUnpaid = OrderModel::where('user_id', $user->id)
-                            ->where('status', 'UNPAID')
-                            ->first(); // Get the first matching order
-
-                        if ($getAllOderUnpaid) { // Check if there is a matching order
-                            $totalPriceSumUnPaid = OrderModel::where('user_id', $user->id)
-                                ->where('status', 'UNPAID')
-                                ->sum('total_price');
-
-                            // Update the final_total_price of the first matching order
-                            $getAllOderUnpaid->final_total_price = $totalPriceSumUnPaid;
-                            $getAllOderUnpaid->save();
-                        }
-                        // ****************************//
-
+                        // **************************** //
+                        // START GROUP CALCULATION FOR SHIPPING FEE FOR PROMO BUY 3 990 WITH FREE SHIPPING AND WITHOUT PROMO 
+                        // AND CALCULATION OF FINAL TOTAL PRICE
+                        // **************************** //
                         // Fetch the total Quantity
                         $fetchAllQuantityAndCalculateShippingFee = OrderModel::where('user_id', $user->id)
                             ->where('status', 'UNPAID')
@@ -1536,20 +1575,34 @@ class OrderController extends Controller
                                     ->orWhereNull('promo');
                             })
                             ->get();
-                        $totalQuantity = 0;
+                        $totalQuantity = $fetchAllQuantityAndCalculateShippingFee->sum('quantity');
+                        // **************************** //
 
-                        foreach ($fetchAllQuantityAndCalculateShippingFee as $order) {
-                            $totalQuantity += $order->quantity;
+                        // **************************** //
+                        // Total Quantity of Promo Buy 3 990 with free shipping
+                        $totalQtyWithPromoFreeShipping = OrderModel::where('user_id', $user->id)
+                            ->where('status', 'UNPAID')
+                            ->where('promo', 'BUY 3 FOR 990 WITH FREE SHIPPING')
+                            ->get();
+                        $totalQtyWithPromo = 0;
+                        $finalTotalQtyWithPromo = 0;
+                        $totalQtyWithPromo = $totalQtyWithPromoFreeShipping->sum('quantity');
+                        if ($totalQtyWithPromo <= 2) {
+                            $finalTotalQtyWithPromo = $totalQtyWithPromo;
                         }
+                        // **************************** //
 
-                        function calculateShippingFee($totalQuantity)
+                        $finalTotalQtyPromoAndWithoutPromo = $finalTotalQtyWithPromo + $totalQuantity;
+
+                        // Calculate the Shipping Fee
+                        function calculateShippingFee($finalTotalQtyPromoAndWithoutPromo)
                         {
                             $shippingFee = 100; // Base shipping fee
                             $rangeSize = 5; // Size of each range
                             $feeIncrement = 100; // Fee increment for each range
 
                             // Calculate the range index based on the quantity
-                            $rangeIndex = ceil($totalQuantity / $rangeSize);
+                            $rangeIndex = ceil($finalTotalQtyPromoAndWithoutPromo / $rangeSize);
 
                             // Calculate the shipping fee based on the range index and quantity
                             $shippingFee += ($rangeIndex - 1) * $feeIncrement;
@@ -1557,16 +1610,68 @@ class OrderController extends Controller
                             return number_format($shippingFee, 2); // Format the shipping fee with two decimal places
                         }
 
-                        $updateShippingFeeNow = OrderModel::where('user_id', $user->id)
+                        // Saving Now Shipping Fee
+                        $savingQuery = OrderModel::where('user_id', $user->id)
                             ->where('status', 'UNPAID')
                             ->where('role', 'MAIN')
                             ->first();
-                        $updateShippingFeeNow->shipping_fee = calculateShippingFee($totalQuantity);
-                        if ($updateShippingFeeNow->save()) {
-                            return response()->json([
-                                'message' => 'Deleted'
-                            ], Response::HTTP_OK);
+                        $savingQuery->shipping_fee = calculateShippingFee($finalTotalQtyPromoAndWithoutPromo);
+                        $savingQuery->save();
+                        // **************************** //
+
+                        // ********************************************* //
+                        // CALCULATING THE FINAL TOTAL PRICE UNPAID
+                        // USE THIS QUERY FOR GETTING THE VALUE OF BUY 3 FOR 990 WITH FREE SHIPPING
+                        $priceOfPromoBuy3For990 = OrderModel::where('user_id', $user->id)
+                            ->where('status', 'UNPAID')
+                            ->where('promo', 'BUY 3 FOR 990 WITH FREE SHIPPING')
+                            ->first();
+
+                        // Query Get all quantity promo of BUY 3 FOR 990 WITH FREE SHIPPING then calculate the final total price
+                        $getAllOrderUnpaidWithPromoBuy3For990withFreeShip = OrderModel::where('user_id', $user->id)
+                            ->where('status', 'UNPAID')
+                            ->where('promo', 'BUY 3 FOR 990 WITH FREE SHIPPING')
+                            ->get();
+                        $totalQtyPromoBuy3For990 = 0;
+                        foreach ($getAllOrderUnpaidWithPromoBuy3For990withFreeShip as $dataAllOrderUnpaidWithPromoBuy3For990withFreeShip) {
+                            $totalQtyPromoBuy3For990 += $dataAllOrderUnpaidWithPromoBuy3For990withFreeShip->quantity;
                         }
+
+                        // Calculate the total price based on the promo logic
+                        $divisibleBy3 = intdiv($totalQtyPromoBuy3For990, 3);
+                        $basePrice = $divisibleBy3 * 990;
+                        $additionalItems = $totalQtyPromoBuy3For990 % 3;
+                        $additionalPrice = 0;
+                        if ($additionalItems > 0) {
+                            // If there are additional items, add the original product price for those items
+                            $additionalPrice = $additionalItems * $priceOfPromoBuy3For990->product_price;
+                        }
+                        // Calculate the total price
+                        $finalTotalPricePromoBuy3for990FreeShip = $basePrice + $additionalPrice;
+
+                        // Query Get all sum total without promo
+                        $getAllOrderUnpaidNoPromos = OrderModel::where('user_id', $user->id)
+                            ->where('status', 'UNPAID')
+                            ->where('promo', '!=', 'BUY 3 FOR 990 WITH FREE SHIPPING')
+                            ->get();
+                        $totalSumNoPromo = $getAllOrderUnpaidNoPromos->sum('total_price');
+
+                        // Saving Now For final total price
+                        $savingQueryCalculationFinalPrice = OrderModel::where('user_id', $user->id)
+                            ->where('status', 'UNPAID')
+                            ->where('role', 'MAIN')
+                            ->first();
+
+                        $finalTotalPricePromoBuy3for990FreeShip = $basePrice + $additionalPrice;
+                        $savingQueryCalculationFinalPrice->final_total_price =  $finalTotalPricePromoBuy3for990FreeShip + $totalSumNoPromo;
+                        $savingQueryCalculationFinalPrice->save();
+                        // END GROUP CALCULATION FOR SHIPPING FEE FOR PROMO BUY 3 990 WITH FREE SHIPPING AND WITHOUT PROMO
+                        // AND CALCULATION OF FINAL TOTAL PRICE
+                        // ********************************************* //
+
+                        return response()->json([
+                            'message' => 'Deleted'
+                        ], Response::HTTP_OK);
                     }
                 }
             }
